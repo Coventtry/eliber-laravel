@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StorePrestamoRequest;
+use App\Models\Area;
+use App\Models\Prestamo;
+use App\Services\PrestamoService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class PrestamoController extends Controller
+{
+    public function __construct(private PrestamoService $prestamoService) {}
+
+    public function index(Request $request): Response
+    {
+        $this->prestamoService->marcarAtrasados();
+
+        $prestamos = Prestamo::with(['socio', 'material.area'])
+            ->when($request->estado, fn($q, $e) => $q->where('estado', $e))
+            ->when($request->search, fn($q, $s) => $q->whereHas('socio', fn($sq) =>
+                $sq->where('nombre', 'like', "%{$s}%")->orWhere('apellido', 'like', "%{$s}%")
+            ))
+            ->orderByRaw("FIELD(estado, 'atrasado', 'pendiente', 'activo', 'devuelto')")
+            ->orderBy('fecha_devolucion')
+            ->paginate(20)
+            ->withQueryString();
+
+        return Inertia::render('Prestamos/Index', [
+            'prestamos' => $prestamos,
+            'filters'   => $request->only(['estado', 'search']),
+        ]);
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('Prestamos/Create', [
+            'areas' => Area::orderBy('nombre')->get(['id', 'nombre']),
+        ]);
+    }
+
+    public function store(StorePrestamoRequest $request): RedirectResponse
+    {
+        try {
+            $prestamo = $this->prestamoService->crearPrestamo(
+                $request->socio_id,
+                $request->material_id,
+                $request->cantidad,
+                $request->fecha_devolucion,
+            );
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
+
+        return redirect()->route('prestamos.index')->with('success', 'Préstamo registrado correctamente.');
+    }
+
+    public function showDevolucion(Prestamo $prestamo): Response
+    {
+        return Inertia::render('Prestamos/Return', [
+            'prestamo' => $prestamo->load('socio', 'material'),
+        ]);
+    }
+
+    public function devolver(Prestamo $prestamo): RedirectResponse
+    {
+        if ($prestamo->estado === 'devuelto') {
+            return back()->withErrors(['prestamo' => 'Este préstamo ya fue devuelto.']);
+        }
+
+        $this->prestamoService->devolverPrestamo($prestamo);
+        return redirect()->route('prestamos.index')->with('success', 'Devolución registrada.');
+    }
+
+    public function extender(Request $request, Prestamo $prestamo): RedirectResponse
+    {
+        $request->validate(['dias' => 'required|integer|min:1|max:30']);
+
+        try {
+            $this->prestamoService->extenderPrestamo($prestamo, $request->dias);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        return redirect()->route('prestamos.index')->with('success', "Préstamo extendido {$request->dias} días.");
+    }
+}

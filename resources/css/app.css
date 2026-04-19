@@ -1,0 +1,133 @@
+/* Bootstrap 4 desde npm — no más CDN */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+/* ============================================================
+   Paleta de colores E-liber
+   ============================================================ */
+:root {
+    --eliber-green:        #2e7d32;
+    --eliber-green-dark:   #1b5e20;
+    --eliber-green-light:  #e8f5e9;
+    --eliber-green-accent: #28a745;
+    --eliber-footer:       #161245;
+}
+
+/* ============================================================
+   Layout base
+   ============================================================ */
+html, body {
+    height: 100%;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.page-content {
+    flex: 1;
+}
+
+/* ============================================================
+   Navbar
+   ============================================================ */
+.navbar-eliber {
+    background-color: rgba(46, 125, 50, 0.92);
+}
+
+.navbar-eliber .navbar-brand,
+.navbar-eliber .nav-link {
+    color: #fff;
+}
+
+.navbar-eliber .nav-link:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.navbar-eliber .dropdown-item:hover {
+    background-color: var(--eliber-green-light);
+}
+
+/* ============================================================
+   Perfil en navbar
+   ============================================================ */
+.perfil-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--eliber-green-accent);
+    object-fit: cover;
+}
+
+/* ============================================================
+   Jumbotron / Hero
+   ============================================================ */
+.hero-section {
+    background: linear-gradient(rgba(27, 94, 32, 0.75), rgba(27, 94, 32, 0.75)),
+                url('/img/fondo.jpg') center/cover no-repeat;
+    color: #fff;
+    padding: 4rem 0;
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.footer-eliber {
+    background-color: var(--eliber-footer);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 1rem 0;
+    font-size: 0.85rem;
+}
+
+/* ============================================================
+   Badges de estado de préstamo
+   ============================================================ */
+.badge-activo    { background-color: #17a2b8; color: #fff; }
+.badge-pendiente { background-color: #ffc107; color: #212529; }
+.badge-atrasado  { background-color: #dc3545; color: #fff; }
+.badge-devuelto  { background-color: #28a745; color: #fff; }
+
+/* ============================================================
+   Tarjetas de noticias
+   ============================================================ */
+.card-noticia {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-noticia:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================================
+   Tabla responsive
+   ============================================================ */
+.table thead th {
+    background-color: var(--eliber-green);
+    color: #fff;
+    border-color: var(--eliber-green-dark);
+}
+
+/* ============================================================
+   Alertas flash — animación de salida
+   ============================================================ */
+.flash-message {
+    animation: fadeOut 0.5s ease 3s forwards;
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; }
+}
+
+/* ============================================================
+   Contenedor principal con sombra suave
+   ============================================================ */
+.main-container {
+    background-color: var(--eliber-green-light);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}

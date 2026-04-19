@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"robocopy \\\\\"C:\\\\Users\\\\rodri\\\\Documents\\\\eliber-laravel\\\\\" \\\\\"C:\\\\Users\\\\rodri\\\\Documents\\\\eliber-simple\\\\\" /E /COPYALL /XD vendor node_modules .git \\\\\"storage\\\\app\\\\public\\\\qrcodes\\\\\" \\\\\"storage\\\\app\\\\public\\\\noticias\\\\\" /XF .env *.log database.sqlite\")",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(cmd //c \"robocopy \\\\\"C:\\\\Users\\\\rodri\\\\Documents\\\\eliber-laravel\\\\\" \\\\\"C:\\\\Users\\\\rodri\\\\Documents\\\\eliber-simple\\\\\" /E /XD vendor node_modules .git /XF .env database.sqlite\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)"
+    ]
+  }
+}
