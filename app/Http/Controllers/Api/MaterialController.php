@@ -11,6 +11,7 @@ class MaterialController extends Controller
     public function index(): JsonResponse
     {
         $materiales = Material::select('id', 'titulo', 'autor', 'anio_publicacion', 'categoria', 'codigo', 'disponibilidad')
+            ->where('disponibilidad', '>', 0)
             ->paginate(20);
 
         return response()->json($materiales);
