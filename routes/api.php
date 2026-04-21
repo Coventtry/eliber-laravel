@@ -15,5 +15,6 @@ Route::prefix('v1')->group(function () {
         Route::post('reservas', [ReservaController::class, 'store']);
         Route::delete('reservas/{reserva}', [ReservaController::class, 'destroy']);
         Route::patch('reservas/{reserva}/aprobar', [ReservaController::class, 'aprobar']);
+        Route::patch('reservas/{reserva}/rechazar', [ReservaController::class, 'rechazar']);
     });
 });
