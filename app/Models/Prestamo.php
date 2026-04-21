@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,11 @@ class Prestamo extends Model
 {
     protected $table = 'prestamos';
     public $timestamps = false;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TenantScope());
+    }
 
     protected $fillable = [
         'socio_id', 'material_id', 'fecha_prestamo',
