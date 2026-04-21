@@ -72,8 +72,10 @@ class PrestamoService
             throw ValidationException::withMessages(['socio_id' => 'El socio está dado de baja.']);
         }
 
-        if ($material->disponibilidad < $cantidad) {
-            throw ValidationException::withMessages(['material_id' => "Disponibilidad insuficiente. Disponibles: {$material->disponibilidad}."]);
+        $disponibleReal = $material->disponibilidad - ($material->disponibilidad_reservada ?? 0);
+
+        if ($disponibleReal < $cantidad) {
+            throw ValidationException::withMessages(['material_id' => "Disponibilidad insuficiente. Disponibles: {$disponibleReal}."]);
         }
 
         $activos = Prestamo::where('socio_id', $socio->id)
