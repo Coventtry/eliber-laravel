@@ -30,3 +30,20 @@ Use form request classes (`StoreSocioRequest`, `StoreMaterialRequest`, etc.) in 
 ## Auth
 
 Laravel default guard with `Bibliotecario` model. All routes except `/login` require `auth` middleware.
+
+## Git Workflow (Large Changes)
+
+```bash
+# 1. Ensure you're on main and up to date
+git checkout main
+git pull origin main
+
+# 2. Create feature branch from main (name: short, descriptive)
+git checkout -b feature/<module-name>
+
+# 3. Make changes, commit regularly
+
+# 4. Push and create PR manually (user does this)
+git push -u origin feature/<module-name>
+# Then create PR via GitHub UI
+```
