@@ -8,7 +8,11 @@ use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\NoticiaController;
 use App\Http\Controllers\AnotacionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LandingController;
 use Illuminate\Support\Facades\Route;
+
+// Landing page - pública
+Route::get('/', [LandingController::class, '__invoke'])->name('landing');
 
 // Auth
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login')->middleware('guest');
@@ -17,7 +21,7 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name
 
 // Protected routes
 Route::middleware('auth')->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('socios', SocioController::class);
     Route::patch('socios/{socio}/baja', [SocioController::class, 'baja'])->name('socios.baja');

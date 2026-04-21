@@ -3,26 +3,30 @@
 return [
     'defaults' => [
         'guard'     => 'web',
-        'passwords' => 'bibliotecarios',
+        'passwords' => 'users',
     ],
 
     'guards' => [
         'web' => [
             'driver'   => 'session',
-            'provider' => 'bibliotecarios',
+            'provider' => 'users',
+        ],
+        'sanctum' => [
+            'driver'   => 'sanctum',
+            'provider' => 'users',
         ],
     ],
 
     'providers' => [
-        'bibliotecarios' => [
+        'users' => [
             'driver' => 'eloquent',
-            'model'  => App\Models\Bibliotecario::class,
+            'model' => App\Models\User::class,
         ],
     ],
 
     'passwords' => [
-        'bibliotecarios' => [
-            'provider' => 'bibliotecarios',
+        'users' => [
+            'provider' => 'users',
             'table'    => 'password_reset_tokens',
             'expire'   => 60,
             'throttle' => 60,

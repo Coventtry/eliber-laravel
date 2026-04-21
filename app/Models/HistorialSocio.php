@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -9,6 +10,11 @@ class HistorialSocio extends Model
 {
     protected $table = 'historial_socios';
     public $timestamps = false;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TenantScope());
+    }
 
     protected $fillable = ['id_socio', 'accion', 'fecha', 'observaciones'];
 
