@@ -19,6 +19,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'gestionar-noticias',
             'gestionar-anotaciones',
             'ver-reportes',
+            'ver-materiales',
+            'crear-reservas',
+            'ver-reservas',
         ];
 
         foreach ($permisos as $permiso) {
@@ -29,5 +32,12 @@ class RolesAndPermissionsSeeder extends Seeder
         $admin->givePermissionTo(Permission::all());
 
         Role::firstOrCreate(['name' => 'bibliotecario', 'guard_name' => 'web']);
+
+        $alumno = Role::firstOrCreate(['name' => 'alumno', 'guard_name' => 'web']);
+        $alumno->givePermissionTo([
+            'ver-materiales',
+            'crear-reservas',
+            'ver-reservas',
+        ]);
     }
 }
