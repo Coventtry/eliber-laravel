@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SocioController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\AreaController;
@@ -18,6 +19,10 @@ Route::get('/', [LandingController::class, '__invoke'])->name('landing');
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login')->middleware('guest');
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('guest');
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
+// Password reset (público)
+Route::get('/reset-password', [PasswordResetController::class, 'showForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.reset.submit');
 
 // Protected routes
 Route::middleware('auth')->group(function () {

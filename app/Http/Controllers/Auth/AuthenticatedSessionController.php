@@ -19,12 +19,12 @@ class AuthenticatedSessionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'email'    => 'required|email',
+            'usuario'    => 'required|string',
             'password' => 'required|string',
         ]);
 
-        if (!Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'Las credenciales no son correctas.'])->onlyInput('email');
+        if (!Auth::attempt(['usuario' => $request->usuario, 'password' => $request->password], $request->boolean('remember'))) {
+            return back()->withErrors(['usuario' => 'Las credenciales no son correctas.'])->onlyInput('usuario');
         }
 
         $request->session()->regenerate();
