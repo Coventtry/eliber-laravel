@@ -10,7 +10,7 @@ class LandingController extends Controller
 {
     public function __invoke(): Response
     {
-        $noticias = Noticia::latest()->take(6)->get(['id', 'titulo', 'cuerpo', 'created_at']);
+        $noticias = Noticia::orderBy('fecha', 'desc')->take(6)->get(['id', 'titulo', 'descripcion', 'fecha as created_at']);
 
         return Inertia::render('Landing', [
             'noticias' => $noticias,

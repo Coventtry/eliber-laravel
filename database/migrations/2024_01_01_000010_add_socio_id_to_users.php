@@ -10,7 +10,7 @@ return new class extends Migration
     {
         if (!Schema::hasColumn('users', 'socio_id')) {
             Schema::table('users', function (Blueprint $table) {
-                $table->foreignId('socio_id')->nullable()->constrained('socios')->nullOnDelete();
+                $table->unsignedInteger('socio_id')->nullable()->constrained('socios')->nullOnDelete();
             });
         }
     }

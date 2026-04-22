@@ -69,8 +69,16 @@
                 <ul class="pagination justify-content-center">
                     <li v-for="link in prestamos.links" :key="link.label"
                         :class="['page-item', { active: link.active, disabled: !link.url }]">
-                        <Link v-if="link.url" :href="link.url" class="page-link" v-html="link.label" />
-                        <span v-else class="page-link" v-html="link.label" />
+                        <Link v-if="link.url" :href="link.url" class="page-link">
+                            <span v-if="link.label.includes('Anterior') || link.label.includes('Previous')">&laquo;</span>
+                            <span v-else-if="link.label.includes('Siguiente') || link.label.includes('Next')">&raquo;</span>
+                            <span v-else v-html="link.label"></span>
+                        </Link>
+                        <span v-else class="page-link">
+                            <span v-if="link.label.includes('Anterior') || link.label.includes('Previous')">&laquo;</span>
+                            <span v-else-if="link.label.includes('Siguiente') || link.label.includes('Next')">&raquo;</span>
+                            <span v-else v-html="link.label"></span>
+                        </span>
                     </li>
                 </ul>
             </nav>

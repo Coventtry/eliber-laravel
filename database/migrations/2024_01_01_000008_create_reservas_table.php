@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('reservas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('material_id')->constrained()->onDelete('cascade');
-            $table->foreignId('socio_id')->constrained('socios')->onDelete('cascade');
+            $table->unsignedInteger('material_id')->constrained('materiales')->onDelete('cascade');
+            $table->unsignedInteger('socio_id')->constrained('socios')->onDelete('cascade');
             $table->enum('estado', ['pendiente', 'aprobada', 'rechazada', 'expirada'])->default('pendiente');
             $table->dateTime('fecha_reserva');
             $table->dateTime('fecha_vencimiento')->nullable();

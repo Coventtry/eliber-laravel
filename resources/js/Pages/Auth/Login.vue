@@ -13,17 +13,17 @@
 
                 <form @submit.prevent="submit">
                     <div class="form-group">
-                        <label for="email">Correo electrónico</label>
+                        <label for="usuario">Usuario</label>
                         <input
-                            id="email"
-                            v-model="form.email"
-                            type="email"
+                            id="usuario"
+                            v-model="form.usuario"
+                            type="text"
                             class="form-control"
-                            :class="{ 'is-invalid': errors.email }"
+                            :class="{ 'is-invalid': errors.usuario }"
                             autocomplete="username"
                             autofocus
                         >
-                        <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
+                        <div v-if="errors.usuario" class="invalid-feedback">{{ errors.usuario }}</div>
                     </div>
 
                     <div class="form-group">
@@ -49,6 +49,14 @@
                         Ingresar
                     </button>
                 </form>
+
+                <div class="text-center mt-3">
+                    <small>
+                        <Link :href="route('password.reset')" class="text-muted">
+                            ¿Olvidaste tu contraseña?
+                        </Link>
+                    </small>
+                </div>
             </div>
         </div>
     </div>
@@ -63,7 +71,7 @@ const page = usePage()
 const errors = computed(() => page.props.errors)
 
 const form = useForm({
-    email:    '',
+    usuario: '',
     password: '',
     remember: false,
 })

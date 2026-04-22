@@ -29,7 +29,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? [
                     'id'          => $user->id,
                     'nombre'      => $user->nombre,
-                    'usuario'     => $user->name,
+                    'usuario'    => $user->usuario,
                     'picture_url' => $user->picture_url ?? null,
                 ] : null,
                 'permisos' => $user ? $user->getAllPermissions()->pluck('name')->toArray() : [],
@@ -44,7 +44,7 @@ class HandleInertiaRequests extends Middleware
         ]);
     }
 
-    private function buildMenu(?\App\Models\User $user): array
+    private function buildMenu($user): array
     {
         if (!$user) return [];
 

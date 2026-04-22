@@ -5,23 +5,25 @@
 ```bash
 composer run dev     # Laravel server + Vite + queue + logs (parallel)
 composer run test   # Clears config, then runs tests
-php artisan pint    # PHP linting/formatting
+php artisan pint   # PHP linting/formatting
+composer run setup  # Fresh install: deps, .env, migrate, npm
 ```
 
 ## Critical Quirks
 
 - **Vue components NOT in repo**: Route render paths like `Inertia::render('Socios/Index', ...)` expect files at `resources/js/Pages/Socios/Index.vue`. Components are compiled by Vite, not version-controlled.
-- **Migrations are non-destructive**: All migrations use `Schema::table()` only — never `Schema::create()`. Safe to run on production DB with data.
+- **Migrations are non-destructive**: All migrations use `Schema::table()` with `if (Schema::hasColumn(...))` guards. Safe to run on production DB with data.
 - **Test DB is SQLite in-memory**: `phpunit.xml` sets `DB_CONNECTION=sqlite` with `:memory:`. Factories work normally.
 - **QR codes stored at `public/qrcodes/`**: Served directly, not via storage symlink. Run `php artisan storage:link` for other uploads.
+- **Database charset**: MySQL migrations run `SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci` on driver.
 
 ## Architecture
 
 Single Inertia.js app. Laravel handles routing, auth, DB queries. Vue 3 renders UI. No separate API.
 
-**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService` contain business logic. Controllers delegate to these.
+**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService` contain business logic. Controllers delegate to these.
 
-**Key models**: `Socio` (member), `Material` (item), `Prestamo` (loan), `Area` (Dewey classification)
+**Key models**: `Socio` (member), `Material` (item), `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey classification), `Bibliotecario` (auth)
 
 ## Validation
 
