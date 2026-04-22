@@ -212,6 +212,185 @@ class SmokeTest extends TestCase
         ]);
     }
 
+    public function test_authenticated_api_user_can_approve_a_reserva_and_create_prestamo(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Aprobable',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2021,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-003',
+            'disponibilidad' => 2,
+            'disponibilidad_reservada' => 1,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-3',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $reservaId = \DB::table('reservas')->insertGetId([
+            'material_id' => $material->id,
+            'socio_id' => $socio->id,
+            'estado' => 'pendiente',
+            'fecha_reserva' => now(),
+            'fecha_vencimiento' => now()->addDays(2),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')->patchJson("/api/v1/reservas/{$reservaId}/aprobar", [
+            'dias' => 10,
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('reservas', [
+            'id' => $reservaId,
+            'estado' => 'aprobada',
+        ]);
+        $this->assertDatabaseHas('prestamos', [
+            'socio_id' => $socio->id,
+            'material_id' => $material->id,
+            'estado' => 'activo',
+            'institucion_id' => $user->institucion_id,
+        ]);
+        $this->assertDatabaseHas('materiales', [
+            'id' => $material->id,
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 0,
+        ]);
+    }
+
+    public function test_authenticated_api_user_can_reject_a_reserva(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Rechazable',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2021,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-004',
+            'disponibilidad' => 2,
+            'disponibilidad_reservada' => 1,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-4',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $reservaId = \DB::table('reservas')->insertGetId([
+            'material_id' => $material->id,
+            'socio_id' => $socio->id,
+            'estado' => 'pendiente',
+            'fecha_reserva' => now(),
+            'fecha_vencimiento' => now()->addDays(2),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')->patchJson("/api/v1/reservas/{$reservaId}/rechazar", [
+            'motivo' => 'No disponible para esta fecha',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('reservas', [
+            'id' => $reservaId,
+            'estado' => 'rechazada',
+        ]);
+        $this->assertDatabaseHas('materiales', [
+            'id' => $material->id,
+            'disponibilidad' => 2,
+            'disponibilidad_reservada' => 0,
+        ]);
+    }
+
+    public function test_authenticated_bibliotecario_can_devolver_a_prestamo(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Devolucion',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2021,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-005',
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 0,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-5',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $prestamoId = \DB::table('prestamos')->insertGetId([
+            'socio_id' => $socio->id,
+            'material_id' => $material->id,
+            'fecha_prestamo' => now()->subDays(2)->toDateString(),
+            'fecha_devolucion' => now()->addDays(5)->toDateString(),
+            'estado' => 'activo',
+            'cantidad' => 1,
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $response = $this->actingAs($user)->patch("/prestamos/{$prestamoId}/devolver");
+
+        $response->assertRedirect(route('prestamos.index'));
+        $this->assertDatabaseHas('prestamos', [
+            'id' => $prestamoId,
+            'estado' => 'devuelto',
+        ]);
+        $this->assertDatabaseHas('materiales', [
+            'id' => $material->id,
+            'disponibilidad' => 2,
+        ]);
+    }
+
+    public function test_authenticated_bibliotecario_can_extender_a_prestamo(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Extension',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2021,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-006',
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 0,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-6',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $fechaOriginal = now()->addDays(5)->toDateString();
+
+        $prestamoId = \DB::table('prestamos')->insertGetId([
+            'socio_id' => $socio->id,
+            'material_id' => $material->id,
+            'fecha_prestamo' => now()->subDays(2)->toDateString(),
+            'fecha_devolucion' => $fechaOriginal,
+            'estado' => 'activo',
+            'cantidad' => 1,
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $response = $this->actingAs($user)->patch("/prestamos/{$prestamoId}/extender", [
+            'dias' => 3,
+        ]);
+
+        $response->assertRedirect(route('prestamos.index'));
+        $fechaDevolucion = (string) \DB::table('prestamos')->where('id', $prestamoId)->value('fecha_devolucion');
+
+        $this->assertSame(now()->addDays(8)->toDateString(), substr($fechaDevolucion, 0, 10));
+    }
+
     private function createInstitucion(): Institucion
     {
         return Institucion::create([
