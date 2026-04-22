@@ -1,16 +1,23 @@
-/* Bootstrap 4 desde npm — no más CDN */
+/* Bootstrap 5 desde npm — no más CDN */
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* ============================================================
-   Paleta de colores E-liber
+   Paleta Biblioteca Clásica
    ============================================================ */
 :root {
-    --eliber-green:        #2e7d32;
-    --eliber-green-dark:   #1b5e20;
-    --eliber-green-light:  #e8f5e9;
-    --eliber-green-accent: #28a745;
-    --eliber-footer:       #161245;
+    --eliber-primary:       #2d5a27;
+    --eliber-primary-dark: #1a3a15;
+    --eliber-secondary:    #8b4513;
+    --eliber-accent:       #d4a84b;
+    --eliber-crema:       #f5f0e1;
+    --eliber-text:        #2c3e50;
+    --eliber-footer:     #1a3a15;
+
+    --eliber-green:      var(--eliber-primary);
+    --eliber-green-dark: var(--eliber-primary-dark);
+    --eliber-green-light: var(--eliber-crema);
+    --eliber-green-accent: var(--eliber-accent);
 }
 
 /* ============================================================
@@ -28,26 +35,45 @@ html, body {
 
 .page-content {
     flex: 1;
+    position: relative;
+    z-index: 1;
 }
 
 /* ============================================================
    Navbar
    ============================================================ */
 .navbar-eliber {
-    background-color: rgba(46, 125, 50, 0.92);
+    background: linear-gradient(135deg, var(--eliber-primary) 0%, var(--eliber-primary-dark) 100%);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    z-index: 1030;
+}
+
+.navbar-eliber:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .navbar-eliber .navbar-brand,
 .navbar-eliber .nav-link {
     color: #fff;
+    transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .navbar-eliber .nav-link:hover {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--eliber-accent);
+    transform: translateY(-2px);
 }
 
 .navbar-eliber .dropdown-item:hover {
-    background-color: var(--eliber-green-light);
+    background-color: var(--eliber-crema);
+    color: var(--eliber-primary);
+}
+
+/* Navbar scroll effect */
+.navbar-eliber.scrolled {
+    background: rgba(45, 90, 39, 0.98) !important;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
 }
 
 /* ============================================================
@@ -57,28 +83,175 @@ html, body {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 2px solid var(--eliber-green-accent);
+    border: 2px solid var(--eliber-accent);
     object-fit: cover;
+    background: var(--eliber-crema);
+}
+
+.perfil-img:empty,
+.perfil-img[src=""],
+.perfil-img[src$="/"] {
+    display: none;
 }
 
 /* ============================================================
    Jumbotron / Hero
    ============================================================ */
 .hero-section {
-    background: linear-gradient(rgba(27, 94, 32, 0.75), rgba(27, 94, 32, 0.75)),
-                url('/img/fondo.jpg') center/cover no-repeat;
+    background: linear-gradient(135deg, rgba(26, 58, 21, 0.9) 0%, rgba(45, 90, 39, 0.85) 100%),
+                url('/img/menu_bibliotecario.jpg') center/cover no-repeat;
     color: #fff;
     padding: 4rem 0;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.hero-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(212, 168, 75, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.6s ease forwards;
+}
+
+.animate-pulse-subtle {
+    animation: pulse 2s ease-in-out infinite;
 }
 
 /* ============================================================
    Footer
    ============================================================ */
 .footer-eliber {
-    background-color: var(--eliber-footer);
-    color: rgba(255, 255, 255, 0.7);
-    padding: 1rem 0;
+    background: linear-gradient(135deg, var(--eliber-footer) 0%, var(--eliber-primary-dark) 100%);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 2.5rem 0 1rem;
     font-size: 0.85rem;
+    border-top: 3px solid var(--eliber-accent);
+}
+
+.footer-eliber .footer-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 1.875rem;
+    margin-bottom: 1.25rem;
+}
+
+.footer-eliber .footer-section {
+    flex: 1 1 200px;
+    margin-bottom: 1.25rem;
+}
+
+.footer-eliber .footer-section h4 {
+    margin-bottom: 0.9375rem;
+    font-size: 1.1rem;
+    border-bottom: 2px solid var(--eliber-accent);
+    display: inline-block;
+    padding-bottom: 0.3125rem;
+}
+
+.footer-eliber .footer-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-eliber .footer-section ul li {
+    margin: 0.375rem 0;
+}
+
+.footer-eliber .footer-section ul li a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.footer-eliber .footer-section ul li a:hover {
+    color: var(--eliber-accent);
+    transform: translateX(5px);
+    text-decoration: none;
+}
+
+.footer-eliber .tech-icons-wrapper {
+    max-width: 600px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.footer-eliber .tech-icons-wrapper img {
+    height: 36px;
+    width: auto;
+    filter: grayscale(100%);
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.footer-eliber .tech-icons-wrapper img:hover {
+    filter: none;
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+.footer-eliber .social-icons a {
+    margin: 0 0.5rem;
+    color: var(--eliber-accent);
+    text-decoration: none;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.footer-eliber .social-icons a:hover {
+    color: #fff;
+    transform: scale(1.2);
 }
 
 /* ============================================================
@@ -87,27 +260,200 @@ html, body {
 .badge-activo    { background-color: #17a2b8; color: #fff; }
 .badge-pendiente { background-color: #ffc107; color: #212529; }
 .badge-atrasado  { background-color: #dc3545; color: #fff; }
-.badge-devuelto  { background-color: #28a745; color: #fff; }
+.badge-devuelto  { background-color: var(--eliber-primary); color: #fff; }
+
+/* ============================================================
+   Botones con estilo biblioteca
+   ============================================================ */
+.btn-success {
+    background: linear-gradient(135deg, var(--eliber-primary) 0%, var(--eliber-primary-dark) 100%);
+    border: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-success::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-success:hover::before {
+    left: 100%;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, var(--eliber-primary-dark) 0%, var(--eliber-primary) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(45, 90, 39, 0.4);
+}
+
+.btn-outline-success {
+    border: 2px solid var(--eliber-primary);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-success:hover {
+    background: var(--eliber-primary);
+    border-color: var(--eliber-primary);
+    transform: translateY(-2px);
+}
 
 /* ============================================================
    Tarjetas de noticias
    ============================================================ */
 .card-noticia {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
 }
 
 .card-noticia:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(45, 90, 39, 0.2);
+}
+
+.card-noticia .card-img-top {
+    height: 200px;
+    overflow: hidden;
+    background: var(--eliber-crema);
+}
+
+.card-noticia .card-img-top img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.card-noticia:hover .card-img-top img {
+    transform: scale(1.1);
+}
+
+.card-noticia .card-body {
+    padding: 1.25rem;
+    border-top: 3px solid var(--eliber-accent);
+}
+
+.card-noticia .card-title {
+    color: var(--eliber-primary);
+    font-weight: 600;
+}
+
+/* ============================================================
+   Cards genéricas
+   ============================================================ */
+.card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+/* ============================================================
+   Formularios
+   ============================================================ */
+.form-control {
+    border-radius: 8px;
+    border: 2px solid rgba(45, 90, 39, 0.2);
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--eliber-primary);
+    box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.15);
+}
+
+.form-control::placeholder {
+    color: rgba(44, 62, 80, 0.4);
+}
+
+/* ============================================================
+   Página de Login
+   ============================================================ */
+.login-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--eliber-primary-dark) 0%, var(--eliber-primary) 50%, #3d6b35 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.login-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(212, 168, 75, 0.1) 0%, transparent 50%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(45, 90, 39, 0.1);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.login-card .logo-img {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+    transition: all 0.3s ease;
+}
+
+.login-card .logo-img:hover {
+    transform: scale(1.05);
 }
 
 /* ============================================================
    Tabla responsive
    ============================================================ */
 .table thead th {
-    background-color: var(--eliber-green);
+    background: linear-gradient(135deg, var(--eliber-primary) 0%, var(--eliber-primary-dark) 100%);
     color: #fff;
-    border-color: var(--eliber-green-dark);
+    border: none;
+    font-weight: 600;
+}
+
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--eliber-crema);
+    transform: scale(1.01);
+}
+
+.table tbody td {
+    border-color: rgba(45, 90, 39, 0.1);
+    vertical-align: middle;
 }
 
 /* ============================================================

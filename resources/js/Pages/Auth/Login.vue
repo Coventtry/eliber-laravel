@@ -1,42 +1,53 @@
 <template>
     <Head title="Iniciar sesión" />
 
-    <div class="d-flex align-items-center justify-content-center min-vh-100"
-         style="background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 60%, #388e3c 100%)">
-        <div class="card shadow-lg" style="width: 100%; max-width: 420px;">
+    <div class="d-flex align-items-center justify-content-center min-vh-100 login-container">
+        <div class="card login-card shadow-lg" style="width: 100%; max-width: 420px;">
             <div class="card-body p-4">
                 <div class="text-center mb-4">
-                    <i class="bi bi-book-half text-success" style="font-size: 3rem;"></i>
-                    <h4 class="mt-2 font-weight-bold">E-liber</h4>
+                    <img src="/img/logo.png" alt="E-liber" height="100" class="logo-img mb-3">
+                    <h3 class="font-weight-bold" style="color: var(--eliber-primary);">E-liber</h3>
                     <small class="text-muted">Sistema de Gestión de Biblioteca</small>
                 </div>
 
                 <form @submit.prevent="submit">
                     <div class="form-group">
-                        <label for="usuario">Usuario</label>
-                        <input
-                            id="usuario"
-                            v-model="form.usuario"
-                            type="text"
-                            class="form-control"
-                            :class="{ 'is-invalid': errors.usuario }"
-                            autocomplete="username"
-                            autofocus
-                        >
-                        <div v-if="errors.usuario" class="invalid-feedback">{{ errors.usuario }}</div>
+                        <label for="usuario" class="fw-semibold">Usuario</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
+                                <i class="bi bi-person-fill" style="color: var(--eliber-primary);"></i>
+                            </span>
+                            <input
+                                id="usuario"
+                                v-model="form.usuario"
+                                type="text"
+                                class="form-control"
+                                :class="{ 'is-invalid': errors.usuario }"
+                                autocomplete="username"
+                                autofocus
+                                placeholder="Ingresa tu usuario"
+                            >
+                        </div>
+                        <div v-if="errors.usuario" class="invalid-feedback d-block">{{ errors.usuario }}</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="password">Contraseña</label>
-                        <input
-                            id="password"
-                            v-model="form.password"
-                            type="password"
-                            class="form-control"
-                            :class="{ 'is-invalid': errors.password }"
-                            autocomplete="current-password"
-                        >
-                        <div v-if="errors.password" class="invalid-feedback">{{ errors.password }}</div>
+                        <label for="password" class="fw-semibold">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
+                                <i class="bi bi-lock-fill" style="color: var(--eliber-primary);"></i>
+                            </span>
+                            <input
+                                id="password"
+                                v-model="form.password"
+                                type="password"
+                                class="form-control"
+                                :class="{ 'is-invalid': errors.password }"
+                                autocomplete="current-password"
+                                placeholder="Ingresa tu contraseña"
+                            >
+                        </div>
+                        <div v-if="errors.password" class="invalid-feedback d-block">{{ errors.password }}</div>
                     </div>
 
                     <div class="form-group form-check">
@@ -44,15 +55,16 @@
                         <label for="remember" class="form-check-label">Recordarme</label>
                     </div>
 
-                    <button type="submit" class="btn btn-success btn-block" :disabled="form.processing">
+                    <button type="submit" class="btn btn-success btn-block py-2 mt-3" :disabled="form.processing">
                         <span v-if="form.processing" class="spinner-border spinner-border-sm mr-2"></span>
+                        <i v-else class="bi bi-box-arrow-in-right me-2"></i>
                         Ingresar
                     </button>
                 </form>
 
-                <div class="text-center mt-3">
+                <div class="text-center mt-4 pt-3" style="border-top: 1px solid rgba(45,90,39,0.1);">
                     <small>
-                        <Link :href="route('password.reset')" class="text-muted">
+                        <Link :href="route('password.reset')" style="color: var(--eliber-secondary);">
                             ¿Olvidaste tu contraseña?
                         </Link>
                     </small>

@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 
 // Landing page - pública
 Route::get('/', [LandingController::class, '__invoke'])->name('landing');
+Route::get('/acerca', fn() => inertia('Acerca'))->name('acerca');
+Route::get('/faqs', fn() => inertia('FAQs'))->name('faqs');
 
 // Auth
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login')->middleware('guest');

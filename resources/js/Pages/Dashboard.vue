@@ -2,9 +2,12 @@
     <Head title="Inicio" />
     <AppNavbar />
 
-    <div class="hero-section text-center">
-        <h2 class="font-weight-bold">Bienvenido, {{ $page.props.auth.user.nombre }}</h2>
-        <p class="lead">Sistema de Gestión de Biblioteca Escolar</p>
+    <div class="hero-section text-center" style="background: linear-gradient(rgba(27, 94, 32, 0.85), rgba(27, 94, 32, 0.85)), url('/img/menu_bibliotecario.jpg') center/cover no-repeat;">
+        <div class="container">
+            <img src="/img/logo.png" alt="E-liber" height="120" class="mb-3">
+            <h2 class="font-weight-bold">Bienvenido, {{ $page.props.auth.user.nombre }}</h2>
+            <p class="lead">Sistema de Gestión de Biblioteca Escolar</p>
+        </div>
     </div>
 
     <div class="container page-content">
