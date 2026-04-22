@@ -31,11 +31,11 @@ class Bibliotecario extends Authenticatable
         return ['password' => 'hashed'];
     }
 
-    public function getPictureUrlAttribute(): string
+    public function getPictureUrlAttribute(): ?string
     {
         if ($this->picture && \Storage::disk('public')->exists('uploads/' . $this->picture)) {
             return \Storage::disk('public')->url('uploads/' . $this->picture);
         }
-        return asset('img/default-avatar.png');
+        return null;
     }
 }

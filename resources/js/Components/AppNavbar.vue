@@ -1,8 +1,8 @@
 <template>
     <nav class="navbar navbar-expand-md navbar-eliber navbar-dark">
         <div class="container-fluid">
-            <Link :href="route('dashboard')" class="navbar-brand font-weight-bold">
-                <i class="bi bi-book-half mr-2"></i>E-liber
+            <Link :href="route('dashboard')" class="navbar-brand">
+                <img src="/img/logo.png" alt="E-liber" height="36">
             </Link>
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navMain">
@@ -26,6 +26,9 @@
                         <div class="dropdown-menu">
                             <Link :href="route('materiales.create')" class="dropdown-item">Nuevo material</Link>
                             <Link :href="route('materiales.index')" class="dropdown-item">Buscar / Modificar</Link>
+                            <Link :href="route('materiales.index')" class="dropdown-item">
+                                <i class="bi bi-qr-code me-2"></i>Imprimir Código
+                            </Link>
                         </div>
                     </li>
 
@@ -77,14 +80,19 @@
 
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" data-toggle="dropdown" href="#">
-                            <img :src="auth.user.picture_url" alt="perfil" class="perfil-img mr-2">
-                            <span>{{ auth.user.nombre }}</span>
+                            <template v-if="auth.user.picture_url">
+                                <img :src="auth.user.picture_url" alt="perfil" class="perfil-img mr-2">
+                            </template>
+                            <template v-else>
+                                <i class="bi bi-person-circle" style="font-size: 1.5rem; color: var(--eliber-accent);"></i>
+                            </template>
+                            <span class="ms-2">{{ auth.user.nombre }}</span>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <h6 class="dropdown-header">{{ auth.user.usuario }}</h6>
+                        <div class="dropdown-menu dropdown-menu-right" style="border-radius: 10px; border: none; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
+                            <h6 class="dropdown-header" style="color: var(--eliber-primary); font-weight: 600;">{{ auth.user.usuario }}</h6>
                             <div class="dropdown-divider"></div>
                             <form @submit.prevent="logout" method="POST">
-                                <button type="submit" class="dropdown-item text-danger">
+                                <button type="submit" class="dropdown-item text-danger" style="transition: all 0.3s ease;">
                                     <i class="bi bi-box-arrow-right mr-1"></i>Cerrar sesión
                                 </button>
                             </form>
