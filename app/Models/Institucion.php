@@ -10,6 +10,8 @@ class Institucion extends Model
 {
     use SoftDeletes;
 
+    protected $table = 'instituciones';
+
     protected $fillable = ['nombre', 'slug', 'estado'];
 
     protected function casts(): array

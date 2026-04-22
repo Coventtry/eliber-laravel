@@ -56,7 +56,6 @@ class HandleInertiaRequests extends Middleware
             ['label' => 'Áreas', 'route' => 'areas.index', 'permission' => 'gestionar-areas'],
             ['label' => 'Noticias', 'route' => 'noticias.index', 'permission' => 'gestionar-noticias'],
             ['label' => 'Anotaciones', 'route' => 'anotaciones.index', 'permission' => 'gestionar-anotaciones'],
-            ['label' => 'Usuarios', 'route' => 'usuarios.index', 'permission' => 'gestionar-usuarios'],
         ];
 
         return collect($items)
