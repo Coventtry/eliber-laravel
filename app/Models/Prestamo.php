@@ -19,7 +19,7 @@ class Prestamo extends Model
 
     protected $fillable = [
         'socio_id', 'material_id', 'fecha_prestamo',
-        'fecha_devolucion', 'estado', 'cantidad',
+        'fecha_devolucion', 'estado', 'cantidad', 'institucion_id',
     ];
 
     protected function casts(): array

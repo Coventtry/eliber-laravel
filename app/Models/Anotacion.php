@@ -18,7 +18,7 @@ class Anotacion extends Model
         static::addGlobalScope(new TenantScope());
     }
 
-    protected $fillable = ['anotacion', 'fecha'];
+    protected $fillable = ['anotacion', 'fecha', 'institucion_id'];
 
     protected function casts(): array
     {

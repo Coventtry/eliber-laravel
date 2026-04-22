@@ -40,7 +40,10 @@ class SocioController extends Controller
 
     public function store(StoreSocioRequest $request): RedirectResponse
     {
-        Socio::create($request->validated());
+        Socio::create([
+            ...$request->validated(),
+            'institucion_id' => $request->user()->institucion_id,
+        ]);
         return redirect()->route('socios.index')->with('success', 'Socio registrado correctamente.');
     }
 

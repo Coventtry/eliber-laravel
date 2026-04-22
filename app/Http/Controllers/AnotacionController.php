@@ -29,7 +29,10 @@ class AnotacionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate(['anotacion' => 'required|string|max:255']);
-        Anotacion::create(['anotacion' => $request->anotacion]);
+        Anotacion::create([
+            'anotacion' => $request->anotacion,
+            'institucion_id' => $request->user()->institucion_id,
+        ]);
         return redirect()->route('anotaciones.index')->with('success', 'Anotación guardada.');
     }
 }

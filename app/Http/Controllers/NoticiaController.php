@@ -47,6 +47,7 @@ class NoticiaController extends Controller
             'titulo'      => $request->titulo,
             'descripcion' => $request->descripcion,
             'imagen'      => $nombreImagen,
+            'institucion_id' => $request->user()->institucion_id,
         ]);
 
         return redirect()->route('noticias.index')->with('success', 'Noticia publicada.');

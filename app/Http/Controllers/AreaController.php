@@ -30,7 +30,10 @@ class AreaController extends Controller
             'Abreviado'    => 'nullable|string|max:50',
         ]);
 
-        Area::create($request->only('codigo_dewey', 'nombre', 'Abreviado'));
+        Area::create([
+            ...$request->only('codigo_dewey', 'nombre', 'Abreviado'),
+            'institucion_id' => $request->user()->institucion_id,
+        ]);
         return redirect()->route('areas.index')->with('success', 'Área creada.');
     }
 

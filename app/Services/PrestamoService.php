@@ -25,6 +25,7 @@ class PrestamoService
                 'fecha_devolucion' => $fechaDevolucion,
                 'estado'           => 'activo',
                 'cantidad'         => $cantidad,
+                'institucion_id'   => $socio->institucion_id,
             ]);
 
             $material->decrement('disponibilidad', $cantidad);
