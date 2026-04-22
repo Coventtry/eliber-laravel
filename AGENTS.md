@@ -32,3 +32,23 @@ Use form request classes (`StoreSocioRequest`, `StoreMaterialRequest`, etc.) in 
 ## Auth
 
 Laravel default guard with `Bibliotecario` model. All routes except `/login` require `auth` middleware.
+
+## Multi-tenancy
+
+The system uses `TenantScope` to filter data by `institucion_id`. All queries automatically filter by the logged user's institution. Seed data must set correct `institucion_id` to be visible.
+
+## Branding
+
+- Logo: `public/img/logo.png`
+- Icon: `public/img/icono.ico`
+- Brand images: `public/img/` folder
+- PWA manifest: `public/manifest.json`
+
+## Sample Data
+
+To load sample data (socios, materiales, prestamos), run:
+```bash
+php artisan db:seed --class=SampleDataSeeder
+```
+
+Or set `SEED_SAMPLE_DATA=true` in `.env` before `migrate:fresh --seed`.
