@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,21 +12,16 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            InstitucionesSeeder::class,
+            AreasSeeder::class,
             RolesAndPermissionsSeeder::class,
+            DefaultBibliotecarioSeeder::class,
         ]);
 
-        $institucionId = \App\Models\Institucion::first()?->id ?? 1;
-
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@example.com'],
-            [
-                'name' => 'Admin',
-                'nombre' => 'Administrador',
-                'password' => bcrypt('password'),
-                'activo' => true,
-                'institucion_id' => $institucionId,
-            ]
-        );
-        $admin->assignRole('admin');
+        if (filter_var(env('SEED_SAMPLE_DATA', false), FILTER_VALIDATE_BOOL)) {
+            $this->call([
+                SampleDataSeeder::class,
+            ]);
+        }
     }
 }
