@@ -5,9 +5,8 @@
         <div class="card login-card shadow-lg" style="width: 100%; max-width: 420px;">
             <div class="card-body p-4">
                 <div class="text-center mb-4">
-                    <img src="/img/logo.png" alt="E-liber" height="100" class="logo-img mb-3">
-                    <h3 class="font-weight-bold" style="color: var(--eliber-primary);">E-liber</h3>
-                    <small class="text-muted">Sistema de Gestión de Biblioteca</small>
+                    <img src="/img/logo.png" alt="E-liber" height="50" class="logo-img mb-3"><br>
+                    <small class="text-muted">Sistema de Gestión Bibliotecaria</small>
                 </div>
 
                 <form @submit.prevent="submit">

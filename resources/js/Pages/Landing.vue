@@ -7,7 +7,6 @@
         <div class="container-fluid">
             <Link :href="route('landing')" class="navbar-brand font-weight-bold d-flex align-items-center">
                 <img src="/img/logo.png" alt="E-liber" height="32" class="mr-2">
-                <span class="d-none d-md-inline">E-liber</span>
             </Link>
             <div class="ml-auto">
                 <Link :href="route('login')" class="btn btn-outline-light btn-sm">
@@ -19,7 +18,7 @@
 
     <header class="hero-section text-center">
         <div class="container">
-            <img src="/img/logo.png" alt="E-liber" height="120" class="mb-3 animate-pulse-subtle">
+           
             <h1 class="display-4 font-weight-bold animate-fade-in-up">Biblioteca Escolar</h1>
             <p class="lead animate-slide-in-left">Sistema de Gestión Bibliotecaria</p>
         </div>
