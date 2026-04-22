@@ -19,7 +19,7 @@ class Noticia extends Model
         static::addGlobalScope(new TenantScope());
     }
 
-    protected $fillable = ['titulo', 'descripcion', 'imagen', 'fecha'];
+    protected $fillable = ['titulo', 'descripcion', 'imagen', 'fecha', 'institucion_id'];
 
     protected function casts(): array
     {

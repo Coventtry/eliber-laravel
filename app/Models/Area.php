@@ -16,7 +16,7 @@ class Area extends Model
         static::addGlobalScope(new TenantScope());
     }
 
-    protected $fillable = ['codigo_dewey', 'nombre', 'Abreviado'];
+    protected $fillable = ['codigo_dewey', 'nombre', 'Abreviado', 'institucion_id'];
 
     public function materiales(): HasMany
     {

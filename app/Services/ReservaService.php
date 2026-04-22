@@ -65,6 +65,7 @@ class ReservaService
                 'fecha_devolucion' => $fechaDevolucion,
                 'estado' => 'activo',
                 'cantidad' => 1,
+                'institucion_id' => $reserva->socio->institucion_id,
             ]);
 
             $reserva->update([

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Area;
 use App\Models\Material;
+use BaconQrCode\Exception\RuntimeException;
 use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -51,10 +52,15 @@ class MaterialService
             "Código: {$material->codigo}",
         ]);
 
-        $png  = QrCode::format('png')->size(300)->errorCorrection('H')->generate($contenido);
-        $path = "qrcodes/QR_{$material->id}.png";
+        try {
+            $data = QrCode::format('png')->size(300)->errorCorrection('H')->generate($contenido);
+            $path = "qrcodes/QR_{$material->id}.png";
+        } catch (RuntimeException) {
+            $data = QrCode::format('svg')->size(300)->errorCorrection('H')->generate($contenido);
+            $path = "qrcodes/QR_{$material->id}.svg";
+        }
 
-        Storage::disk('public')->put($path, $png);
+        Storage::disk('public')->put($path, $data);
 
         return Storage::disk('public')->url($path);
     }
@@ -64,10 +70,12 @@ class MaterialService
      */
     public function urlQR(Material $material): ?string
     {
-        $path = "qrcodes/QR_{$material->id}.png";
-        if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->url($path);
+        foreach (["qrcodes/QR_{$material->id}.png", "qrcodes/QR_{$material->id}.svg"] as $path) {
+            if (Storage::disk('public')->exists($path)) {
+                return Storage::disk('public')->url($path);
+            }
         }
+
         return null;
     }
 }

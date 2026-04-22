@@ -45,6 +45,7 @@ class MaterialController extends Controller
         $data    = $request->validated();
         $area    = Area::findOrFail($data['area_id']);
         $data['codigo'] = $this->materialService->generarCodigo($area);
+        $data['institucion_id'] = $request->user()->institucion_id;
 
         if ($request->filled('pasillo')) {
             $data['clasificacion_fisica'] = $this->materialService->generarClasificacionFisica(

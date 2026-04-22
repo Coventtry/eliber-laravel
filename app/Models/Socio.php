@@ -18,7 +18,7 @@ class Socio extends Model
 
     protected $fillable = [
         'nombre', 'apellido', 'telefono', 'direccion',
-        'email', 'anio', 'division', 'activo',
+        'email', 'anio', 'division', 'activo', 'institucion_id',
     ];
 
     protected function casts(): array
