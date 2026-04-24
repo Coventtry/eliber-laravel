@@ -16,7 +16,7 @@ class HistorialSocio extends Model
         static::addGlobalScope(new TenantScope());
     }
 
-    protected $fillable = ['id_socio', 'accion', 'fecha', 'observaciones'];
+    protected $fillable = ['id_socio', 'accion', 'fecha', 'observaciones', 'institucion_id'];
 
     public function socio(): BelongsTo
     {

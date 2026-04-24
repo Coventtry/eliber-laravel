@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Bibliotecario;
 use App\Models\Institucion;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -25,15 +25,16 @@ class DefaultBibliotecarioSeeder extends Seeder
         $email = env('DEFAULT_ADMIN_EMAIL', 'admin@example.com');
         $password = env('DEFAULT_ADMIN_PASSWORD', 'password');
 
-        $admin = Bibliotecario::firstOrCreate(
+        $admin = User::firstOrCreate(
             ['usuario' => $usuario],
             [
-                'nombre' => $nombre,
-                'email' => $email,
-                'telefono' => null,
-                'password' => $password,
-                'picture' => '',
+                'name'           => $nombre,
+                'nombre'         => $nombre,
+                'email'          => $email,
+                'password'       => $password,
+                'picture'        => '',
                 'institucion_id' => $institucion->id,
+                'activo'         => true,
             ]
         );
 

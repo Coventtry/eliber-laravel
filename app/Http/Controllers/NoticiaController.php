@@ -31,6 +31,7 @@ class NoticiaController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', \App\Models\Noticia::class);
         $request->validate([
             'titulo'      => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
@@ -62,6 +63,7 @@ class NoticiaController extends Controller
 
     public function update(Request $request, Noticia $noticia): RedirectResponse
     {
+        $this->authorize('update', $noticia);
         $request->validate([
             'titulo'      => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
@@ -83,6 +85,7 @@ class NoticiaController extends Controller
 
     public function destroy(Noticia $noticia): RedirectResponse
     {
+        $this->authorize('delete', $noticia);
         if ($noticia->imagen) {
             Storage::disk('public')->delete('noticias/' . $noticia->imagen);
         }

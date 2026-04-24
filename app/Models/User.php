@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -19,7 +20,10 @@ class User extends Authenticatable
         'name',
         'nombre',
         'email',
+        'usuario',
         'password',
+        'picture',
+        'telefono',
         'activo',
         'institucion_id',
         'socio_id',
@@ -42,6 +46,14 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::addGlobalScope(new TenantScope());
+    }
+
+    public function getPictureUrlAttribute(): ?string
+    {
+        if ($this->picture && Storage::disk('public')->exists('uploads/' . $this->picture)) {
+            return Storage::disk('public')->url('uploads/' . $this->picture);
+        }
+        return null;
     }
 
     public function institucion(): BelongsTo

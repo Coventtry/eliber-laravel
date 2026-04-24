@@ -12,7 +12,7 @@
             <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav mr-auto">
                     <!-- Socios -->
-                    <li class="nav-item dropdown">
+                    <li v-if="can('gestionar-socios')" class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Socios</a>
                         <div class="dropdown-menu">
                             <Link :href="route('socios.create')" class="dropdown-item">Nuevo socio</Link>
@@ -21,7 +21,7 @@
                     </li>
 
                     <!-- Materiales -->
-                    <li class="nav-item dropdown">
+                    <li v-if="can('gestionar-materiales')" class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Materiales</a>
                         <div class="dropdown-menu">
                             <Link :href="route('materiales.create')" class="dropdown-item">Nuevo material</Link>
@@ -33,7 +33,7 @@
                     </li>
 
                     <!-- Áreas -->
-                    <li class="nav-item dropdown">
+                    <li v-if="can('gestionar-areas')" class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Áreas</a>
                         <div class="dropdown-menu">
                             <Link :href="route('areas.create')" class="dropdown-item">Nueva área</Link>
@@ -42,7 +42,7 @@
                     </li>
 
                     <!-- Préstamos -->
-                    <li class="nav-item dropdown">
+                    <li v-if="can('gestionar-prestamos')" class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Préstamos</a>
                         <div class="dropdown-menu">
                             <Link :href="route('prestamos.create')" class="dropdown-item">Nuevo préstamo</Link>
@@ -51,7 +51,7 @@
                     </li>
 
                     <!-- Avisador -->
-                    <li class="nav-item dropdown">
+                    <li v-if="can('gestionar-noticias')" class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Avisador</a>
                         <div class="dropdown-menu">
                             <Link :href="route('noticias.create')" class="dropdown-item">Nueva noticia</Link>
@@ -60,11 +60,20 @@
                     </li>
 
                     <!-- Notas -->
-                    <li class="nav-item dropdown">
+                    <li v-if="can('gestionar-anotaciones')" class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Notas</a>
                         <div class="dropdown-menu">
                             <Link :href="route('anotaciones.create')" class="dropdown-item">Nueva nota</Link>
                             <Link :href="route('anotaciones.index')" class="dropdown-item">Consultar</Link>
+                        </div>
+                    </li>
+
+                    <!-- Usuarios -->
+                    <li v-if="can('gestionar-usuarios')" class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Usuarios</a>
+                        <div class="dropdown-menu">
+                            <Link :href="route('usuarios.create')" class="dropdown-item">Nuevo usuario</Link>
+                            <Link :href="route('usuarios.index')" class="dropdown-item">Gestionar</Link>
                         </div>
                     </li>
                 </ul>
@@ -111,6 +120,11 @@ import { computed } from 'vue'
 const page = usePage()
 const auth = computed(() => page.props.auth)
 const vencimientosProximos = computed(() => page.props.vencimientos_proximos ?? 0)
+
+function can(permiso) {
+    if (auth.value?.es_admin) return true
+    return auth.value?.permisos?.includes(permiso) ?? false
+}
 
 function logout() {
     router.post(route('logout'))

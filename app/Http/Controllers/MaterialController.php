@@ -74,12 +74,14 @@ class MaterialController extends Controller
 
     public function update(StoreMaterialRequest $request, Material $material): RedirectResponse
     {
+        $this->authorize('update', $material);
         $material->update($request->validated());
         return redirect()->route('materiales.index')->with('success', 'Material actualizado.');
     }
 
     public function destroy(Material $material): RedirectResponse
     {
+        $this->authorize('delete', $material);
         $material->delete();
         return redirect()->route('materiales.index')->with('success', 'Material eliminado.');
     }

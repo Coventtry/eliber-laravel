@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Area;
-use App\Models\Bibliotecario;
 use App\Models\Institucion;
 use App\Models\Material;
 use App\Models\Socio;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class SmokeTest extends TestCase
@@ -19,13 +21,15 @@ class SmokeTest extends TestCase
     {
         $institucion = $this->createInstitucion();
 
-        Bibliotecario::create([
-            'nombre' => 'Admin Test',
-            'email' => 'admin@test.com',
-            'usuario' => 'admin-test',
-            'password' => 'secret123',
-            'picture' => '',
+        User::create([
+            'name'           => 'Admin Test',
+            'nombre'         => 'Admin Test',
+            'email'          => 'admin@test.com',
+            'usuario'        => 'admin-test',
+            'password'       => 'secret123',
+            'picture'        => '',
             'institucion_id' => $institucion->id,
+            'activo'         => true,
         ]);
 
         $response = $this->post('/login', [
@@ -232,13 +236,14 @@ class SmokeTest extends TestCase
         ]);
 
         $reservaId = \DB::table('reservas')->insertGetId([
-            'material_id' => $material->id,
-            'socio_id' => $socio->id,
-            'estado' => 'pendiente',
-            'fecha_reserva' => now(),
+            'material_id'    => $material->id,
+            'socio_id'       => $socio->id,
+            'estado'         => 'pendiente',
+            'fecha_reserva'  => now(),
             'fecha_vencimiento' => now()->addDays(2),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'institucion_id' => $user->institucion_id,
+            'created_at'     => now(),
+            'updated_at'     => now(),
         ]);
 
         $response = $this->actingAs($user, 'sanctum')->patchJson("/api/v1/reservas/{$reservaId}/aprobar", [
@@ -283,13 +288,14 @@ class SmokeTest extends TestCase
         ]);
 
         $reservaId = \DB::table('reservas')->insertGetId([
-            'material_id' => $material->id,
-            'socio_id' => $socio->id,
-            'estado' => 'pendiente',
-            'fecha_reserva' => now(),
+            'material_id'    => $material->id,
+            'socio_id'       => $socio->id,
+            'estado'         => 'pendiente',
+            'fecha_reserva'  => now(),
             'fecha_vencimiento' => now()->addDays(2),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'institucion_id' => $user->institucion_id,
+            'created_at'     => now(),
+            'updated_at'     => now(),
         ]);
 
         $response = $this->actingAs($user, 'sanctum')->patchJson("/api/v1/reservas/{$reservaId}/rechazar", [
@@ -400,18 +406,29 @@ class SmokeTest extends TestCase
         ]);
     }
 
-    private function createBibliotecario(): Bibliotecario
+    private function createBibliotecario(): User
     {
         $institucion = $this->createInstitucion();
 
-        return Bibliotecario::create([
-            'nombre' => 'Bibliotecario Test',
-            'email' => 'bibliotecario@test.com',
-            'usuario' => 'bibliotecario-test',
-            'password' => 'secret123',
-            'picture' => '',
+        $user = User::create([
+            'name'           => 'Bibliotecario Test',
+            'nombre'         => 'Bibliotecario Test',
+            'email'          => 'bibliotecario@test.com',
+            'usuario'        => 'bibliotecario-test',
+            'password'       => 'secret123',
+            'picture'        => '',
             'institucion_id' => $institucion->id,
+            'activo'         => true,
         ]);
+
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        foreach (['gestionar-socios','gestionar-materiales','gestionar-prestamos','gestionar-areas','gestionar-noticias','gestionar-anotaciones','gestionar-usuarios','ver-reportes'] as $p) {
+            Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
+        }
+        $adminRole->givePermissionTo(Permission::all());
+        $user->assignRole($adminRole);
+
+        return $user;
     }
 
     private function createArea(int $institucionId): Area

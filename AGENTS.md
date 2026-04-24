@@ -3,52 +3,65 @@
 ## Dev Commands
 
 ```bash
-composer run dev     # Laravel server + Vite + queue + logs (parallel)
-composer run test   # Clears config, then runs tests
-php artisan pint   # PHP linting/formatting
-composer run setup  # Fresh install: deps, .env, migrate, npm
+composer run dev       # Laravel + Vite (parallel)
+composer run dev:queue # Add queue worker
+composer run test     # Clears config, runs tests
+composer run setup    # Fresh install (deps, .env, migrate, seed, npm)
+php artisan pint      # PHP formatting
 ```
-
-## Critical Quirks
-
-- **Vue components NOT in repo**: Route render paths like `Inertia::render('Socios/Index', ...)` expect files at `resources/js/Pages/Socios/Index.vue`. Components are compiled by Vite, not version-controlled.
-- **Migrations are non-destructive**: All migrations use `Schema::table()` with `if (Schema::hasColumn(...))` guards. Safe to run on production DB with data.
-- **Test DB is SQLite in-memory**: `phpunit.xml` sets `DB_CONNECTION=sqlite` with `:memory:`. Factories work normally.
-- **QR codes stored at `public/qrcodes/`**: Served directly, not via storage symlink. Run `php artisan storage:link` for other uploads.
-- **Database charset**: MySQL migrations run `SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci` on driver.
 
 ## Architecture
 
-Single Inertia.js app. Laravel handles routing, auth, DB queries. Vue 3 renders UI. No separate API.
+Inertia.js SPA (Laravel routing + auth + DB; Vue 3 UI) **plus** a REST API under `/api/v1/` authenticated with Laravel Sanctum. One project, one `.env`.
 
 **Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService` contain business logic. Controllers delegate to these.
 
-**Key models**: `Socio` (member), `Material` (item), `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey classification), `Bibliotecario` (auth)
-
-## Validation
-
-Use form request classes (`StoreSocioRequest`, `StoreMaterialRequest`, etc.) in `app/Http/Requests/`.
+**Key models**: `User` (auth), `Socio` (member), `Material` (item), `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey), `Institucion` (tenant)
 
 ## Auth
 
-Laravel default guard with `Bibliotecario` model. All routes except `/login` require `auth` middleware.
+- Guard: `web` (session), provider: `App\Models\User`
+- Login uses `usuario` field, not `email` — `Auth::attempt(['usuario' => ...])`
+- REST API uses `auth:sanctum` guard
+- Roles/permissions via `spatie/laravel-permission` — roles: `admin`, `bibliotecario`, `alumno`
+- `admin` role has all permissions; `bibliotecario` gets permissions delegated individually
 
 ## Multi-tenancy
 
-The system uses `TenantScope` to filter data by `institucion_id`. All queries automatically filter by the logged user's institution. Seed data must set correct `institucion_id` to be visible.
+`TenantScope` (in `app/Scopes/`) filters all queries by `institucion_id` of the authenticated user. Applied via `booted()` in every model. `institucion_id` is never a form field — always set from `auth()->user()->institucion_id` in controllers.
 
-## Branding
+## Authorization
 
-- Logo: `public/img/logo.png`
-- Icon: `public/img/icono.ico`
-- Brand images: `public/img/` folder
-- PWA manifest: `public/manifest.json`
+Every model has a Policy in `app/Policies/` (auto-discovered). Base `Controller` includes `AuthorizesRequests` trait. All write operations call `$this->authorize()`. Check for 403s when adding new routes — ensure roles/permissions are seeded.
 
-## Sample Data
+## Validation
 
-To load sample data (socios, materiales, prestamos), run:
+Form request classes in `app/Http/Requests/`: `StoreSocioRequest`, `StoreMaterialRequest`, `StorePrestamoRequest`, `StoreUserRequest`, `UpdateUserRequest`, etc.
+
+## Database & Migrations
+
+- Migrations use `Schema::table()` with `if (Schema::hasColumn(...))` guards — safe on production DB with data
+- Test DB is SQLite in-memory (set in `phpunit.xml`)
+- All main tables in `biblioteca` database
+
+## Tests
+
+`tests/Feature/SmokeTest.php` covers all main flows. Helper `createBibliotecario()` creates a `User` with admin role + permissions — required for `authorize()` checks to pass.
+
+## Storage
+
+- QR codes: `storage/app/public/qrcodes/`
+- News images: `storage/app/public/noticias/`
+- Run `php artisan storage:link` once after setup
+
+## Production Deploy
+
 ```bash
-php artisan db:seed --class=SampleDataSeeder
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+php artisan storage:link
+php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
 
-Or set `SEED_SAMPLE_DATA=true` in `.env` before `migrate:fresh --seed`.
+Config template: `nginx/eliber.conf`

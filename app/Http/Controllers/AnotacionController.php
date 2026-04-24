@@ -28,6 +28,7 @@ class AnotacionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', \App\Models\Anotacion::class);
         $request->validate(['anotacion' => 'required|string|max:255']);
         Anotacion::create([
             'anotacion' => $request->anotacion,

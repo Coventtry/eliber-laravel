@@ -21,14 +21,20 @@ No requiere conocimientos técnicos para operar el sistema. La interfaz está co
 
 | Módulo | Estado |
 |--------|--------|
-| Autenticación (login/logout) | Completo |
+| Autenticación (login/logout/reset) | Completo |
+| Multi-institución (TenantScope) | Completo |
+| Roles y permisos delegables (Spatie) | Completo |
+| Gestión de usuarios (admin UI) | Completo |
 | Dashboard con alertas de vencimientos | Completo |
 | CRUD Socios + baja/alta + historial | Completo |
 | CRUD Materiales + código automático + QR | Completo |
-| Préstamos: crear, devolver, validaciones | Completo |
+| Préstamos: crear, devolver, extender | Completo |
+| Reservas: solicitar, aprobar, rechazar | Completo |
+| API REST `/api/v1/` (Sanctum) | Completo |
 | Áreas temáticas (Dewey) | Completo |
 | Noticias con imagen | Completo |
 | Anotaciones internas | Completo |
+| Policies de autorización por entidad | Completo |
 | Migraciones sobre BD existente (sin pérdida) | Completo |
 | Configuración Nginx + SSL para producción | Completo |
 | Deploy a servidor Ubuntu | Pendiente |
@@ -46,9 +52,11 @@ No requiere conocimientos técnicos para operar el sistema. La interfaz está co
 | Base de datos | MySQL 8+ / MariaDB 10.4+ |
 | Servidor web | Nginx (producción) |
 | QR Codes | simplesoftwareio/simple-qrcode |
+| Auth API | Laravel Sanctum |
+| Roles/Permisos | spatie/laravel-permission |
 | Rutas JS | tightenco/ziggy |
 
-La arquitectura usa **Inertia.js**: Laravel maneja routing, autenticación y queries; Vue 3 renderiza la UI. Un solo proyecto, un solo `.env`, sin API REST separada ni CORS.
+La arquitectura usa **Inertia.js**: Laravel maneja routing, autenticación y queries; Vue 3 renderiza la UI. Un solo proyecto, un solo `.env`. Adicionalmente, existe una REST API bajo `/api/v1/` (autenticada con Laravel Sanctum) para el catálogo público y el sistema de reservas.
 
 ---
 
@@ -177,7 +185,7 @@ La BD `biblioteca` se puede inicializar completamente con migraciones y seeders.
 
 Las migraciones del proyecto usan `Schema::table` cuando trabajan sobre estructuras existentes y `Schema::create` para instalaciones nuevas. El objetivo es cubrir ambos escenarios sin depender de un dump manual.
 
-Tablas principales: `materiales`, `socios`, `prestamos`, `areas`, `bibliotecarios`, `noticias`, `anotaciones`, `historial_socios`.
+Tablas principales: `users`, `instituciones`, `materiales`, `socios`, `prestamos`, `reservas`, `areas`, `noticias`, `anotaciones`, `historial_socios`. La tabla `bibliotecarios` se mantiene como respaldo histórico; la autenticación opera sobre `users`.
 
 Seeders base:
 

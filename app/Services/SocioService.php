@@ -12,10 +12,11 @@ class SocioService
         $socio->update(['activo' => 0]);
 
         HistorialSocio::create([
-            'id_socio'      => $socio->id,
-            'accion'        => 'BAJA',
+            'id_socio'       => $socio->id,
+            'accion'         => 'BAJA',
             'fecha'         => now(),
-            'observaciones' => $observaciones ?: 'Baja registrada.',
+            'observaciones'  => $observaciones ?: 'Baja registrada.',
+            'institucion_id' => $socio->institucion_id,
         ]);
     }
 
@@ -24,10 +25,11 @@ class SocioService
         $socio->update(['activo' => 1]);
 
         HistorialSocio::create([
-            'id_socio'      => $socio->id,
-            'accion'        => 'ALTA',
+            'id_socio'       => $socio->id,
+            'accion'         => 'ALTA',
             'fecha'         => now(),
-            'observaciones' => 'Reactivación de cuenta.',
+            'observaciones'  => 'Reactivacion de cuenta.',
+            'institucion_id'  => $socio->institucion_id,
         ]);
     }
 }

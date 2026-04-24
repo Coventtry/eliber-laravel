@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,7 +14,13 @@ class Reserva extends Model
         'estado',
         'fecha_reserva',
         'fecha_vencimiento',
+        'institucion_id',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TenantScope());
+    }
 
     protected function casts(): array
     {
