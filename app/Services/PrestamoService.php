@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Alerta;
+use App\Models\Configuracion;
 use App\Models\Material;
 use App\Models\Prestamo;
 use App\Models\Socio;
@@ -189,12 +190,13 @@ class PrestamoService
             throw ValidationException::withMessages(['material_id' => 'El socio ya tiene un préstamo activo de este material.']);
         }
 
-        $hoy    = now()->startOfDay();
-        $limite = now()->addDays(14)->startOfDay();
-        $fecha  = \Carbon\Carbon::parse($fechaDevolucion)->startOfDay();
+        $diasPrestamo = (int) Configuracion::get($socio->institucion_id, 'dias_prestamo', 14);
+        $hoy          = now()->startOfDay();
+        $limite       = now()->addDays($diasPrestamo)->startOfDay();
+        $fecha        = \Carbon\Carbon::parse($fechaDevolucion)->startOfDay();
 
         if ($fecha->lt($hoy) || $fecha->gt($limite)) {
-            throw ValidationException::withMessages(['fecha_devolucion' => 'La fecha de devolución debe estar entre hoy y los próximos 14 días.']);
+            throw ValidationException::withMessages(['fecha_devolucion' => "La fecha de devolución debe estar entre hoy y los próximos {$diasPrestamo} días."]);
         }
     }
 }
