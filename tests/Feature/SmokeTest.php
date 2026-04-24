@@ -45,8 +45,13 @@ class SmokeTest extends TestCase
     {
         $user = $this->createBibliotecario();
 
+        // El rol admin es redirigido a su propio dashboard
         $this->actingAs($user)
             ->get('/dashboard')
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->actingAs($user)
+            ->get('/admin/dashboard')
             ->assertOk();
 
         $this->actingAs($user)
