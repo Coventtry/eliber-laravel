@@ -160,8 +160,8 @@
 - [x] **Conectar parámetros operacionales**: `PrestamoService` lee `dias_prestamo` y `HandleInertiaRequests` lee `dias_alerta_previa` desde `Configuracion` por `institucion_id`, con fallback a 14 y 4 respectivamente.
 
 ### Media prioridad
-- [ ] **Sidebar mobile en admin**: al reducir pantalla el sidebar desaparece sin reemplazo. Agregar botón hamburger que muestre/oculte el sidebar como drawer overlay
-- [ ] **Dark mode en Chart.js**: los gráficos de `Admin/Analitica/Index.vue` usan colores fijos, no responden al tema oscuro. Watcher en `darkMode` que actualice las opciones de Chart.js
+- [x] **Sidebar mobile en admin**: hamburger en navbar abre/cierra sidebar como drawer overlay con backdrop. Transición con `translateX`.
+- [x] **Dark mode en Chart.js**: opciones y colores de Bar/Doughnut en `Analitica/Index.vue` son `computed` reactivos a `darkMode`. Grilla, ticks y barras cambian automáticamente.
 
 ### Baja prioridad
 - [ ] **UI de wallpaper**: campo `wallpaper` existe en BD y modelo `User` pero no hay pantalla para subir/visualizar el fondo personalizado del usuario
