@@ -15,10 +15,11 @@ class PerfilController extends Controller
         $user = auth()->user();
         return Inertia::render('Perfil/Edit', [
             'perfil' => [
-                'nombre'      => $user->nombre,
-                'usuario'     => $user->usuario,
-                'email'       => $user->email,
-                'picture_url' => $user->picture_url,
+                'nombre'       => $user->nombre,
+                'usuario'      => $user->usuario,
+                'email'        => $user->email,
+                'picture_url'  => $user->picture_url,
+                'wallpaper_url'=> $user->wallpaper_url,
             ],
         ]);
     }
@@ -26,8 +27,9 @@ class PerfilController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
-            'email'   => 'nullable|email|max:255',
-            'picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'email'     => 'nullable|email|max:255',
+            'picture'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'wallpaper' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
         $user = auth()->user();
@@ -43,6 +45,14 @@ class PerfilController extends Controller
             }
             $filename = $request->file('picture')->store('uploads', 'public');
             $data['picture'] = basename($filename);
+        }
+
+        if ($request->hasFile('wallpaper')) {
+            if ($user->wallpaper) {
+                Storage::disk('public')->delete('wallpapers/' . $user->wallpaper);
+            }
+            $filename = $request->file('wallpaper')->store('wallpapers', 'public');
+            $data['wallpaper'] = basename($filename);
         }
 
         if ($data) {

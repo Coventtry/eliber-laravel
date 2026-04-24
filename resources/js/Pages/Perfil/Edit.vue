@@ -8,59 +8,68 @@
         <FlashMessage v-if="!esAdmin" />
 
         <div class="row justify-content-center">
-            <div class="col-md-6">
+            <div class="col-md-7">
                 <h4 class="mb-4">Mi perfil</h4>
 
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <!-- Avatar actual -->
-                        <div class="text-center mb-4">
-                            <img
-                                v-if="perfil.picture_url"
-                                :src="perfil.picture_url"
-                                alt="foto de perfil"
-                                class="rounded-circle"
-                                style="width:90px; height:90px; object-fit:cover;"
-                            >
-                            <div v-else class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center"
-                                style="width:90px; height:90px;">
-                                <i class="bi bi-person" style="font-size:2.5rem; color:#aaa;"></i>
+                <div class="card shadow-sm mb-4">
+                    <!-- Wallpaper banner -->
+                    <div class="perfil-banner" :style="bannerStyle">
+                        <label class="perfil-banner-edit" title="Cambiar portada">
+                            <i class="bi bi-camera"></i>
+                            <input type="file" class="d-none" accept="image/jpg,image/jpeg,image/png,image/webp"
+                                   @change="onWallpaper">
+                        </label>
+                    </div>
+
+                    <div class="card-body pt-0">
+                        <!-- Avatar sobre el banner -->
+                        <div class="perfil-avatar-wrap">
+                            <img v-if="avatarPreview || perfil.picture_url"
+                                 :src="avatarPreview || perfil.picture_url"
+                                 class="perfil-avatar rounded-circle"
+                                 alt="foto de perfil">
+                            <div v-else class="perfil-avatar rounded-circle bg-light border d-flex align-items-center justify-content-center">
+                                <i class="bi bi-person" style="font-size:2rem;color:#aaa;"></i>
                             </div>
-                            <p class="text-muted small mt-2 mb-0">{{ perfil.nombre }} — <span class="font-weight-bold">{{ perfil.usuario }}</span></p>
+                        </div>
+
+                        <div class="mt-5 pt-2 mb-3">
+                            <p class="mb-0 font-weight-bold">{{ perfil.nombre }}</p>
+                            <p class="text-muted small mb-0">@{{ perfil.usuario }}</p>
                         </div>
 
                         <form @submit.prevent="guardar" enctype="multipart/form-data">
+
                             <div class="form-group">
                                 <label class="font-weight-bold">Correo electrónico</label>
-                                <input
-                                    v-model="form.email"
-                                    type="email"
-                                    class="form-control"
-                                    placeholder="tucorreo@ejemplo.com"
-                                >
+                                <input v-model="form.email" type="email" class="form-control"
+                                       placeholder="tucorreo@ejemplo.com">
                             </div>
 
                             <div class="form-group">
                                 <label class="font-weight-bold">Foto de perfil</label>
                                 <div class="custom-file">
-                                    <input
-                                        type="file"
-                                        class="custom-file-input"
-                                        id="picture"
-                                        accept="image/jpg,image/jpeg,image/png,image/webp"
-                                        @change="onFile"
-                                    >
+                                    <input type="file" class="custom-file-input" id="picture"
+                                           accept="image/jpg,image/jpeg,image/png,image/webp"
+                                           @change="onAvatar">
                                     <label class="custom-file-label" for="picture">
-                                        {{ nombreArchivo }}
+                                        {{ avatarNombre }}
                                     </label>
                                 </div>
                                 <small class="text-muted">JPG, PNG o WebP — máx. 2 MB</small>
                             </div>
 
-                            <!-- Preview -->
-                            <div v-if="preview" class="text-center mb-3">
-                                <img :src="preview" alt="preview" class="rounded-circle"
-                                    style="width:70px; height:70px; object-fit:cover; border:2px solid var(--eliber-primary);">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Imagen de portada</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="wallpaper"
+                                           accept="image/jpg,image/jpeg,image/png,image/webp"
+                                           @change="onWallpaper">
+                                    <label class="custom-file-label" for="wallpaper">
+                                        {{ wallpaperNombre }}
+                                    </label>
+                                </div>
+                                <small class="text-muted">JPG, PNG o WebP — máx. 4 MB. Se muestra como banner en tu perfil.</small>
                             </div>
 
                             <div class="text-right">
@@ -106,31 +115,91 @@ const page     = usePage()
 const esAdmin  = computed(() => page.props.auth?.roles?.includes('admin') ?? false)
 const esAlumno = computed(() => page.props.auth?.roles?.includes('alumno') ?? false)
 
-const form          = ref({ email: props.perfil.email ?? '' })
-const archivoFile   = ref(null)
-const nombreArchivo = ref('Seleccioná una imagen...')
-const preview       = ref(null)
-const guardando     = ref(false)
+const form           = ref({ email: props.perfil.email ?? '' })
+const avatarFile     = ref(null)
+const wallpaperFile  = ref(null)
+const avatarNombre   = ref('Seleccioná una imagen...')
+const wallpaperNombre= ref('Seleccioná una imagen...')
+const avatarPreview  = ref(null)
+const wallpaperPreview = ref(props.perfil.wallpaper_url ?? null)
+const guardando      = ref(false)
 
-function onFile(e) {
+const bannerStyle = computed(() => {
+    const img = wallpaperPreview.value
+    return img
+        ? `background-image:url('${img}');background-size:cover;background-position:center;`
+        : ''
+})
+
+function onAvatar(e) {
     const file = e.target.files[0]
     if (!file) return
-    archivoFile.value   = file
-    nombreArchivo.value = file.name
-    preview.value = URL.createObjectURL(file)
+    avatarFile.value   = file
+    avatarNombre.value = file.name
+    avatarPreview.value = URL.createObjectURL(file)
+}
+
+function onWallpaper(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    wallpaperFile.value    = file
+    wallpaperNombre.value  = file.name
+    wallpaperPreview.value = URL.createObjectURL(file)
 }
 
 function guardar() {
     guardando.value = true
     const data = new FormData()
     data.append('_method', 'PUT')
-    if (form.value.email) data.append('email', form.value.email)
-    if (archivoFile.value) data.append('picture', archivoFile.value)
+    if (form.value.email)   data.append('email', form.value.email)
+    if (avatarFile.value)   data.append('picture', avatarFile.value)
+    if (wallpaperFile.value)data.append('wallpaper', wallpaperFile.value)
 
     router.post(route('perfil.update'), data, {
         forceFormData: true,
-        onSuccess: () => { guardando.value = false; preview.value = null },
+        onSuccess: () => { guardando.value = false; avatarPreview.value = null },
         onError:   () => { guardando.value = false },
     })
 }
 </script>
+
+<style scoped>
+.perfil-banner {
+    position: relative;
+    height: 140px;
+    background: linear-gradient(135deg, var(--eliber-primary, #1a3a5c), #2d6a9f);
+    border-radius: .375rem .375rem 0 0;
+    overflow: hidden;
+}
+
+.perfil-banner-edit {
+    position: absolute;
+    bottom: .6rem;
+    right: .7rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.45);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: .9rem;
+    transition: background .15s;
+}
+.perfil-banner-edit:hover { background: rgba(0,0,0,.65); }
+
+.perfil-avatar-wrap {
+    position: absolute;
+    margin-top: -48px;
+    margin-left: 1.5rem;
+}
+.perfil-avatar {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+</style>
