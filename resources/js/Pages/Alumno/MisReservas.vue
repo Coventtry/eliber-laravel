@@ -26,6 +26,7 @@
                                 <th>Estado</th>
                                 <th>Fecha reserva</th>
                                 <th>Vencimiento</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -36,6 +37,17 @@
                                 </td>
                                 <td class="text-nowrap">{{ r.fecha_reserva }}</td>
                                 <td class="text-nowrap">{{ r.fecha_vencimiento ?? '—' }}</td>
+                                <td class="text-right">
+                                    <button
+                                        v-if="r.estado === 'pendiente' || r.estado === 'aprobada'"
+                                        type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        :disabled="cancelando === r.id"
+                                        @click="cancelar(r)"
+                                    >
+                                        {{ cancelando === r.id ? '...' : 'Cancelar' }}
+                                    </button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -63,7 +75,8 @@
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { Head, Link, router } from '@inertiajs/vue3'
 import AppNavbarAlumno from '@/Components/AppNavbarAlumno.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
@@ -72,6 +85,16 @@ defineProps({
     reservas:    { type: Object, default: () => ({ data: [] }) },
     tiene_socio: { type: Boolean, default: false },
 })
+
+const cancelando = ref(null)
+
+function cancelar(reserva) {
+    if (!confirm('¿Cancelar esta reserva?')) return
+    cancelando.value = reserva.id
+    router.delete(route('alumno.reservas.cancel', reserva.id), {
+        onFinish: () => { cancelando.value = null },
+    })
+}
 
 function badgeEstado(estado) {
     return {

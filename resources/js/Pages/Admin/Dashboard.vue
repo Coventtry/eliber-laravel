@@ -62,7 +62,7 @@
             <div class="col-lg-6 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
-                        <span class="font-weight-bold">Próximos vencimientos <span class="badge badge-warning ml-1">4 días</span></span>
+                        <span class="font-weight-bold">Próximos vencimientos <span class="badge badge-warning ml-1">{{ diasAlerta }} días</span></span>
                         <Link :href="route('prestamos.index')" class="btn btn-sm btn-outline-warning">Ver todos</Link>
                     </div>
                     <div class="card-body p-0">
@@ -105,6 +105,7 @@ const props = defineProps({
     stats:               { type: Object, required: true },
     reservas_pendientes: { type: Array,  default: () => [] },
     proximos_vencer:     { type: Array,  default: () => [] },
+    diasAlerta:          { type: Number, default: 4 },
 })
 
 const statCards = computed(() => [

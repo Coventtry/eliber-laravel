@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Alerta;
+use App\Models\Configuracion;
 use App\Models\Material;
 use App\Models\Prestamo;
 use App\Models\Reserva;
@@ -23,7 +24,8 @@ class AdminController extends Controller
 
     public function dashboard(): Response
     {
-        $instId = auth()->user()->institucion_id;
+        $instId     = auth()->user()->institucion_id;
+        $diasAlerta = (int) Configuracion::get($instId, 'dias_alerta_previa', 4);
 
         $stats = [
             'socios_activos'   => Socio::where('activo', true)->count(),
@@ -48,7 +50,7 @@ class AdminController extends Controller
             ]);
 
         $proximos_vencer = Prestamo::with(['socio', 'material'])
-            ->vencimientoProximo(4)
+            ->vencimientoProximo($diasAlerta)
             ->get()
             ->map(fn($p) => [
                 'id'              => $p->id,
@@ -58,7 +60,7 @@ class AdminController extends Controller
             ]);
 
         return Inertia::render('Admin/Dashboard', compact(
-            'stats', 'reservas_pendientes', 'proximos_vencer'
+            'stats', 'reservas_pendientes', 'proximos_vencer', 'diasAlerta'
         ));
     }
 

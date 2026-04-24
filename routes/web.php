@@ -117,6 +117,8 @@ Route::middleware('auth')->group(function () {
         Route::get('dashboard', [AlumnoController::class, 'dashboard'])->name('dashboard');
         Route::get('mis-reservas', [AlumnoController::class, 'misReservas'])->name('reservas');
         Route::get('catalogo', [AlumnoController::class, 'catalogo'])->name('catalogo');
+        Route::post('reservas', [AlumnoController::class, 'reservar'])->name('reservas.store');
+        Route::delete('reservas/{reserva}', [AlumnoController::class, 'cancelarReserva'])->name('reservas.cancel');
     });
 
     // AJAX endpoints
