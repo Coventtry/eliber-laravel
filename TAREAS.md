@@ -157,7 +157,7 @@
 ## 11. Tareas pendientes
 
 ### Alta prioridad
-- [ ] **Conectar parámetros operacionales**: `PrestamoService` usa `14` días hardcodeado para el límite de devolución y `HandleInertiaRequests` usa `4` días para alertas previas. Leer ambos desde `Configuracion::get(institucion_id, 'dias_prestamo', 14)` / `'dias_alerta_previa'`
+- [x] **Conectar parámetros operacionales**: `PrestamoService` lee `dias_prestamo` y `HandleInertiaRequests` lee `dias_alerta_previa` desde `Configuracion` por `institucion_id`, con fallback a 14 y 4 respectivamente.
 
 ### Media prioridad
 - [ ] **Sidebar mobile en admin**: al reducir pantalla el sidebar desaparece sin reemplazo. Agregar botón hamburger que muestre/oculte el sidebar como drawer overlay
