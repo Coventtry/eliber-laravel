@@ -11,7 +11,7 @@
 |-----|-------|--------|
 | `bibliotecario` | App completa (socios, materiales, préstamos, alertas, etc.) | ✅ Implementado |
 | `alumno` | Catálogo, mis reservas, perfil | ✅ Implementado |
-| `admin` | Dashboard admin con gestión global | ⬜ Pendiente |
+| `admin` | Dashboard admin con gestión global | ✅ Implementado (crítico) |
 
 ---
 
@@ -20,22 +20,22 @@
 > Adaptar las vistas de `Admin-Dashboard/` de React a Vue 3 + Bootstrap 4.6.
 
 ### 1.1 Layout base del admin
-- [ ] `AppNavbarAdmin.vue` — Navbar con selector de institución activa y menú de usuario
-- [ ] `AppSidebarAdmin.vue` — Sidebar lateral (Overview, Usuarios, Socios, Inventario, Tareas, Feedback, Contenido, Analítica, Configuración)
-- [ ] Layout wrapper `AdminLayout.vue` con navbar + sidebar + slot de contenido
-- [ ] Ruta `/admin/dashboard` → `AdminController@dashboard`, redirigir al admin en login
+- [x] `AdminLayout.vue` — Navbar + sidebar fijo + content area con layout persistente de Inertia
+- [x] Sidebar con: Overview, Usuarios, Socios, Materiales, Préstamos, Alertas (con badge), Feedback/Contenido/Analítica/Config (deshabilitados)
+- [x] Rutas `/admin/*` protegidas con middleware `role:admin`
+- [x] Login redirige al admin a `/admin/dashboard` automáticamente
 
 ### 1.2 Overview / Dashboard
-- [ ] Tarjetas de estadísticas reales: Total socios activos, Préstamos del mes, Materiales en stock, Alertas no leídas
-- [ ] Tabla "Últimas reservas pendientes" (últimas 5)
-- [ ] Tabla "Préstamos próximos a vencer" (próximos 4 días)
-- [ ] Vista: `Admin/Dashboard.vue`
+- [x] Tarjetas de estadísticas reales: socios activos, préstamos del mes, unidades en stock, alertas sin leer
+- [x] Tabla "Últimas reservas pendientes" (últimas 5)
+- [x] Tabla "Próximos vencimientos" (4 días)
+- [x] Vista: `Admin/Dashboard.vue`
 
 ### 1.3 Gestión de Usuarios
-- [ ] `Admin/Usuarios/Index.vue` — Tabla con búsqueda, filtro por rol e institución, paginación
-- [ ] `Admin/Usuarios/Modal.vue` — Modal crear/editar: nombre, email, contraseña, rol, institución, foto de perfil (drag-drop), permisos (toggles)
-- [ ] Vincular `socio_id` al usuario alumno desde el modal de edición
-- [ ] `AdminController@usuarios` o mover lógica a controlador existente `UserController`
+- [x] `Admin/Usuarios/Index.vue` — Tabla con búsqueda, filtro por rol, paginación, avatares
+- [x] Modal crear/editar inline: nombre, email, usuario, contraseña, rol, foto de perfil, `socio_id` (solo para alumno)
+- [x] Vincular `socio_id` al usuario alumno desde el modal
+- [x] `AdminController` con CRUD completo + toggle activo
 
 ---
 

@@ -11,6 +11,7 @@ use App\Http\Controllers\AnotacionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\AlumnoController;
 use App\Http\Controllers\PerfilController;
@@ -62,6 +63,16 @@ Route::middleware('auth')->group(function () {
     Route::patch('alertas/todas-leidas', [AlertaController::class, 'marcarTodasLeidas'])->name('alertas.todas-leidas');
     Route::patch('alertas/{alerta}/leida', [AlertaController::class, 'marcarLeida'])->name('alertas.leida');
     Route::post('alertas/{alerta}/baja-material', [AlertaController::class, 'bajaAlerta'])->name('alertas.baja-material');
+
+    // Admin
+    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('usuarios', [AdminController::class, 'usuarios'])->name('usuarios');
+        Route::post('usuarios', [AdminController::class, 'storeUsuario'])->name('usuarios.store');
+        Route::put('usuarios/{user}', [AdminController::class, 'updateUsuario'])->name('usuarios.update');
+        Route::delete('usuarios/{user}', [AdminController::class, 'destroyUsuario'])->name('usuarios.destroy');
+        Route::patch('usuarios/{user}/toggle-activo', [AdminController::class, 'toggleActivoUsuario'])->name('usuarios.toggle');
+    });
 
     // Perfil (todos los roles)
     Route::get('perfil', [PerfilController::class, 'edit'])->name('perfil.edit');

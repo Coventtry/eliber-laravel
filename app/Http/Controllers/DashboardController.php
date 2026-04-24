@@ -13,6 +13,10 @@ class DashboardController extends Controller
 
     public function index(): Response|RedirectResponse
     {
+        if (auth()->user()->hasRole('admin')) {
+            return redirect()->route('admin.dashboard');
+        }
+
         if (auth()->user()->hasRole('alumno')) {
             return redirect()->route('alumno.dashboard');
         }
