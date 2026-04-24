@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Alerta;
+use App\Models\Configuracion;
 use App\Models\FooterLink;
 use App\Services\PrestamoService;
 use Illuminate\Http\Request;
@@ -26,7 +27,8 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
 
         if ($user) {
-            $vencimientos    = app(PrestamoService::class)->obtenerVencimientosProximos(4)->count();
+            $diasAlerta   = (int) Configuracion::get($user->institucion_id, 'dias_alerta_previa', 4);
+            $vencimientos = app(PrestamoService::class)->obtenerVencimientosProximos($diasAlerta)->count();
             $alertasNoLeidas = Alerta::noLeidas()->count();
 
             $institucion = $user->institucion;
