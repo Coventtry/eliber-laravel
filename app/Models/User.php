@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Scopes\TenantScope;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,11 +40,6 @@ class User extends Authenticatable
             'password' => 'hashed',
             'activo' => 'boolean',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        static::addGlobalScope(new TenantScope());
     }
 
     public function getPictureUrlAttribute(): ?string

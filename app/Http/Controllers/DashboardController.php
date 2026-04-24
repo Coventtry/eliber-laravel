@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\PrestamoService;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -10,8 +11,12 @@ class DashboardController extends Controller
 {
     public function __construct(private PrestamoService $prestamoService) {}
 
-    public function index(): Response
+    public function index(): Response|RedirectResponse
     {
+        if (auth()->user()->hasRole('alumno')) {
+            return redirect()->route('alumno.dashboard');
+        }
+
         $this->prestamoService->marcarAtrasados();
 
         return Inertia::render('Dashboard', [

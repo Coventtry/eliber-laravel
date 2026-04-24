@@ -50,31 +50,22 @@
                         </div>
                     </li>
 
-                    <!-- Avisador -->
+                    <!-- Noticias -->
                     <li v-if="can('gestionar-noticias')" class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Avisador</a>
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Noticias</a>
                         <div class="dropdown-menu">
                             <Link :href="route('noticias.create')" class="dropdown-item">Nueva noticia</Link>
                             <Link :href="route('noticias.index')" class="dropdown-item">Modificar / Eliminar</Link>
                         </div>
                     </li>
 
-                    <!-- Notas -->
-                    <li v-if="can('gestionar-anotaciones')" class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Notas</a>
-                        <div class="dropdown-menu">
-                            <Link :href="route('anotaciones.create')" class="dropdown-item">Nueva nota</Link>
-                            <Link :href="route('anotaciones.index')" class="dropdown-item">Consultar</Link>
-                        </div>
-                    </li>
 
-                    <!-- Usuarios -->
-                    <li v-if="can('gestionar-usuarios')" class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Usuarios</a>
-                        <div class="dropdown-menu">
-                            <Link :href="route('usuarios.create')" class="dropdown-item">Nuevo usuario</Link>
-                            <Link :href="route('usuarios.index')" class="dropdown-item">Gestionar</Link>
-                        </div>
+                    <!-- Alertas -->
+                    <li class="nav-item">
+                        <Link :href="route('alertas.index')" class="nav-link">
+                            Alertas
+                            <span v-if="alertasNoLeidas > 0" class="badge badge-danger ml-1">{{ alertasNoLeidas }}</span>
+                        </Link>
                     </li>
                 </ul>
 
@@ -100,6 +91,10 @@
                         <div class="dropdown-menu dropdown-menu-right" style="border-radius: 10px; border: none; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
                             <h6 class="dropdown-header" style="color: var(--eliber-primary); font-weight: 600;">{{ auth.user.usuario }}</h6>
                             <div class="dropdown-divider"></div>
+                            <Link :href="route('perfil.edit')" class="dropdown-item">
+                                <i class="bi bi-person-gear mr-1"></i>Mi perfil
+                            </Link>
+                            <div class="dropdown-divider"></div>
                             <form @submit.prevent="logout" method="POST">
                                 <button type="submit" class="dropdown-item text-danger" style="transition: all 0.3s ease;">
                                     <i class="bi bi-box-arrow-right mr-1"></i>Cerrar sesión
@@ -111,6 +106,7 @@
             </div>
         </div>
     </nav>
+
 </template>
 
 <script setup>
@@ -120,6 +116,7 @@ import { computed } from 'vue'
 const page = usePage()
 const auth = computed(() => page.props.auth)
 const vencimientosProximos = computed(() => page.props.vencimientos_proximos ?? 0)
+const alertasNoLeidas = computed(() => page.props.alertas_no_leidas ?? 0)
 
 function can(permiso) {
     if (auth.value?.es_admin) return true
@@ -129,4 +126,5 @@ function can(permiso) {
 function logout() {
     router.post(route('logout'))
 }
+
 </script>

@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -22,6 +22,7 @@ class Bibliotecario extends Authenticatable
         'password',
         'picture',
         'institucion_id',
+        'socio_id',
     ];
 
     protected $hidden = ['password', 'remember_token', 'Clave_unica'];
@@ -29,6 +30,11 @@ class Bibliotecario extends Authenticatable
     protected function casts(): array
     {
         return ['password' => 'hashed'];
+    }
+
+    public function socio(): BelongsTo
+    {
+        return $this->belongsTo(Socio::class);
     }
 
     public function getPictureUrlAttribute(): ?string

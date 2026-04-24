@@ -76,50 +76,59 @@ La arquitectura usa **Inertia.js**: Laravel maneja routing, autenticación y que
 
 ## Instalación local
 
-Estándar local del proyecto:
+### 1. Requisitos previos
 
-- PHP nativo en `PATH`
-- Composer nativo en `PATH`
-- Node.js/npm nativos en `PATH`
-- MySQL o MariaDB nativo
-- Sin XAMPP
-- Sin Docker
+- PHP 8.2, Composer, Node.js 18+ en `PATH`
+- MySQL 8+ o MariaDB 10.4+ corriendo
+
+Crear la base de datos manualmente:
+
+```sql
+CREATE DATABASE biblioteca CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 2. Clonar y configurar
 
 ```bash
-git clone <repo> e-liber
-cd e-liber
-
-composer run setup
-php artisan storage:link
+git clone <repo> eliber-laravel
+cd eliber-laravel
 ```
 
-Configurar `.env`:
-```
-DB_DATABASE=biblioteca
-DB_USERNAME=root
-DB_PASSWORD=
+Copiar el archivo de entorno y ajustar credenciales si es necesario:
 
-DEFAULT_INSTITUCION_NOMBRE="Biblioteca Escolar N° 1"
-DEFAULT_INSTITUCION_SLUG=biblioteca-escolar-1
-DEFAULT_ADMIN_NOMBRE="Administrador"
-DEFAULT_ADMIN_USUARIO=admin
-DEFAULT_ADMIN_EMAIL=admin@example.com
-DEFAULT_ADMIN_PASSWORD=password
-SEED_SAMPLE_DATA=false
-```
-
-`composer run setup` crea el `.env` si no existe, genera la key, corre migraciones y seeders, instala dependencias frontend y compila assets. Ya no hace falta importar `biblioteca.sql`.
-
-Si prefieres ejecutar el proceso manualmente:
 ```bash
-composer install
-npm install
 cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
-php artisan storage:link
-npm run build
+# Editar DB_USERNAME y DB_PASSWORD si no es root sin contraseña
 ```
+
+### 3. Setup completo
+
+```bash
+composer run setup
+```
+
+Ejecuta en orden: `composer install` → genera `.env` si no existe → `php artisan key:generate` → `php artisan migrate --seed` (migraciones + seeders) → `npm install` → `npm run build`.
+
+### 4. Link de storage
+
+```bash
+php artisan storage:link
+```
+
+### 5. Levantar el servidor
+
+```bash
+composer run dev
+```
+
+Acceder en `http://localhost:8000`.
+
+Credenciales iniciales:
+
+- **Usuario:** `admin`
+- **Password:** `password`
+
+Podés cambiarlas antes del setup ajustando `DEFAULT_ADMIN_USUARIO` y `DEFAULT_ADMIN_PASSWORD` en `.env`.
 
 Levantar el proyecto:
 ```bash

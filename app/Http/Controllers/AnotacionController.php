@@ -29,11 +29,17 @@ class AnotacionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $this->authorize('create', \App\Models\Anotacion::class);
-        $request->validate(['anotacion' => 'required|string|max:255']);
+        $request->validate(['anotacion' => 'required|string|max:2000']);
         Anotacion::create([
-            'anotacion' => $request->anotacion,
+            'anotacion'      => $request->anotacion,
+            'fecha'          => now(),
             'institucion_id' => $request->user()->institucion_id,
         ]);
+
+        if ($request->boolean('from_modal')) {
+            return back()->with('success', 'Anotación guardada.');
+        }
+
         return redirect()->route('anotaciones.index')->with('success', 'Anotación guardada.');
     }
 }

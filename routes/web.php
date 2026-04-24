@@ -11,6 +11,9 @@ use App\Http\Controllers\AnotacionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AlertaController;
+use App\Http\Controllers\AlumnoController;
+use App\Http\Controllers\PerfilController;
 use Illuminate\Support\Facades\Route;
 
 // Landing page - pública
@@ -53,6 +56,21 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'create', 'store', 'edit', 'update']);
     Route::patch('usuarios/{user}/permisos', [UserController::class, 'updatePermisos'])->name('usuarios.permisos');
     Route::patch('usuarios/{user}/toggle-activo', [UserController::class, 'toggleActivo'])->name('usuarios.toggle-activo');
+
+    // Alertas
+    Route::get('alertas', [AlertaController::class, 'index'])->name('alertas.index');
+    Route::patch('alertas/todas-leidas', [AlertaController::class, 'marcarTodasLeidas'])->name('alertas.todas-leidas');
+    Route::patch('alertas/{alerta}/leida', [AlertaController::class, 'marcarLeida'])->name('alertas.leida');
+    Route::post('alertas/{alerta}/baja-material', [AlertaController::class, 'bajaAlerta'])->name('alertas.baja-material');
+
+    // Perfil (todos los roles)
+    Route::get('perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
+    Route::put('perfil', [PerfilController::class, 'update'])->name('perfil.update');
+
+    // Vistas alumno
+    Route::get('alumno/dashboard', [AlumnoController::class, 'dashboard'])->name('alumno.dashboard');
+    Route::get('alumno/mis-reservas', [AlumnoController::class, 'misReservas'])->name('alumno.reservas');
+    Route::get('alumno/catalogo', [AlumnoController::class, 'catalogo'])->name('alumno.catalogo');
 
     // AJAX endpoints
     Route::get('api/socios/buscar', [SocioController::class, 'buscar'])->name('api.socios.buscar');

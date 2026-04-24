@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Alerta;
 use App\Models\Material;
 use App\Models\Prestamo;
 use App\Models\Socio;
@@ -39,6 +40,12 @@ class PrestamoService
         DB::transaction(function () use ($prestamo) {
             $prestamo->material->increment('disponibilidad', $prestamo->cantidad);
             $prestamo->update(['estado' => 'devuelto']);
+
+            // Cerrar alertas activas del préstamo al devolverlo
+            Alerta::withoutGlobalScopes()
+                ->where('prestamo_id', $prestamo->id)
+                ->where('leida', false)
+                ->update(['leida' => true]);
         });
     }
 
@@ -51,20 +58,106 @@ class PrestamoService
         $prestamo->update([
             'fecha_devolucion' => $prestamo->fecha_devolucion->addDays($dias)->toDateString(),
         ]);
+
+        $prestamo->load(['socio', 'material']);
+        $nuevaFecha = $prestamo->fecha_devolucion->format('d/m/Y');
+        $this->registrarAlerta(
+            $prestamo,
+            'renovacion',
+            "Renovación +{$dias} días — {$prestamo->material->titulo} (nuevo vencimiento: {$nuevaFecha})"
+        );
     }
 
     public function marcarAtrasados(): int
     {
-        return Prestamo::whereIn('estado', ['activo', 'pendiente'])
+        $atrasados = Prestamo::with(['socio', 'material'])
+            ->whereIn('estado', ['activo', 'pendiente'])
             ->where('fecha_devolucion', '<', now()->toDateString())
-            ->update(['estado' => 'atrasado']);
+            ->get();
+
+        foreach ($atrasados as $prestamo) {
+            $prestamo->update(['estado' => 'atrasado']);
+            $fecha = $prestamo->fecha_devolucion->format('d/m/Y');
+            $this->registrarAlerta(
+                $prestamo,
+                'vencido',
+                "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (venció el {$fecha})",
+                true
+            );
+        }
+
+        return count($atrasados);
     }
 
     public function obtenerVencimientosProximos(int $dias = 4): \Illuminate\Database\Eloquent\Collection
     {
-        return Prestamo::with(['socio', 'material'])
+        $proximos = Prestamo::with(['socio', 'material'])
             ->vencimientoProximo($dias)
             ->get();
+
+        foreach ($proximos as $prestamo) {
+            $fecha = $prestamo->fecha_devolucion->format('d/m/Y');
+            $this->registrarAlerta(
+                $prestamo,
+                'proximo_vencer',
+                "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (vence el {$fecha})"
+            );
+        }
+
+        return $proximos;
+    }
+
+    private function registrarAlerta(Prestamo $prestamo, string $tipo, string $descripcion, bool $upsert = false): void
+    {
+        if (!auth()->check()) {
+            return;
+        }
+
+        $institucionId = $prestamo->institucion_id;
+
+        if ($tipo === 'renovacion') {
+            Alerta::create([
+                'institucion_id' => $institucionId,
+                'prestamo_id'    => $prestamo->id,
+                'tipo'           => $tipo,
+                'descripcion'    => $descripcion,
+                'fecha_alerta'   => now(),
+                'leida'          => false,
+            ]);
+            return;
+        }
+
+        // Para proximo_vencer y vencido: no duplicar si ya existe no leída
+        $existe = Alerta::withoutGlobalScopes()
+            ->where('prestamo_id', $prestamo->id)
+            ->where('tipo', $tipo)
+            ->where('leida', false)
+            ->exists();
+
+        if ($existe && !$upsert) {
+            return;
+        }
+
+        if ($upsert) {
+            Alerta::withoutGlobalScopes()->updateOrCreate(
+                ['prestamo_id' => $prestamo->id, 'tipo' => $tipo],
+                [
+                    'institucion_id' => $institucionId,
+                    'descripcion'    => $descripcion,
+                    'fecha_alerta'   => now(),
+                    'leida'          => false,
+                ]
+            );
+        } else {
+            Alerta::create([
+                'institucion_id' => $institucionId,
+                'prestamo_id'    => $prestamo->id,
+                'tipo'           => $tipo,
+                'descripcion'    => $descripcion,
+                'fecha_alerta'   => now(),
+                'leida'          => false,
+            ]);
+        }
     }
 
     private function validarCreacion(Socio $socio, Material $material, int $cantidad, string $fechaDevolucion): void

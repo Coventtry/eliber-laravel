@@ -29,6 +29,7 @@ class UserController extends Controller
         $this->authorize('viewAny', User::class);
 
         $usuarios = User::with('roles')
+            ->where('institucion_id', auth()->user()->institucion_id)
             ->when($request->search, fn($q, $s) =>
                 $q->where('nombre', 'like', "%{$s}%")
                   ->orWhere('email', 'like', "%{$s}%")

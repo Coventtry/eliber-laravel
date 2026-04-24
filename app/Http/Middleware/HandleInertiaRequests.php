@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Alerta;
 use App\Services\PrestamoService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -18,10 +19,12 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $vencimientos = 0;
+        $alertasNoLeidas = 0;
         $user = $request->user();
 
         if ($user) {
-            $vencimientos = app(PrestamoService::class)->obtenerVencimientosProximos(4)->count();
+            $vencimientos    = app(PrestamoService::class)->obtenerVencimientosProximos(4)->count();
+            $alertasNoLeidas = Alerta::noLeidas()->count();
         }
 
         return array_merge(parent::share($request), [
@@ -33,6 +36,7 @@ class HandleInertiaRequests extends Middleware
                     'picture_url' => $user->picture_url ?? null,
                 ] : null,
                 'permisos' => $user ? $user->getAllPermissions()->pluck('name')->toArray() : [],
+                'roles'    => $user ? $user->getRoleNames()->toArray() : [],
                 'es_admin' => $user ? $user->hasRole('admin') : false,
             ],
             'menu' => $this->buildMenu($user),
@@ -40,7 +44,8 @@ class HandleInertiaRequests extends Middleware
                 'success' => session('success'),
                 'error'   => session('error'),
             ],
-            'vencimientos_proximos' => $vencimientos,
+            'vencimientos_proximos'  => $vencimientos,
+            'alertas_no_leidas'      => $alertasNoLeidas,
         ]);
     }
 
