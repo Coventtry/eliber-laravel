@@ -21,3 +21,6 @@ yarn-error.log
 /storage/api-docs
 /resources/views/vendor
 /temp_fix.php
+
+# Reference dashboard (React mock, not part of the project)
+Admin-Dashboard/
