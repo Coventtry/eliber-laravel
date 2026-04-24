@@ -130,8 +130,11 @@ import {
     Title, Tooltip, Legend,
 } from 'chart.js'
 import { Bar, Doughnut } from 'vue-chartjs'
+import { useDarkMode } from '@/Composables/useDarkMode'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend)
+
+const { darkMode } = useDarkMode()
 
 const props = defineProps({
     prestamos_por_mes: { type: Array, default: () => [] },
@@ -156,49 +159,65 @@ const statCards = computed(() => [
     { label: 'Socios',              value: props.totales.socios_total       ?? 0, icon: 'bi-people',        color: '#e67e22', bg: '#fef3e2' },
 ])
 
+// ── Helpers de color por tema ─────────────────────────────────────────────────
+const gridColor  = computed(() => darkMode.value ? 'rgba(255,255,255,.08)' : '#f0f0f0')
+const tickColor  = computed(() => darkMode.value ? '#94a3b8' : '#6b7280')
+const barColor   = computed(() => darkMode.value ? '#60a5fa' : '#1a3a5c')
+
 // ── Gráfico: Préstamos por mes ────────────────────────────────────────────────
 const barData = computed(() => ({
     labels:   props.prestamos_por_mes.map(d => d.label),
     datasets: [{
         label:           'Préstamos',
         data:            props.prestamos_por_mes.map(d => d.value),
-        backgroundColor: '#1a3a5c',
+        backgroundColor: barColor.value,
         borderRadius:    4,
         borderSkipped:   false,
     }],
 }))
 
-const barOptions = {
+const barOptions = computed(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
-        x: { grid: { display: false } },
+        y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1, color: tickColor.value },
+            grid:  { color: gridColor.value },
+        },
+        x: {
+            ticks: { color: tickColor.value },
+            grid:  { display: false },
+        },
     },
-}
+}))
 
 // ── Gráfico: Donut socios ─────────────────────────────────────────────────────
 const doughnutData = computed(() => ({
     labels:   ['Activos', 'Dados de baja'],
     datasets: [{
         data:            [props.socios_activos, props.socios_baja],
-        backgroundColor: ['#1a3a5c', '#dee2e6'],
+        backgroundColor: darkMode.value ? ['#60a5fa', '#334155'] : ['#1a3a5c', '#dee2e6'],
         borderWidth:     0,
     }],
 }))
 
-const doughnutOptions = {
+const doughnutOptions = computed(() => ({
     responsive:          true,
     maintainAspectRatio: true,
     cutout:              '68%',
     plugins: { legend: { display: false } },
-}
+}))
 
 // ── Gráfico: Materiales por área ──────────────────────────────────────────────
 const areaColors = [
     '#1a3a5c','#e8a020','#6f42c1','#20c997','#dc3545',
     '#fd7e14','#0dcaf0','#198754','#6610f2','#d63384',
+]
+const areaColorsDark = [
+    '#60a5fa','#fbbf24','#a78bfa','#34d399','#f87171',
+    '#fb923c','#38bdf8','#4ade80','#818cf8','#f472b6',
 ]
 
 const areaData = computed(() => ({
@@ -206,20 +225,29 @@ const areaData = computed(() => ({
     datasets: [{
         label:           'Materiales',
         data:            props.por_area.map(d => d.value),
-        backgroundColor: props.por_area.map((_, i) => areaColors[i % areaColors.length]),
+        backgroundColor: props.por_area.map((_, i) =>
+            (darkMode.value ? areaColorsDark : areaColors)[i % areaColors.length]
+        ),
         borderRadius:    4,
         borderSkipped:   false,
     }],
 }))
 
-const areaOptions = {
+const areaOptions = computed(() => ({
     responsive:          true,
     maintainAspectRatio: false,
     indexAxis:           'y',
     plugins: { legend: { display: false } },
     scales: {
-        x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
-        y: { grid: { display: false } },
+        x: {
+            beginAtZero: true,
+            ticks: { stepSize: 1, color: tickColor.value },
+            grid:  { color: gridColor.value },
+        },
+        y: {
+            ticks: { color: tickColor.value },
+            grid:  { display: false },
+        },
     },
-}
+}))
 </script>
