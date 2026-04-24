@@ -1,6 +1,6 @@
 <template>
     <Head title="Acerca del Proyecto" />
-    <AppNavbar />
+    <PublicNavbar />
 
     <div class="hero-section text-center">
         <div class="container">
@@ -51,6 +51,6 @@
 </template>
 
 <script setup>
-import AppNavbar from '@/Components/AppNavbar.vue'
+import PublicNavbar from '@/Components/PublicNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 </script>

@@ -67,6 +67,13 @@
                             ¿Olvidaste tu contraseña?
                         </Link>
                     </small>
+                    <div class="mt-2">
+                        <small>
+                            <Link :href="route('landing')" class="text-muted">
+                                <i class="bi bi-arrow-left mr-1"></i>Volver al inicio
+                            </Link>
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>

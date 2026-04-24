@@ -3,18 +3,7 @@
         <meta name="description" content="E-liber - Sistema de Gestión de Biblioteca Escolar">
     </Head>
 
-    <nav class="navbar navbar-expand-md navbar-eliber navbar-dark">
-        <div class="container-fluid">
-            <Link :href="route('landing')" class="navbar-brand font-weight-bold d-flex align-items-center">
-                <img src="/img/logo.png" alt="E-liber" height="32" class="mr-2">
-            </Link>
-            <div class="ml-auto">
-                <Link :href="route('login')" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-box-arrow-in-right mr-1"></i>Ingresar
-                </Link>
-            </div>
-        </div>
-    </nav>
+    <PublicNavbar />
 
     <header class="hero-section text-center">
         <div class="container">
@@ -59,6 +48,8 @@
 </template>
 
 <script setup>
+import PublicNavbar from '@/Components/PublicNavbar.vue'
+
 defineProps({
     noticias: {
         type: Array,

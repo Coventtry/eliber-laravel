@@ -75,9 +75,20 @@
             </div>
         </div>
 
-        <div v-else class="alert alert-warning">
-            <i class="bi bi-info-circle mr-2"></i>
-            Tu usuario no está vinculado a un registro de socio. Contactá al bibliotecario para que lo configure.
+        <div v-else class="card border-warning shadow-sm mb-3">
+            <div class="card-body d-flex align-items-start" style="gap:1rem;">
+                <i class="bi bi-exclamation-triangle-fill text-warning mt-1" style="font-size:1.5rem;flex-shrink:0;"></i>
+                <div>
+                    <strong>Cuenta sin socio vinculado</strong>
+                    <p class="mb-2 text-muted small">
+                        Tu usuario todavía no está asociado a un registro de socio en la biblioteca.
+                        Mientras tanto, podés consultar el catálogo de materiales disponibles.
+                    </p>
+                    <Link :href="route('alumno.catalogo')" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-book mr-1"></i>Ver catálogo
+                    </Link>
+                </div>
+            </div>
         </div>
     </div>
 

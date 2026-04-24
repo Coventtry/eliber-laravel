@@ -1,6 +1,6 @@
 <template>
     <Head title="FAQs - Preguntas Frecuentes" />
-    <AppNavbar />
+    <PublicNavbar />
 
     <div class="hero-section text-center">
         <div class="container">
@@ -78,7 +78,7 @@
 
 <script setup>
 import { Head } from '@inertiajs/vue3'
-import AppNavbar from '@/Components/AppNavbar.vue'
+import PublicNavbar from '@/Components/PublicNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 
 defineProps({
