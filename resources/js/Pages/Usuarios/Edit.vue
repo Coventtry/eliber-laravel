@@ -8,7 +8,7 @@
                 <h3 class="mb-0 mr-3">
                     <i class="bi bi-person-gear mr-2"></i>{{ usuario.nombre }}
                 </h3>
-                <span :class="esBadgeRol">{{ esAdminTarget ? 'admin' : 'bibliotecario' }}</span>
+                <span :class="badgeRol">{{ labelRol }}</span>
                 <span :class="usuario.activo ? 'badge badge-success ml-2' : 'badge badge-danger ml-2'">
                     {{ usuario.activo ? 'Activo' : 'Inactivo' }}
                 </span>
@@ -56,6 +56,18 @@
                             </div>
                         </div>
 
+                        <!-- Socio vinculado (solo alumno) -->
+                        <div v-if="esAlumnoTarget" class="form-group">
+                            <label>Socio vinculado</label>
+                            <select v-model="form.socio_id" class="form-control"
+                                    :class="{ 'is-invalid': form.errors.socio_id }">
+                                <option :value="null">— Sin vincular —</option>
+                                <option v-for="s in socios" :key="s.id" :value="s.id">{{ s.label }}</option>
+                            </select>
+                            <small class="form-text text-muted">Vinculá este usuario al registro de socio correspondiente.</small>
+                            <div class="invalid-feedback">{{ form.errors.socio_id }}</div>
+                        </div>
+
                         <div class="d-flex justify-content-between mt-2">
                             <Link :href="route('usuarios.index')" class="btn btn-outline-secondary">Cancelar</Link>
                             <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
@@ -64,8 +76,8 @@
                 </div>
             </div>
 
-            <!-- Permisos (solo si no es admin) -->
-            <div v-if="!esAdminTarget" class="card mb-4">
+            <!-- Permisos (solo bibliotecario) -->
+            <div v-if="!esAdminTarget && !esAlumnoTarget" class="card mb-4">
                 <div class="card-header"><strong>Permisos</strong></div>
                 <div class="card-body">
                     <p class="text-muted small mb-3">Los permisos marcados están activos para este usuario.</p>
@@ -90,7 +102,7 @@
                     </button>
                 </div>
             </div>
-            <div v-else class="alert alert-info mb-4">
+            <div v-else-if="esAdminTarget" class="alert alert-info mb-4">
                 El rol <strong>admin</strong> tiene acceso total. Los permisos individuales no aplican.
             </div>
 
@@ -125,7 +137,9 @@ const props = defineProps({
     permisos_usuario: { type: Array,  default: () => [] },
     todos_permisos:   { type: Array,  default: () => [] },
     es_admin_target:  { type: Boolean, default: false },
+    es_alumno_target: { type: Boolean, default: false },
     es_yo:            { type: Boolean, default: false },
+    socios:           { type: Array,  default: () => [] },
 })
 
 const form = useForm({
@@ -134,16 +148,23 @@ const form = useForm({
     usuario:               props.usuario.usuario,
     password:              '',
     password_confirmation: '',
+    socio_id:              props.usuario.socio_id ?? null,
 })
 
-const esAdminTarget     = ref(props.es_admin_target)
-const esYo              = ref(props.es_yo)
-const permisosSeleccionados = ref([...props.permisos_usuario])
-const savingPermisos    = ref(false)
+const esAdminTarget          = ref(props.es_admin_target)
+const esAlumnoTarget         = ref(props.es_alumno_target)
+const esYo                   = ref(props.es_yo)
+const permisosSeleccionados  = ref([...props.permisos_usuario])
+const savingPermisos         = ref(false)
 
-const esBadgeRol = computed(() =>
-    esAdminTarget.value ? 'badge badge-primary' : 'badge badge-secondary'
-)
+const ROLES = { admin: 'Administrador', bibliotecario: 'Bibliotecario', alumno: 'Alumno' }
+const labelRol = computed(() => ROLES[props.usuario.rol] ?? props.usuario.rol ?? '')
+
+const badgeRol = computed(() => ({
+    admin:        'badge badge-primary',
+    bibliotecario:'badge badge-secondary',
+    alumno:       'badge badge-success',
+}[props.usuario.rol] ?? 'badge badge-light'))
 
 function submitInfo() {
     form.put(route('usuarios.update', props.usuario.id))

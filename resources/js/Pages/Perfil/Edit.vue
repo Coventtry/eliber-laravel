@@ -1,9 +1,11 @@
 <template>
     <Head title="Mi perfil" />
-    <component :is="navbar" />
 
-    <div class="container page-content">
-        <FlashMessage />
+    <AppNavbar v-if="!esAdmin && !esAlumno" />
+    <AppNavbarAlumno v-else-if="esAlumno" />
+
+    <div :class="esAdmin ? '' : 'container page-content'">
+        <FlashMessage v-if="!esAdmin" />
 
         <div class="row justify-content-center">
             <div class="col-md-6">
@@ -73,8 +75,20 @@
         </div>
     </div>
 
-    <AppFooter />
+    <AppFooter v-if="!esAdmin" />
 </template>
+
+<script>
+import AdminLayout from '@/Layouts/AdminLayout.vue'
+
+export default {
+    layout: (h, page) => {
+        const roles = page.props.auth?.roles ?? []
+        if (roles.includes('admin')) return h(AdminLayout, () => [page])
+        return page
+    },
+}
+</script>
 
 <script setup>
 import { Head, usePage, router } from '@inertiajs/vue3'
@@ -89,19 +103,19 @@ const props = defineProps({
 })
 
 const page     = usePage()
+const esAdmin  = computed(() => page.props.auth?.roles?.includes('admin') ?? false)
 const esAlumno = computed(() => page.props.auth?.roles?.includes('alumno') ?? false)
-const navbar   = computed(() => esAlumno.value ? AppNavbarAlumno : AppNavbar)
 
-const form         = ref({ email: props.perfil.email ?? '' })
-const archivoFile  = ref(null)
+const form          = ref({ email: props.perfil.email ?? '' })
+const archivoFile   = ref(null)
 const nombreArchivo = ref('Seleccioná una imagen...')
-const preview      = ref(null)
-const guardando    = ref(false)
+const preview       = ref(null)
+const guardando     = ref(false)
 
 function onFile(e) {
     const file = e.target.files[0]
     if (!file) return
-    archivoFile.value  = file
+    archivoFile.value   = file
     nombreArchivo.value = file.name
     preview.value = URL.createObjectURL(file)
 }

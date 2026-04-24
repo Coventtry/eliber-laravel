@@ -15,12 +15,22 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\AlumnoController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\ContenidoController;
+use App\Http\Controllers\AnaliticaController;
+use App\Http\Controllers\ConfiguracionController;
 use Illuminate\Support\Facades\Route;
 
 // Landing page - pública
 Route::get('/', [LandingController::class, '__invoke'])->name('landing');
 Route::get('/acerca', fn() => inertia('Acerca'))->name('acerca');
-Route::get('/faqs', fn() => inertia('FAQs'))->name('faqs');
+Route::get('/faqs', function () {
+    // Muestra FAQs activas de la primera institución activa (público)
+    $faqs = \App\Models\Faq::where('activa', true)
+        ->orderBy('orden')->orderBy('id')
+        ->get(['id', 'pregunta', 'respuesta']);
+    return inertia('FAQs', ['faqs' => $faqs]);
+})->name('faqs');
 
 // Auth
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login')->middleware('guest');
@@ -72,6 +82,30 @@ Route::middleware('auth')->group(function () {
         Route::put('usuarios/{user}', [AdminController::class, 'updateUsuario'])->name('usuarios.update');
         Route::delete('usuarios/{user}', [AdminController::class, 'destroyUsuario'])->name('usuarios.destroy');
         Route::patch('usuarios/{user}/toggle-activo', [AdminController::class, 'toggleActivoUsuario'])->name('usuarios.toggle');
+
+        // Feedback Kanban
+        Route::get('feedback', [FeedbackController::class, 'index'])->name('feedback.index');
+        Route::post('feedback', [FeedbackController::class, 'store'])->name('feedback.store');
+        Route::put('feedback/{feedbackCard}', [FeedbackController::class, 'update'])->name('feedback.update');
+        Route::patch('feedback/{feedbackCard}/mover', [FeedbackController::class, 'mover'])->name('feedback.mover');
+        Route::delete('feedback/{feedbackCard}', [FeedbackController::class, 'destroy'])->name('feedback.destroy');
+
+        // Contenido
+        Route::get('contenido', [ContenidoController::class, 'index'])->name('contenido.index');
+        Route::post('contenido/faqs', [ContenidoController::class, 'storeFaq'])->name('contenido.faqs.store');
+        Route::put('contenido/faqs/{faq}', [ContenidoController::class, 'updateFaq'])->name('contenido.faqs.update');
+        Route::delete('contenido/faqs/{faq}', [ContenidoController::class, 'destroyFaq'])->name('contenido.faqs.destroy');
+        Route::post('contenido/footer', [ContenidoController::class, 'storeFooterLink'])->name('contenido.footer.store');
+        Route::put('contenido/footer/{footerLink}', [ContenidoController::class, 'updateFooterLink'])->name('contenido.footer.update');
+        Route::delete('contenido/footer/{footerLink}', [ContenidoController::class, 'destroyFooterLink'])->name('contenido.footer.destroy');
+        Route::patch('contenido/anuncio', [ContenidoController::class, 'updateAnuncio'])->name('contenido.anuncio.update');
+
+        // Analítica
+        Route::get('analitica', [AnaliticaController::class, 'index'])->name('analitica.index');
+
+        // Configuración
+        Route::get('configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
+        Route::put('configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
     });
 
     // Perfil (todos los roles)
@@ -79,9 +113,11 @@ Route::middleware('auth')->group(function () {
     Route::put('perfil', [PerfilController::class, 'update'])->name('perfil.update');
 
     // Vistas alumno
-    Route::get('alumno/dashboard', [AlumnoController::class, 'dashboard'])->name('alumno.dashboard');
-    Route::get('alumno/mis-reservas', [AlumnoController::class, 'misReservas'])->name('alumno.reservas');
-    Route::get('alumno/catalogo', [AlumnoController::class, 'catalogo'])->name('alumno.catalogo');
+    Route::middleware('role:alumno')->prefix('alumno')->name('alumno.')->group(function () {
+        Route::get('dashboard', [AlumnoController::class, 'dashboard'])->name('dashboard');
+        Route::get('mis-reservas', [AlumnoController::class, 'misReservas'])->name('reservas');
+        Route::get('catalogo', [AlumnoController::class, 'catalogo'])->name('catalogo');
+    });
 
     // AJAX endpoints
     Route::get('api/socios/buscar', [SocioController::class, 'buscar'])->name('api.socios.buscar');

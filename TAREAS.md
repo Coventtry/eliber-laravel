@@ -44,13 +44,13 @@
 > Reemplaza/extiende el sistema actual de Anotaciones.  
 > Referencia: `KanbanFeedback.tsx`
 
-- [ ] Migración: nueva tabla `feedback_cards` con campos: `titulo`, `descripcion`, `tags` (JSON), `prioridad` (low/medium/high/urgent), `columna` (backlog/in_progress/completed/published), `creado_por` (FK bibliotecarios), `fecha`, `institucion_id`
-- [ ] `FeedbackController` — CRUD + mover entre columnas (`PATCH feedback/{id}/mover`)
-- [ ] `Admin/Feedback/Index.vue` — Tablero Kanban con drag-drop (usar `vue-draggable-plus` o `@vueuse/gesture`)
-- [ ] Columnas: Backlog → En progreso → Completado → Publicado
-- [ ] Tarjeta: título, descripción, tags coloreados, badge de prioridad, autor, fecha
-- [ ] Modal de configuración: tiempo de desaparición de publicados, colores por prioridad, gestión de tags
-- [ ] Auto-archivado de cards publicadas según configuración de días
+- [x] Migración: nueva tabla `feedback_cards` con campos: `titulo`, `descripcion`, `tags` (JSON), `prioridad` (low/medium/high/urgent), `columna` (backlog/in_progress/completed/published), `creado_por` (FK users), `institucion_id`
+- [x] `FeedbackController` — CRUD + mover entre columnas (`PATCH feedback/{id}/mover`)
+- [x] `Admin/Feedback/Index.vue` — Tablero Kanban con drag-drop (HTML5 nativo + vuedraggable instalado)
+- [x] Columnas: Backlog → En progreso → Completado → Publicado
+- [x] Tarjeta: título, descripción, tags coloreados, badge de prioridad, autor, fecha
+- [x] Modal de configuración: tiempo de desaparición de publicados, colores por prioridad, gestión de tags
+- [x] Auto-archivado de cards publicadas según configuración de días
 
 ---
 
@@ -59,20 +59,20 @@
 > Referencia: `ContentManagement.tsx`
 
 ### 3.1 Editor de FAQs
-- [ ] Tabla `faqs`: `pregunta`, `respuesta`, `orden`, `activa`, `institucion_id`
-- [ ] `FaqController` — CRUD
-- [ ] `Admin/Contenido/Faqs.vue` — Lista expandible, modal edición, reordenamiento
-- [ ] Conectar la página pública `/faqs` para mostrar FAQs reales desde BD (actualmente es estática)
+- [x] Tabla `faqs`: `pregunta`, `respuesta`, `orden`, `activa`, `institucion_id`
+- [x] `ContenidoController` — CRUD FAQs + Footer + Anuncio (todo en uno)
+- [x] `Admin/Contenido/Index.vue` — Tabs: FAQs / Anuncio / Footer con modales inline
+- [x] Conectar la página pública `/faqs` para mostrar FAQs reales desde BD (fallback estático)
 
 ### 3.2 Anuncio global (Banner)
-- [ ] Tabla `anuncios` o columnas en `instituciones`: `anuncio_texto`, `anuncio_estilo` (warning/danger/info/success), `anuncio_activo`
-- [ ] `Admin/Contenido/Anuncio.vue` — Editor de texto + selector de estilo + preview + toggle
-- [ ] Mostrar el banner en `AppNavbar.vue` si `anuncio_activo = true` (via Inertia shared data)
+- [x] Columnas en `instituciones`: `anuncio_texto`, `anuncio_estilo`, `anuncio_activo`
+- [x] Tab Anuncio en `Admin/Contenido/Index.vue` — editor + preview + toggle
+- [x] Mostrar el banner en `AppNavbar.vue` si `anuncio_activo = true` (via Inertia shared data)
 
 ### 3.3 Editor de Footer
-- [ ] Tabla `footer_links`: `label`, `url`, `orden`, `institucion_id`
-- [ ] `Admin/Contenido/Footer.vue` — Lista editable de links
-- [ ] `AppFooter.vue` — Leer links dinámicos de Inertia shared data en lugar de links hardcodeados
+- [x] Tabla `footer_links`: `label`, `url`, `orden`, `institucion_id`
+- [x] Tab Footer en `Admin/Contenido/Index.vue` — lista editable de links
+- [x] `AppFooter.vue` — Leer links dinámicos de Inertia shared data
 
 ---
 
@@ -80,13 +80,14 @@
 
 > Referencia: `Analytics` placeholder en sidebar del Admin-Dashboard
 
-- [ ] `Admin/Analitica/Index.vue` — Panel con gráficos reales:
-  - Préstamos por mes (últimos 6 meses) — gráfico de barras
-  - Distribución de materiales por área — gráfico de torta
-  - Socios activos vs dados de baja — gráfico de barras
-  - Top 5 materiales más prestados
-- [ ] Usar `Chart.js` (ya disponible en el proyecto) o `vue-chartjs`
-- [ ] `AdminController@analitica` — Consultas agregadas con Eloquent
+- [x] `Admin/Analitica/Index.vue` — Panel con gráficos reales:
+  - [x] Préstamos por mes (últimos 6 meses) — gráfico de barras (Chart.js)
+  - [x] Distribución de materiales por área — gráfico de barras horizontal
+  - [x] Socios activos vs dados de baja — gráfico donut
+  - [x] Top 5 materiales más prestados — ranking con badges
+  - [x] Tarjetas de totales: préstamos, activos, vencidos, materiales, socios
+- [x] Instalado `chart.js` + `vue-chartjs`
+- [x] `AnaliticaController@index` — Consultas agregadas con Eloquent
 
 ---
 
@@ -94,30 +95,77 @@
 
 > Referencia: `Settings` placeholder en sidebar del Admin-Dashboard
 
-- [ ] `Admin/Configuracion/Index.vue` — Formulario de configuración de la institución:
-  - Nombre de la institución
-  - Días máximos de préstamo (actualmente hardcodeado en 14)
-  - Días de alerta anticipada de vencimiento (actualmente hardcodeado en 4)
-  - Logo/imagen institucional
-- [ ] Tabla `configuraciones` (clave-valor por `institucion_id`) o nuevos campos en `instituciones`
-- [ ] `ConfiguracionController` — get/update
+- [x] `Admin/Configuracion/Index.vue` — Formulario de configuración de la institución:
+  - [x] Nombre de la institución (actualiza tabla `instituciones`)
+  - [x] Días máximos de préstamo (guardado en BD, referencial)
+  - [x] Días de alerta anticipada de vencimiento (guardado en BD, referencial)
+  - [x] Logo/imagen institucional (almacenado en `storage/app/public/logos/`)
+- [x] Tabla `configuraciones` (clave-valor por `institucion_id`)
+- [x] `ConfiguracionController` — get/update
 
 ---
 
 ## 6. Tareas de acceso y navegación
 
-- [ ] **Usuarios** — Definir desde dónde se accede (quitado del navbar del bibliotecario). Opciones: panel admin, configuración del sistema, o re-agregar al navbar con permiso `gestionar-usuarios`
-- [ ] **Anotaciones** — El listado `/anotaciones` no tiene acceso desde ningún punto de navegación. Agregar enlace en el footer o en el dropdown del usuario
-- [ ] **Perfil** — Verificar que el navbar del bibliotecario muestre correctamente el enlace "Mi perfil" (ya implementado pero sin test)
+- [x] **Usuarios** — Accesible desde panel admin en `/admin/usuarios`
+- [x] **Anotaciones** — Enlace agregado en el dropdown del usuario en `AppNavbar.vue` (visible con permiso `gestionar-anotaciones`)
+- [x] **Perfil** — Verificado con test: `test_authenticated_user_can_view_and_update_perfil`
 
 ---
 
 ## 7. Backlog técnico
 
-- [ ] Regenerar Swagger docs: `php artisan l5-swagger:generate` (incluir endpoint `alertas.baja-material`)
-- [ ] Agregar campo `wallpaper` (nullable) a `bibliotecarios` para foto de portada del perfil (referencia: `UserModal.tsx`)
-- [ ] Tests para las nuevas rutas: `alumno.*`, `perfil.*`, `alertas.baja-material`
-- [ ] Middleware de autorización por rol para las rutas `/admin/*` (solo `admin`) y `/alumno/*` (solo `alumno`)
+- [x] Regenerar Swagger docs: `php artisan l5-swagger:generate`
+- [x] Campo `wallpaper` (nullable) en tabla `users` + accessor `wallpaper_url` en modelo User
+- [x] Tests para nuevas rutas: `perfil.*`, `alumno.*`, middleware de roles (18/18 pasando)
+- [x] Middleware `role:alumno` en grupo `/alumno/*` y `role:admin` ya existía en `/admin/*`
+
+---
+
+## 8. Modo oscuro global (todas las vistas)
+
+- [x] Composable `useDarkMode.js` — singleton con clave `localStorage` por usuario (`eliber-dark-mode-{id}`)
+- [x] `AdminLayout.vue` — toggle en navbar, variables dark en `:global([data-theme="dark"]) .admin-shell`
+- [x] `AppNavbar.vue` (bibliotecario) — toggle `.dm-toggle` + composable
+- [x] `AppNavbarAlumno.vue` — toggle + composable
+- [x] `app.css` — bloque global `[data-theme="dark"]` cubre todas las vistas Bootstrap
+
+---
+
+## 9. Gestión de usuarios alumno (bibliotecario)
+
+- [x] `UserController` — soporte para rol alumno con `socio_id` en create/store/edit/update/index
+- [x] `Usuarios/Index.vue` — filtro por rol, columna "Socio vinculado" con badge warning si falta vínculo
+- [x] `Usuarios/Create.vue` — selector de socio dinámico al elegir rol alumno
+- [x] `Usuarios/Edit.vue` — selector de socio para alumno, badge de rol correcto, permisos solo para bibliotecario
+- [x] `AppNavbar.vue` — ítem "Usuarios" visible con permiso `gestionar-usuarios`
+- [x] Seeder — rol `bibliotecario` recibe los 8 permisos de gestión automáticamente
+- [x] Bibliotecario puede activar/desactivar usuarios (excepto admins y a sí mismo)
+
+---
+
+## 10. Registro de alertas de préstamos
+
+- [x] Migración + modelo `Alerta` con `TenantScope`
+- [x] `PrestamoService` genera alertas automáticas: `proximo_vencer`, `vencido`, `renovacion`
+- [x] `AlertaController` — index paginado con filtros, marcar leída, marcar todas leídas
+- [x] Badge en `AppNavbar` con conteo de alertas no leídas (via Inertia shared data)
+- [x] `Alertas/Index.vue` — tabla con tipo (badge color), descripción, fecha, estado, acción
+
+---
+
+## 11. Tareas pendientes
+
+### Alta prioridad
+- [ ] **Conectar parámetros operacionales**: `PrestamoService` usa `14` días hardcodeado para el límite de devolución y `HandleInertiaRequests` usa `4` días para alertas previas. Leer ambos desde `Configuracion::get(institucion_id, 'dias_prestamo', 14)` / `'dias_alerta_previa'`
+
+### Media prioridad
+- [ ] **Sidebar mobile en admin**: al reducir pantalla el sidebar desaparece sin reemplazo. Agregar botón hamburger que muestre/oculte el sidebar como drawer overlay
+- [ ] **Dark mode en Chart.js**: los gráficos de `Admin/Analitica/Index.vue` usan colores fijos, no responden al tema oscuro. Watcher en `darkMode` que actualice las opciones de Chart.js
+
+### Baja prioridad
+- [ ] **UI de wallpaper**: campo `wallpaper` existe en BD y modelo `User` pero no hay pantalla para subir/visualizar el fondo personalizado del usuario
+- [ ] **Limpiar `Admin-Dashboard/`**: directorio en la raíz del proyecto con el dashboard React de referencia (ya no necesario)
 
 ---
 

@@ -15,6 +15,12 @@
 
             <form @submit.prevent="buscar" class="form-inline mb-3">
                 <input v-model="search" type="text" class="form-control mr-2" placeholder="Nombre, email o usuario…">
+                <select v-model="rolFiltro" class="form-control mr-2" style="width:auto;">
+                    <option value="">Todos los roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="bibliotecario">Bibliotecario</option>
+                    <option value="alumno">Alumno</option>
+                </select>
                 <button type="submit" class="btn btn-outline-success mr-2">Buscar</button>
                 <Link :href="route('usuarios.index')" class="btn btn-outline-secondary">Limpiar</Link>
             </form>
@@ -27,6 +33,7 @@
                             <th>Email</th>
                             <th>Usuario</th>
                             <th>Rol</th>
+                            <th>Socio vinculado</th>
                             <th>Estado</th>
                             <th></th>
                         </tr>
@@ -37,9 +44,16 @@
                             <td>{{ u.email }}</td>
                             <td><code>{{ u.usuario }}</code></td>
                             <td>
-                                <span :class="u.rol === 'admin' ? 'badge badge-primary' : 'badge badge-secondary'">
-                                    {{ u.rol }}
+                                <span :class="badgeRol(u.rol)">{{ u.rol }}</span>
+                            </td>
+                            <td>
+                                <span v-if="u.rol === 'alumno'">
+                                    <span v-if="u.socio" class="badge badge-info">
+                                        <i class="bi bi-person-check mr-1"></i>{{ u.socio }}
+                                    </span>
+                                    <span v-else class="badge badge-warning">Sin vincular</span>
                                 </span>
+                                <span v-else class="text-muted">—</span>
                             </td>
                             <td>
                                 <span :class="u.activo ? 'badge badge-success' : 'badge badge-danger'">
@@ -53,7 +67,7 @@
                             </td>
                         </tr>
                         <tr v-if="!usuarios.data.length">
-                            <td colspan="6" class="text-center text-muted">No se encontraron usuarios.</td>
+                            <td colspan="7" class="text-center text-muted">No se encontraron usuarios.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -94,9 +108,19 @@ const props = defineProps({
     filters:  { type: Object, default: () => ({}) },
 })
 
-const search = ref(props.filters.search ?? '')
+const search   = ref(props.filters.search ?? '')
+const rolFiltro = ref(props.filters.rol ?? '')
 
 function buscar() {
-    router.get(route('usuarios.index'), { search: search.value }, { preserveState: true, replace: true })
+    router.get(route('usuarios.index'), { search: search.value, rol: rolFiltro.value }, { preserveState: true, replace: true })
+}
+
+function badgeRol(rol) {
+    return {
+        admin:        'badge badge-primary',
+        bibliotecario:'badge badge-secondary',
+        alumno:       'badge badge-success',
+        'sin rol':    'badge badge-light',
+    }[rol] ?? 'badge badge-light'
 }
 </script>

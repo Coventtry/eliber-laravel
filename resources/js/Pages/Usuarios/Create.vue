@@ -46,9 +46,21 @@
                     <label>Rol <span class="text-danger">*</span></label>
                     <select v-model="form.rol" class="form-control"
                             :class="{ 'is-invalid': form.errors.rol }">
-                        <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
+                        <option v-for="r in roles" :key="r" :value="r">{{ labelRol(r) }}</option>
                     </select>
                     <div class="invalid-feedback">{{ form.errors.rol }}</div>
+                </div>
+
+                <!-- Vinculación a socio (solo alumno) -->
+                <div v-if="form.rol === 'alumno'" class="form-group">
+                    <label>Socio vinculado</label>
+                    <select v-model="form.socio_id" class="form-control"
+                            :class="{ 'is-invalid': form.errors.socio_id }">
+                        <option :value="null">— Sin vincular —</option>
+                        <option v-for="s in socios" :key="s.id" :value="s.id">{{ s.label }}</option>
+                    </select>
+                    <small class="form-text text-muted">Vinculá el usuario al registro de socio correspondiente.</small>
+                    <div class="invalid-feedback">{{ form.errors.socio_id }}</div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-3">
@@ -69,17 +81,23 @@ import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
 
 defineProps({
-    roles: { type: Array, required: true },
+    roles:  { type: Array, required: true },
+    socios: { type: Array, default: () => [] },
 })
 
 const form = useForm({
-    nombre: '',
-    email: '',
-    usuario: '',
-    password: '',
+    nombre:                '',
+    email:                 '',
+    usuario:               '',
+    password:              '',
     password_confirmation: '',
-    rol: 'bibliotecario',
+    rol:                   'bibliotecario',
+    socio_id:              null,
 })
+
+function labelRol(r) {
+    return { admin: 'Administrador', bibliotecario: 'Bibliotecario', alumno: 'Alumno' }[r] ?? r
+}
 
 function submit() {
     form.post(route('usuarios.store'))

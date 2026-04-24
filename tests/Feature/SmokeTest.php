@@ -402,6 +402,47 @@ class SmokeTest extends TestCase
         $this->assertSame(now()->addDays(8)->toDateString(), substr($fechaDevolucion, 0, 10));
     }
 
+    public function test_authenticated_user_can_view_and_update_perfil(): void
+    {
+        $user = $this->createBibliotecario();
+
+        $this->actingAs($user)->get('/perfil')->assertOk();
+
+        $response = $this->actingAs($user)->put('/perfil', [
+            'email' => 'nuevo@test.com',
+        ]);
+
+        $response->assertRedirect(route('perfil.edit'));
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'nuevo@test.com',
+        ]);
+    }
+
+    public function test_alumno_can_access_alumno_pages(): void
+    {
+        $alumno = $this->createAlumno();
+
+        $this->actingAs($alumno)->get('/alumno/dashboard')->assertOk();
+        $this->actingAs($alumno)->get('/alumno/catalogo')->assertOk();
+        $this->actingAs($alumno)->get('/alumno/mis-reservas')->assertOk();
+    }
+
+    public function test_non_alumno_cannot_access_alumno_pages(): void
+    {
+        $bibliotecario = $this->createBibliotecario();
+
+        // El middleware role:alumno redirige si no tiene el rol
+        $this->actingAs($bibliotecario)->get('/alumno/dashboard')->assertStatus(403);
+    }
+
+    public function test_non_admin_cannot_access_admin_pages(): void
+    {
+        $alumno = $this->createAlumno();
+
+        $this->actingAs($alumno)->get('/admin/dashboard')->assertStatus(403);
+    }
+
     private function createInstitucion(): Institucion
     {
         return Institucion::create([
@@ -459,5 +500,26 @@ class SmokeTest extends TestCase
             'activo' => 1,
             'institucion_id' => $institucionId,
         ]);
+    }
+
+    private function createAlumno(): User
+    {
+        $institucion = $this->createInstitucion();
+
+        $user = User::create([
+            'name'           => 'Alumno Test',
+            'nombre'         => 'Alumno Test',
+            'email'          => 'alumno@test.com',
+            'usuario'        => 'alumno-test',
+            'password'       => 'secret123',
+            'picture'        => '',
+            'institucion_id' => $institucion->id,
+            'activo'         => true,
+        ]);
+
+        $role = Role::firstOrCreate(['name' => 'alumno', 'guard_name' => 'web']);
+        $user->assignRole($role);
+
+        return $user;
     }
 }

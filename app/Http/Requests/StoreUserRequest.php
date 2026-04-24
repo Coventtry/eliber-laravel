@@ -16,7 +16,8 @@ class StoreUserRequest extends FormRequest
             'usuario'               => 'required|string|max:255|unique:users,usuario',
             'password'              => 'required|string|min:8|confirmed',
             'password_confirmation' => 'required',
-            'rol'                   => 'required|in:admin,bibliotecario',
+            'rol'                   => 'required|in:admin,bibliotecario,alumno',
+            'socio_id'              => 'nullable|exists:socios,id',
         ];
     }
 }

@@ -18,6 +18,7 @@ class UpdateUserRequest extends FormRequest
             'usuario'               => "required|string|max:255|unique:users,usuario,{$userId}",
             'password'              => 'nullable|string|min:8|confirmed',
             'password_confirmation' => 'nullable',
+            'socio_id'              => 'nullable|exists:socios,id',
         ];
     }
 }

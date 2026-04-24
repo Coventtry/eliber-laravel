@@ -24,15 +24,26 @@
                 </ul>
 
                 <ul class="navbar-nav ml-auto align-items-center">
+                    <li class="nav-item mr-2">
+                        <button class="dm-toggle" @click="toggleDark" :title="darkMode ? 'Modo claro' : 'Modo oscuro'">
+                            <i :class="darkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+                        </button>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" data-toggle="dropdown" href="#">
-                            <template v-if="auth.user.picture_url">
-                                <img :src="auth.user.picture_url" alt="perfil" class="perfil-img mr-2">
-                            </template>
-                            <template v-else>
-                                <i class="bi bi-person-circle" style="font-size:1.5rem; color:var(--eliber-accent);"></i>
-                            </template>
-                            <span class="ms-2">{{ auth.user.nombre }}</span>
+                            <img v-if="auth.user.picture_url"
+                                :src="auth.user.picture_url"
+                                alt="perfil"
+                                class="perfil-img mr-2">
+                            <div v-else
+                                class="mr-2"
+                                style="width:36px;height:36px;border-radius:50%;background:var(--eliber-accent,#e8a020);color:#fff;font-weight:700;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid rgba(255,255,255,.3);">
+                                {{ auth.user.nombre?.charAt(0)?.toUpperCase() }}
+                            </div>
+                            <div class="d-none d-md-flex flex-column" style="line-height:1.2;">
+                                <span class="text-white font-weight-bold" style="font-size:.85rem;">{{ auth.user.nombre }}</span>
+                                <span style="font-size:.7rem;color:rgba(255,255,255,.65);">Alumno</span>
+                            </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" style="border-radius:10px; border:none; box-shadow:0 8px 25px rgba(0,0,0,.15);">
                             <h6 class="dropdown-header" style="color:var(--eliber-primary); font-weight:600;">{{ auth.user.usuario }}</h6>
@@ -56,10 +67,14 @@
 
 <script setup>
 import { usePage, Link, router } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { initDarkMode, useDarkMode } from '@/Composables/useDarkMode'
 
 const page = usePage()
 const auth = computed(() => page.props.auth)
+
+const { darkMode, toggleDark } = useDarkMode()
+onMounted(() => initDarkMode(auth.value?.user?.id ?? null))
 
 function logout() {
     router.post(route('logout'))

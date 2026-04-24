@@ -94,6 +94,21 @@ html, body {
     display: none;
 }
 
+.nav-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--eliber-accent, #e8a020);
+    color: #fff;
+    font-weight: 700;
+    font-size: .9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,.3);
+}
+
 /* ============================================================
    Jumbotron / Hero
    ============================================================ */
@@ -477,3 +492,223 @@ html, body {
     padding: 1.5rem;
     margin-top: 1.5rem;
 }
+
+/* ============================================================
+   Dark Mode Global — se activa con data-theme="dark" en <html>
+   ============================================================ */
+
+/* ── Tokens ─────────────────────────────────────────────────── */
+[data-theme="dark"] {
+    --dm-bg:           #0f172a;
+    --dm-surface:      #1e293b;
+    --dm-surface-2:    #293548;
+    --dm-border:       #334155;
+    --dm-text:         #f1f5f9;
+    --dm-text-muted:   #94a3b8;
+    --dm-input-bg:     #1e293b;
+    --dm-hover:        #334155;
+    --dm-primary:      #60a5fa;
+    --dm-primary-muted:#1e3a5f;
+}
+
+/* ── Base ───────────────────────────────────────────────────── */
+[data-theme="dark"] body {
+    background-color: var(--dm-bg);
+    color: var(--dm-text);
+}
+
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .main-container {
+    background-color: var(--dm-bg);
+    color: var(--dm-text);
+    box-shadow: none;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+[data-theme="dark"] .card {
+    background-color: var(--dm-surface) !important;
+    border-color: var(--dm-border) !important;
+    color: var(--dm-text);
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .card-footer {
+    background-color: var(--dm-surface-2) !important;
+    border-color: var(--dm-border) !important;
+    color: var(--dm-text);
+}
+[data-theme="dark"] .card-noticia {
+    background-color: var(--dm-surface) !important;
+}
+
+/* ── Tablas ─────────────────────────────────────────────────── */
+[data-theme="dark"] .table {
+    color: var(--dm-text);
+    box-shadow: none;
+}
+[data-theme="dark"] .table thead th {
+    background: var(--dm-surface-2) !important;
+    color: var(--dm-text-muted);
+    border-color: var(--dm-border);
+}
+[data-theme="dark"] .table td,
+[data-theme="dark"] .table th {
+    border-color: var(--dm-border);
+}
+[data-theme="dark"] .table tbody tr:hover {
+    background-color: var(--dm-hover);
+    transform: none;
+    color: var(--dm-text);
+}
+[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255,255,255,.03);
+}
+
+/* ── Formularios ────────────────────────────────────────────── */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .custom-select,
+[data-theme="dark"] .custom-file-label {
+    background-color: var(--dm-input-bg) !important;
+    border-color: var(--dm-border) !important;
+    color: var(--dm-text) !important;
+}
+[data-theme="dark"] .form-control:focus {
+    background-color: var(--dm-input-bg) !important;
+    border-color: var(--dm-primary) !important;
+    color: var(--dm-text) !important;
+    box-shadow: 0 0 0 .2rem rgba(96,165,250,.2) !important;
+}
+[data-theme="dark"] .form-control::placeholder { color: var(--dm-text-muted); }
+[data-theme="dark"] .form-control:disabled,
+[data-theme="dark"] .form-control[readonly] {
+    background-color: var(--dm-surface-2) !important;
+    color: var(--dm-text-muted) !important;
+}
+[data-theme="dark"] .input-group-text {
+    background-color: var(--dm-surface-2);
+    border-color: var(--dm-border);
+    color: var(--dm-text-muted);
+}
+[data-theme="dark"] label,
+[data-theme="dark"] .form-label { color: var(--dm-text); }
+[data-theme="dark"] .custom-control-label { color: var(--dm-text); }
+
+/* ── Dropdowns ──────────────────────────────────────────────── */
+[data-theme="dark"] .dropdown-menu {
+    background-color: var(--dm-surface) !important;
+    border-color: var(--dm-border) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4) !important;
+}
+[data-theme="dark"] .dropdown-item {
+    color: var(--dm-text) !important;
+}
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item:focus {
+    background-color: var(--dm-hover) !important;
+    color: var(--dm-text) !important;
+}
+[data-theme="dark"] .dropdown-divider { border-color: var(--dm-border); }
+[data-theme="dark"] .dropdown-header { color: var(--dm-text-muted); }
+
+/* ── Modales ────────────────────────────────────────────────── */
+[data-theme="dark"] .modal-content {
+    background-color: var(--dm-surface) !important;
+    border-color: var(--dm-border) !important;
+    color: var(--dm-text);
+}
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+    border-color: var(--dm-border) !important;
+}
+[data-theme="dark"] .modal-header .close,
+[data-theme="dark"] .close {
+    color: var(--dm-text) !important;
+    opacity: .7;
+}
+
+/* ── List groups ────────────────────────────────────────────── */
+[data-theme="dark"] .list-group-item {
+    background-color: var(--dm-surface);
+    border-color: var(--dm-border);
+    color: var(--dm-text);
+}
+[data-theme="dark"] .list-group-item:hover,
+[data-theme="dark"] .list-group-item.active {
+    background-color: var(--dm-hover);
+    border-color: var(--dm-border);
+}
+
+/* ── Nav tabs ───────────────────────────────────────────────── */
+[data-theme="dark"] .nav-tabs { border-color: var(--dm-border); }
+[data-theme="dark"] .nav-tabs .nav-link {
+    color: var(--dm-text-muted);
+    border-color: transparent;
+}
+[data-theme="dark"] .nav-tabs .nav-link:hover {
+    border-color: var(--dm-border) var(--dm-border) transparent;
+    color: var(--dm-text);
+}
+[data-theme="dark"] .nav-tabs .nav-link.active {
+    background-color: var(--dm-surface) !important;
+    border-color: var(--dm-border) var(--dm-border) var(--dm-surface) !important;
+    color: var(--dm-text) !important;
+}
+
+/* ── Badges y alerts ────────────────────────────────────────── */
+[data-theme="dark"] .badge-light,
+[data-theme="dark"] .badge-secondary {
+    background-color: var(--dm-surface-2) !important;
+    color: var(--dm-text-muted) !important;
+}
+[data-theme="dark"] .alert-light {
+    background-color: var(--dm-surface-2);
+    border-color: var(--dm-border);
+    color: var(--dm-text);
+}
+[data-theme="dark"] .bg-light,
+[data-theme="dark"] .bg-white {
+    background-color: var(--dm-surface) !important;
+}
+[data-theme="dark"] .bg-secondary { background-color: var(--dm-surface-2) !important; }
+
+/* ── Bordes y texto ─────────────────────────────────────────── */
+[data-theme="dark"] .border,
+[data-theme="dark"] .border-bottom,
+[data-theme="dark"] .border-top,
+[data-theme="dark"] .border-left,
+[data-theme="dark"] .border-right {
+    border-color: var(--dm-border) !important;
+}
+[data-theme="dark"] .text-muted { color: var(--dm-text-muted) !important; }
+[data-theme="dark"] h1,[data-theme="dark"] h2,[data-theme="dark"] h3,
+[data-theme="dark"] h4,[data-theme="dark"] h5,[data-theme="dark"] h6 {
+    color: var(--dm-text);
+}
+[data-theme="dark"] p,[data-theme="dark"] span,[data-theme="dark"] li,
+[data-theme="dark"] small,[data-theme="dark"] .small { color: inherit; }
+[data-theme="dark"] .text-dark { color: var(--dm-text) !important; }
+[data-theme="dark"] hr { border-color: var(--dm-border); }
+
+/* ── Kanban ─────────────────────────────────────────────────── */
+[data-theme="dark"] .kanban-column  { background: var(--dm-surface-2); }
+[data-theme="dark"] .kanban-card    { background: var(--dm-surface); border-color: var(--dm-border); color: var(--dm-text); }
+[data-theme="dark"] .kanban-empty   { color: var(--dm-text-muted); }
+[data-theme="dark"] .kanban-over    { background: var(--dm-primary-muted) !important; }
+
+/* ── Dark mode toggle (botón compartido) ─────────────────────── */
+.dm-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.15);
+    color: #fbbf24;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    flex-shrink: 0;
+}
+.dm-toggle:hover { background: rgba(255,255,255,.22); transform: scale(1.05); }
