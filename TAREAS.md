@@ -164,6 +164,6 @@
 - [x] **Dark mode en Chart.js**: opciones y colores de Bar/Doughnut en `Analitica/Index.vue` son `computed` reactivos a `darkMode`. Grilla, ticks y barras cambian automáticamente.
 
 ### Baja prioridad
-- [ ] **UI de wallpaper**: campo `wallpaper` existe en BD y modelo `User` pero no hay pantalla para subir/visualizar el fondo personalizado del usuario
-- [ ] **Limpiar `Admin-Dashboard/`**: directorio en la raíz del proyecto con el dashboard React de referencia (ya no necesario)
+- [x] **UI de wallpaper**: banner de portada en `Perfil/Edit.vue` con preview, botón de cámara inline y upload. `PerfilController` guarda en `storage/wallpapers/`.
+- [x] **Limpiar `Admin-Dashboard/`**: agregado a `.gitignore`, ya no aparece en git status.
 
