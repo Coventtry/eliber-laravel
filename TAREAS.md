@@ -154,16 +154,22 @@
 
 ---
 
-## 11. Tareas pendientes
+## 11. Correcciones y mejoras de flujo
 
-### Alta prioridad
-- [x] **Conectar parámetros operacionales**: `PrestamoService` lee `dias_prestamo` y `HandleInertiaRequests` lee `dias_alerta_previa` desde `Configuracion` por `institucion_id`, con fallback a 14 y 4 respectivamente.
+### Alta prioridad — completado
+- [x] **Conectar parámetros operacionales**: `PrestamoService` y `HandleInertiaRequests` leen `dias_prestamo` y `dias_alerta_previa` desde `Configuracion`.
+- [x] **Logout → landing**: `AuthenticatedSessionController` redirige a `route('landing')` después de cerrar sesión.
+- [x] **Catálogo con búsqueda y reserva**: filtros por título/autor/área + botón "Reservar" por card. `AlumnoController::reservar()` y `cancelarReserva()` como rutas web.
+- [x] **MisReservas con Cancelar**: botón "Cancelar" para reservas en estado pendiente/aprobada.
 
-### Media prioridad
-- [x] **Sidebar mobile en admin**: hamburger en navbar abre/cierra sidebar como drawer overlay con backdrop. Transición con `translateX`.
-- [x] **Dark mode en Chart.js**: opciones y colores de Bar/Doughnut en `Analitica/Index.vue` son `computed` reactivos a `darkMode`. Grilla, ticks y barras cambian automáticamente.
+### Media prioridad — completado
+- [x] **Sidebar mobile en admin**: hamburger + drawer overlay con `translateX`.
+- [x] **Dark mode en Chart.js**: opciones reactivas al `darkMode` composable.
+- [x] **Navegación pública**: `PublicNavbar.vue` con links a FAQs/Acerca/Ingresar; Landing, Acerca y FAQs lo usan. Login tiene "Volver al inicio".
+- [x] **Badge días dinámico en Admin Dashboard**: lee `dias_alerta_previa` desde `Configuracion`.
 
-### Baja prioridad
-- [x] **UI de wallpaper**: banner de portada en `Perfil/Edit.vue` con preview, botón de cámara inline y upload. `PerfilController` guarda en `storage/wallpapers/`.
-- [x] **Limpiar `Admin-Dashboard/`**: agregado a `.gitignore`, ya no aparece en git status.
+### Baja prioridad — completado
+- [x] **UI de wallpaper**: banner de portada en `Perfil/Edit.vue`.
+- [x] **CTA alumno sin socio**: card informativa con atajo al catálogo en lugar de `alert-warning` simple.
+- [x] **Limpiar `Admin-Dashboard/`**: agregado a `.gitignore`.
 
