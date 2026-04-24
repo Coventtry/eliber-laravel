@@ -4,6 +4,11 @@
         <!-- Navbar top -->
         <nav class="admin-navbar d-flex align-items-center px-3">
 
+            <!-- Hamburger (mobile) -->
+            <button class="sidebar-hamburger d-md-none mr-2" @click="sidebarOpen = !sidebarOpen" aria-label="Menú">
+                <i :class="sidebarOpen ? 'bi bi-x-lg' : 'bi bi-list'"></i>
+            </button>
+
             <!-- Brand -->
             <Link :href="route('admin.dashboard')" class="admin-brand d-flex align-items-center mr-auto">
                 <img src="/img/logo.png" alt="E-liber" height="30">
@@ -53,8 +58,11 @@
             </div>
         </nav>
 
+        <!-- Overlay backdrop (mobile) -->
+        <div v-if="sidebarOpen" class="sidebar-overlay d-md-none" @click="sidebarOpen = false"></div>
+
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" :class="{ 'sidebar-open': sidebarOpen }">
             <nav class="d-flex flex-column h-100 pt-2 pb-3">
                 <template v-for="item in menuItems" :key="item.name ?? item.label">
                     <div v-if="item.separator" class="admin-menu-sep">{{ item.label }}</div>
@@ -84,13 +92,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { usePage, Link, router } from '@inertiajs/vue3'
 import FlashMessage from '@/Components/FlashMessage.vue'
 import { initDarkMode, useDarkMode } from '@/Composables/useDarkMode'
 
-const page = usePage()
-const auth = computed(() => page.props.auth)
+const page        = usePage()
+const auth        = computed(() => page.props.auth)
+const sidebarOpen = ref(false)
 
 const { darkMode, toggleDark } = useDarkMode()
 
@@ -318,9 +327,45 @@ const menuItems = computed(() => [
     transition: background .2s, color .2s;
 }
 
+/* ── Hamburger ───────────────────────────────────────────────────────────── */
+.sidebar-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.15);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+.sidebar-hamburger:hover { background: rgba(255,255,255,.22); }
+
+/* ── Overlay ─────────────────────────────────────────────────────────────── */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 1029;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-    .admin-sidebar { display: none; }
+@media (max-width: 767px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+        z-index: 1030;
+    }
+    .admin-sidebar.sidebar-open {
+        transform: translateX(0);
+    }
     .admin-content { margin-left: 0; }
+}
+@media (min-width: 768px) {
+    .admin-sidebar { transform: none !important; }
 }
 </style>
