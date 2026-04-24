@@ -22,6 +22,7 @@ class User extends Authenticatable
         'usuario',
         'password',
         'picture',
+        'wallpaper',
         'telefono',
         'activo',
         'institucion_id',
@@ -44,8 +45,18 @@ class User extends Authenticatable
 
     public function getPictureUrlAttribute(): ?string
     {
-        if ($this->picture && Storage::disk('public')->exists('uploads/' . $this->picture)) {
-            return Storage::disk('public')->url('uploads/' . $this->picture);
+        $file = trim((string) $this->picture);
+        if ($file && Storage::disk('public')->exists('uploads/' . $file)) {
+            return asset('storage/uploads/' . $file);
+        }
+        return null;
+    }
+
+    public function getWallpaperUrlAttribute(): ?string
+    {
+        $file = trim((string) $this->wallpaper);
+        if ($file && Storage::disk('public')->exists('wallpapers/' . $file)) {
+            return asset('storage/wallpapers/' . $file);
         }
         return null;
     }

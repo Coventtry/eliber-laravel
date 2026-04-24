@@ -178,7 +178,9 @@ class AdminController extends Controller
 
     public function destroyUsuario(User $user): RedirectResponse
     {
-        abort_if($user->id === auth()->id(), 403, 'No podés eliminarte a vos mismo.');
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'No podés eliminar tu propio usuario.');
+        }
         $nombre = $user->nombre;
         if ($user->picture) {
             Storage::disk('public')->delete('uploads/' . $user->picture);
@@ -189,8 +191,11 @@ class AdminController extends Controller
 
     public function toggleActivoUsuario(User $user): RedirectResponse
     {
-        abort_if($user->id === auth()->id(), 403, 'No podés desactivarte a vos mismo.');
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'No podés desactivar tu propio usuario.');
+        }
         $user->update(['activo' => !$user->activo]);
-        return back()->with('success', $user->activo ? 'Usuario activado.' : 'Usuario desactivado.');
+        return redirect()->route('admin.usuarios')
+            ->with('success', $user->activo ? 'Usuario activado.' : 'Usuario desactivado.');
     }
 }

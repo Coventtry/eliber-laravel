@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Socio;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,28 +29,33 @@ class UserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
-        $usuarios = User::with('roles')
+        $usuarios = User::with(['roles', 'socio'])
             ->where('institucion_id', auth()->user()->institucion_id)
             ->when($request->search, fn($q, $s) =>
                 $q->where('nombre', 'like', "%{$s}%")
                   ->orWhere('email', 'like', "%{$s}%")
                   ->orWhere('usuario', 'like', "%{$s}%")
             )
+            ->when($request->rol, fn($q, $r) =>
+                $q->whereHas('roles', fn($rq) => $rq->where('name', $r))
+            )
             ->orderBy('nombre')
             ->paginate(20)
             ->withQueryString()
             ->through(fn($u) => [
-                'id'      => $u->id,
-                'nombre'  => $u->nombre,
-                'email'   => $u->email,
-                'usuario' => $u->usuario,
-                'activo'  => $u->activo,
-                'rol'     => $u->roles->first()?->name ?? 'sin rol',
+                'id'       => $u->id,
+                'nombre'   => $u->nombre,
+                'email'    => $u->email,
+                'usuario'  => $u->usuario,
+                'activo'   => $u->activo,
+                'rol'      => $u->roles->first()?->name ?? 'sin rol',
+                'socio_id' => $u->socio_id,
+                'socio'    => $u->socio ? $u->socio->nombre . ' ' . $u->socio->apellido : null,
             ]);
 
         return Inertia::render('Usuarios/Index', [
             'usuarios' => $usuarios,
-            'filters'  => $request->only(['search']),
+            'filters'  => $request->only(['search', 'rol']),
         ]);
     }
 
@@ -57,8 +63,21 @@ class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
+        $vinculados = User::whereNotNull('socio_id')->pluck('socio_id')->toArray();
+
+        $socios = Socio::where('institucion_id', auth()->user()->institucion_id)
+            ->orderBy('apellido')->orderBy('nombre')
+            ->get(['id', 'nombre', 'apellido', 'activo'])
+            ->map(fn($s) => [
+                'id'    => $s->id,
+                'label' => $s->apellido . ', ' . $s->nombre
+                    . (!$s->activo ? ' (inactivo)' : '')
+                    . (in_array($s->id, $vinculados) ? ' ⚠ ya vinculado' : ''),
+            ]);
+
         return Inertia::render('Usuarios/Create', [
-            'roles' => ['admin', 'bibliotecario'],
+            'roles'  => ['admin', 'bibliotecario', 'alumno'],
+            'socios' => $socios,
         ]);
     }
 
@@ -74,6 +93,7 @@ class UserController extends Controller
             'password'       => $request->password,
             'institucion_id' => auth()->user()->institucion_id,
             'activo'         => true,
+            'socio_id'       => $request->rol === 'alumno' ? $request->socio_id : null,
         ]);
 
         $user->assignRole($request->rol ?? 'bibliotecario');
@@ -85,12 +105,35 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
 
+        $esAlumno = $user->hasRole('alumno');
+
+        $vinculadosOtros = User::whereNotNull('socio_id')
+            ->where('id', '!=', $user->id)
+            ->pluck('socio_id')->toArray();
+
+        $socios = $esAlumno
+            ? Socio::where('institucion_id', auth()->user()->institucion_id)
+                ->orderBy('apellido')->orderBy('nombre')
+                ->get(['id', 'nombre', 'apellido', 'activo'])
+                ->map(fn($s) => [
+                    'id'    => $s->id,
+                    'label' => $s->apellido . ', ' . $s->nombre
+                        . (!$s->activo ? ' (inactivo)' : '')
+                        . (in_array($s->id, $vinculadosOtros) ? ' ⚠ ya vinculado' : ''),
+                ])
+            : collect();
+
         return Inertia::render('Usuarios/Edit', [
-            'usuario'          => $user->only('id', 'nombre', 'email', 'usuario', 'activo'),
+            'usuario'          => array_merge(
+                $user->only('id', 'nombre', 'email', 'usuario', 'activo', 'socio_id'),
+                ['rol' => $user->roles->first()?->name ?? 'sin rol']
+            ),
             'permisos_usuario' => $user->getDirectPermissions()->pluck('name'),
             'todos_permisos'   => self::PERMISOS_ADMINISTRATIVOS,
             'es_admin_target'  => $user->hasRole('admin'),
+            'es_alumno_target' => $esAlumno,
             'es_yo'            => $user->id === auth()->id(),
+            'socios'           => $socios,
         ]);
     }
 
@@ -103,6 +146,10 @@ class UserController extends Controller
 
         if ($request->filled('password')) {
             $data['password'] = $request->password;
+        }
+
+        if ($user->hasRole('alumno')) {
+            $data['socio_id'] = $request->socio_id;
         }
 
         $user->update($data);
@@ -127,12 +174,20 @@ class UserController extends Controller
 
     public function toggleActivo(User $user): RedirectResponse
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
-        abort_if($user->id === auth()->id(), 403, 'No podés desactivarte a vos mismo.');
+        $me = auth()->user();
+
+        if (!$me->hasRole('admin') && !$me->hasRole('bibliotecario')) {
+            return back()->with('error', 'No tenés permiso para realizar esta acción.');
+        }
+        if ($user->id === $me->id) {
+            return back()->with('error', 'No podés desactivar tu propio usuario.');
+        }
+        if ($user->hasRole('admin') && !$me->hasRole('admin')) {
+            return back()->with('error', 'Solo un administrador puede desactivar a otro administrador.');
+        }
 
         $user->update(['activo' => !$user->activo]);
-        $msg = $user->activo ? 'Usuario activado.' : 'Usuario desactivado.';
-
-        return back()->with('success', $msg);
+        return redirect()->route('usuarios.edit', $user->id)
+            ->with('success', $user->activo ? 'Usuario activado.' : 'Usuario desactivado.');
     }
 }

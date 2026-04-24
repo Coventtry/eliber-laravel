@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Alerta;
+use App\Models\FooterLink;
 use App\Services\PrestamoService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -18,13 +19,29 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        $vencimientos = 0;
+        $vencimientos    = 0;
         $alertasNoLeidas = 0;
+        $anuncio         = null;
+        $footerLinks     = [];
         $user = $request->user();
 
         if ($user) {
             $vencimientos    = app(PrestamoService::class)->obtenerVencimientosProximos(4)->count();
             $alertasNoLeidas = Alerta::noLeidas()->count();
+
+            $institucion = $user->institucion;
+            if ($institucion) {
+                if ($institucion->anuncio_activo && $institucion->anuncio_texto) {
+                    $anuncio = [
+                        'texto'  => $institucion->anuncio_texto,
+                        'estilo' => $institucion->anuncio_estilo ?? 'info',
+                    ];
+                }
+                $footerLinks = FooterLink::where('institucion_id', $user->institucion_id)
+                    ->orderBy('orden')->orderBy('id')
+                    ->get(['id', 'label', 'url'])
+                    ->toArray();
+            }
         }
 
         return array_merge(parent::share($request), [
@@ -46,6 +63,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'vencimientos_proximos'  => $vencimientos,
             'alertas_no_leidas'      => $alertasNoLeidas,
+            'anuncio'                => $anuncio,
+            'footer_links'           => $footerLinks,
         ]);
     }
 

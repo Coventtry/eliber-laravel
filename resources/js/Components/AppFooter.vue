@@ -8,6 +8,11 @@
                         <li><Link :href="route('dashboard')">Inicio</Link></li>
                         <li><Link :href="route('acerca')">Acerca del proyecto</Link></li>
                         <li><Link :href="route('faqs')">FAQs</Link></li>
+                        <template v-if="footerLinks.length">
+                            <li v-for="link in footerLinks" :key="link.id">
+                                <a :href="link.url" target="_blank" rel="noopener">{{ link.label }}</a>
+                            </li>
+                        </template>
                     </ul>
                 </div>
                 <div class="col-md-4 footer-section">
@@ -88,9 +93,10 @@ import { usePage, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import { Link } from '@inertiajs/vue3'
 
-const year = new Date().getFullYear()
-const page = usePage()
-const auth = computed(() => page.props.auth?.user ?? null)
+const year        = new Date().getFullYear()
+const page        = usePage()
+const auth        = computed(() => page.props.auth?.user ?? null)
+const footerLinks = computed(() => page.props.footer_links ?? [])
 
 const modalNota = ref(false)
 const textoNota = ref('')

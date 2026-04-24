@@ -30,7 +30,7 @@ class Noticia extends Model
     {
         if (!$this->imagen) return null;
         return \Storage::disk('public')->exists('noticias/' . $this->imagen)
-            ? \Storage::disk('public')->url('noticias/' . $this->imagen)
+            ? asset('storage/noticias/' . $this->imagen)
             : null;
     }
 }

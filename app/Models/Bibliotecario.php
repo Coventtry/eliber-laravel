@@ -40,7 +40,7 @@ class Bibliotecario extends Authenticatable
     public function getPictureUrlAttribute(): ?string
     {
         if ($this->picture && \Storage::disk('public')->exists('uploads/' . $this->picture)) {
-            return \Storage::disk('public')->url('uploads/' . $this->picture);
+            return asset('storage/uploads/' . $this->picture);
         }
         return null;
     }

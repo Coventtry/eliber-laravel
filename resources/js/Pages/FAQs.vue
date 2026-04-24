@@ -13,6 +13,23 @@
     <div class="container page-content py-5">
         <div class="row">
             <div class="col-lg-8 mx-auto">
+                <!-- FAQs dinámicas desde BD -->
+                <template v-if="faqs && faqs.length">
+                    <div
+                        v-for="faq in faqs"
+                        :key="faq.id"
+                        class="card shadow-sm mb-3"
+                        style="border-radius:12px;"
+                    >
+                        <div class="card-body">
+                            <h5 class="mb-2" style="color:var(--eliber-primary);font-size:1rem;">{{ faq.pregunta }}</h5>
+                            <p class="mb-0 text-muted" style="font-size:.9rem;">{{ faq.respuesta }}</p>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Contenido estático de fallback -->
+                <template v-else>
                 <div class="card shadow-sm mb-4" style="border-radius: 12px;">
                     <div class="card-body">
                         <h4 class="mb-3" style="color: var(--eliber-primary);">Requisitos Previos</h4>
@@ -43,17 +60,6 @@
 
                 <div class="card shadow-sm mb-4" style="border-radius: 12px;">
                     <div class="card-body">
-                        <h4 class="mb-3" style="color: var(--eliber-primary);">Credenciales por Defecto</h4>
-                        <p>Después de ejecutar los seeders:</p>
-                        <ul>
-                            <li><strong>Usuario:</strong> admin</li>
-                            <li><strong>Contraseña:</strong> password</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm mb-4" style="border-radius: 12px;">
-                    <div class="card-body">
                         <h4 class="mb-3" style="color: var(--eliber-primary);">¿Cómo obtener ayuda?</h4>
                         <p>Si tienes más preguntas, puedes:</p>
                         <ul>
@@ -62,6 +68,7 @@
                         </ul>
                     </div>
                 </div>
+                </template>
             </div>
         </div>
     </div>
@@ -70,6 +77,11 @@
 </template>
 
 <script setup>
+import { Head } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
+
+defineProps({
+    faqs: { type: Array, default: () => [] },
+})
 </script>

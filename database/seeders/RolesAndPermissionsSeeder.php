@@ -31,7 +31,17 @@ class RolesAndPermissionsSeeder extends Seeder
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->givePermissionTo(Permission::all());
 
-        Role::firstOrCreate(['name' => 'bibliotecario', 'guard_name' => 'web']);
+        $bibliotecario = Role::firstOrCreate(['name' => 'bibliotecario', 'guard_name' => 'web']);
+        $bibliotecario->givePermissionTo([
+            'gestionar-usuarios',
+            'gestionar-materiales',
+            'gestionar-socios',
+            'gestionar-prestamos',
+            'gestionar-areas',
+            'gestionar-noticias',
+            'gestionar-anotaciones',
+            'ver-reportes',
+        ]);
 
         $alumno = Role::firstOrCreate(['name' => 'alumno', 'guard_name' => 'web']);
         $alumno->givePermissionTo([

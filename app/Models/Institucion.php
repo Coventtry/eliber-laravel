@@ -12,11 +12,17 @@ class Institucion extends Model
 
     protected $table = 'instituciones';
 
-    protected $fillable = ['nombre', 'slug', 'estado'];
+    protected $fillable = [
+        'nombre', 'slug', 'estado',
+        'anuncio_texto', 'anuncio_estilo', 'anuncio_activo',
+    ];
 
     protected function casts(): array
     {
-        return ['estado' => 'boolean'];
+        return [
+            'estado'         => 'boolean',
+            'anuncio_activo' => 'boolean',
+        ];
     }
 
     public function usuarios(): HasMany
