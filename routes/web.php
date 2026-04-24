@@ -10,6 +10,7 @@ use App\Http\Controllers\NoticiaController;
 use App\Http\Controllers\AnotacionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Landing page - pública
@@ -46,6 +47,12 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('noticias', NoticiaController::class);
     Route::resource('anotaciones', AnotacionController::class)->only(['index', 'create', 'store']);
+
+    Route::resource('usuarios', UserController::class)
+        ->parameters(['usuarios' => 'user'])
+        ->only(['index', 'create', 'store', 'edit', 'update']);
+    Route::patch('usuarios/{user}/permisos', [UserController::class, 'updatePermisos'])->name('usuarios.permisos');
+    Route::patch('usuarios/{user}/toggle-activo', [UserController::class, 'toggleActivo'])->name('usuarios.toggle-activo');
 
     // AJAX endpoints
     Route::get('api/socios/buscar', [SocioController::class, 'buscar'])->name('api.socios.buscar');

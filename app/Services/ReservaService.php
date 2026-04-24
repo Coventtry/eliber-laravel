@@ -34,6 +34,7 @@ class ReservaService
                 'estado' => 'pendiente',
                 'fecha_reserva' => now(),
                 'fecha_vencimiento' => now()->addDays(2),
+                'institucion_id' => auth()->user()->institucion_id,
             ]);
 
             $material->increment('disponibilidad_reservada');

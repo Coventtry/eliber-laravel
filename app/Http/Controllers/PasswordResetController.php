@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bibliotecario;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 
 class PasswordResetController extends Controller
 {
@@ -18,7 +15,7 @@ class PasswordResetController extends Controller
     public function reset(Request $request)
     {
         $request->validate([
-            'usuario' => 'required|string|exists:bibliotecarios,usuario',
+            'usuario' => 'required|string|exists:users,usuario',
             'password' => 'required|string|min:6|confirmed',
         ], [
             'usuario.exists' => 'El usuario no existe.',
@@ -26,14 +23,14 @@ class PasswordResetController extends Controller
             'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
-        $bibliotecario = Bibliotecario::where('usuario', $request->usuario)->first();
+        $user = User::where('usuario', $request->usuario)->first();
 
-        if (!$bibliotecario) {
+        if (!$user) {
             return back()->withErrors(['usuario' => 'El usuario no existe.']);
         }
 
-        $bibliotecario->password = $request->password;
-        $bibliotecario->save();
+        $user->password = $request->password;
+        $user->save();
 
         return redirect()->route('login')->with('success', 'Contraseña restablecida correctamente. Podés iniciar sesión.');
     }

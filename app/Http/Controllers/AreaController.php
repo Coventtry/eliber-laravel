@@ -24,6 +24,7 @@ class AreaController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Area::class);
         $request->validate([
             'codigo_dewey' => 'required|string|max:50|unique:areas',
             'nombre'       => 'required|string|max:255|unique:areas',
@@ -44,6 +45,7 @@ class AreaController extends Controller
 
     public function update(Request $request, Area $area): RedirectResponse
     {
+        $this->authorize('update', $area);
         $request->validate([
             'codigo_dewey' => 'required|string|max:50|unique:areas,codigo_dewey,' . $area->id,
             'nombre'       => 'required|string|max:255|unique:areas,nombre,' . $area->id,
@@ -56,6 +58,7 @@ class AreaController extends Controller
 
     public function destroy(Area $area): RedirectResponse
     {
+        $this->authorize('delete', $area);
         $area->delete();
         return redirect()->route('areas.index')->with('success', 'Área eliminada.');
     }

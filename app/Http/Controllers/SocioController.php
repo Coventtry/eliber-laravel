@@ -40,6 +40,7 @@ class SocioController extends Controller
 
     public function store(StoreSocioRequest $request): RedirectResponse
     {
+        $this->authorize('create', Socio::class);
         Socio::create([
             ...$request->validated(),
             'institucion_id' => $request->user()->institucion_id,
@@ -57,24 +58,28 @@ class SocioController extends Controller
 
     public function update(StoreSocioRequest $request, Socio $socio): RedirectResponse
     {
+        $this->authorize('update', $socio);
         $socio->update($request->validated());
         return redirect()->route('socios.index')->with('success', 'Socio actualizado.');
     }
 
     public function destroy(Socio $socio): RedirectResponse
     {
+        $this->authorize('delete', $socio);
         $socio->delete();
         return redirect()->route('socios.index')->with('success', 'Socio eliminado.');
     }
 
     public function baja(Request $request, Socio $socio): RedirectResponse
     {
+        $this->authorize('update', $socio);
         $this->socioService->darDeBaja($socio, $request->input('observaciones', ''));
         return redirect()->route('socios.index')->with('success', 'Socio dado de baja.');
     }
 
     public function reactivar(Socio $socio): RedirectResponse
     {
+        $this->authorize('update', $socio);
         $this->socioService->reactivar($socio);
         return redirect()->route('socios.index')->with('success', 'Socio reactivado.');
     }

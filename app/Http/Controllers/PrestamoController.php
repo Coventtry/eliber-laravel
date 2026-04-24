@@ -45,6 +45,7 @@ class PrestamoController extends Controller
 
     public function store(StorePrestamoRequest $request): RedirectResponse
     {
+        $this->authorize('create', Prestamo::class);
         try {
             $prestamo = $this->prestamoService->crearPrestamo(
                 $request->socio_id,
@@ -68,6 +69,7 @@ class PrestamoController extends Controller
 
     public function devolver(Prestamo $prestamo): RedirectResponse
     {
+        $this->authorize('update', $prestamo);
         if ($prestamo->estado === 'devuelto') {
             return back()->withErrors(['prestamo' => 'Este préstamo ya fue devuelto.']);
         }
@@ -78,6 +80,7 @@ class PrestamoController extends Controller
 
     public function extender(Request $request, Prestamo $prestamo): RedirectResponse
     {
+        $this->authorize('update', $prestamo);
         $request->validate(['dias' => 'required|integer|min:1|max:30']);
 
         try {

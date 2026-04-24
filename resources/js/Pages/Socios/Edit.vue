@@ -69,9 +69,14 @@
             <!-- Baja / Reactivar -->
             <div class="d-flex justify-content-between align-items-center">
                 <div v-if="socio.activo">
-                    <button class="btn btn-outline-danger" data-toggle="modal" data-target="#modalBaja">
+                    <button class="btn btn-outline-danger" @click="showBajaConfirm = true">
                         <i class="bi bi-person-dash mr-1"></i>Dar de baja
                     </button>
+                    <div v-if="showBajaConfirm" class="mt-2 p-3 border rounded">
+                        <p class="mb-2">¿Dar de baja a {{ socio.nombre }} {{ socio.apellido }}?</p>
+                        <button class="btn btn-secondary btn-sm mr-2" @click="showBajaConfirm = false">Cancelar</button>
+                        <button class="btn btn-danger btn-sm" @click="confirmBaja">Confirmar</button>
+                    </div>
                 </div>
                 <div v-else>
                     <form @submit.prevent="reactivar">
@@ -81,15 +86,6 @@
                     </form>
                 </div>
             </div>
-
-            <!-- Modal baja -->
-            <ConfirmModal
-                modal-id="modalBaja"
-                title="Dar de baja"
-                :message="`¿Dar de baja a ${socio.nombre} ${socio.apellido}?`"
-                confirm-text="Confirmar baja"
-                @confirmed="darDeBaja"
-            />
 
             <!-- Historial -->
             <div v-if="historial.length" class="mt-4">
@@ -110,11 +106,11 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
-import ConfirmModal from '@/Components/ConfirmModal.vue'
 
 const props = defineProps({
     socio:    { type: Object, required: true },
@@ -122,12 +118,14 @@ const props = defineProps({
 })
 
 const form = useForm({ ...props.socio })
+const showBajaConfirm = ref(false)
 
 function submit() {
     form.put(route('socios.update', props.socio.id))
 }
 
-function darDeBaja() {
+function confirmBaja() {
+    console.log('confirmBaja called for socio:', props.socio.id)
     router.patch(route('socios.baja', props.socio.id))
 }
 
