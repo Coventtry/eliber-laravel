@@ -38,8 +38,9 @@ class AuthenticatedSessionController extends Controller
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+            $revisor = $usuario->hasRole('bibliotecario') ? 'el administrador' : 'el bibliotecario';
             return back()
-                ->withErrors(['usuario' => 'Tu cuenta está pendiente de aprobación por el bibliotecario.'])
+                ->withErrors(['usuario' => "Tu cuenta está pendiente de aprobación por {$revisor}."])
                 ->onlyInput('usuario');
         }
 
