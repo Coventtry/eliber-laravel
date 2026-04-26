@@ -15,9 +15,9 @@
 
         <!-- Solicitudes pendientes de bibliotecarios -->
         <div v-if="pendientes.length" class="card border-warning mb-4">
-            <div class="card-header d-flex align-items-center py-2" style="background:#fff8e1;">
-                <i class="bi bi-hourglass-split text-warning mr-2"></i>
-                <strong class="text-warning">Solicitudes de acceso pendientes</strong>
+            <div class="card-header d-flex align-items-center py-2 pendientes-header">
+                <i class="bi bi-hourglass-split mr-2" style="color: #d97706;"></i>
+                <strong>Solicitudes de acceso pendientes</strong>
                 <span class="badge badge-warning ml-2">{{ pendientes.length }}</span>
             </div>
             <div class="table-responsive">
