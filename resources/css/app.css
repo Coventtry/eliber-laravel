@@ -774,6 +774,15 @@ select.form-control {
 [data-theme="dark"] .kanban-empty   { color: var(--dm-text-muted); }
 [data-theme="dark"] .kanban-over    { background: var(--dm-primary-muted) !important; }
 
+/* ── Dropdown usuario en navbar ─────────────────────────────── */
+.navbar-dropdown-user {
+    color: var(--eliber-primary);
+    font-weight: 600;
+}
+[data-theme="dark"] .navbar-dropdown-user {
+    color: #fff !important;
+}
+
 /* ── Cabecera de solicitudes pendientes ─────────────────────── */
 .pendientes-header {
     background: #fff8e1 !important;
