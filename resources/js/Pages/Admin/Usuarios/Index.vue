@@ -131,10 +131,12 @@
                                 <button class="btn btn-sm btn-outline-primary mr-1" @click="abrirModal(u)" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-secondary mr-1"
+                                <button v-if="u.rol === 'bibliotecario'"
+                                    class="btn btn-sm btn-outline-secondary mr-1"
                                     @click="toggleActivo(u)" :title="u.activo ? 'Desactivar' : 'Activar'">
                                     <i :class="['bi', u.activo ? 'bi-toggle-on text-success' : 'bi-toggle-off']"></i>
                                 </button>
+                                <span v-else class="mr-1" style="display:inline-block;width:31px;"></span>
                                 <button class="btn btn-sm btn-outline-danger" @click="confirmarEliminar(u)" title="Eliminar">
                                     <i class="bi bi-trash"></i>
                                 </button>

@@ -219,6 +219,9 @@ class AdminController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error', 'No podés desactivar tu propio usuario.');
         }
+        if (!$user->hasRole('bibliotecario')) {
+            return back()->with('error', 'Solo se puede activar/desactivar a bibliotecarios desde este panel.');
+        }
         $user->update(['activo' => !$user->activo]);
         return redirect()->route('admin.usuarios')
             ->with('success', $user->activo ? 'Usuario activado.' : 'Usuario desactivado.');
