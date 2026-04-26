@@ -7,7 +7,7 @@
             <h3 class="mb-4"><i class="bi bi-book-plus mr-2"></i>Nuevo material</h3>
             <FlashMessage />
 
-            <form @submit.prevent="submit">
+            <form @enviar.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-8">
                         <label>Título <span class="text-danger">*</span></label>
@@ -87,14 +87,14 @@
                                    @input="actualizarClasificacion">
                         </div>
                     </div>
-                    <div v-if="clasificacionPreview" class="alert alert-light">
-                        Código de ubicación: <strong>{{ clasificacionPreview }}</strong>
+                    <div v-if="previsualizacionClasificacion" class="alert alert-light">
+                        Código de ubicación: <strong>{{ previsualizacionClasificacion }}</strong>
                     </div>
                 </fieldset>
 
                 <div class="d-flex justify-content-between">
                     <Link :href="route('materiales.index')" class="btn btn-outline-secondary">Cancelar</Link>
-                    <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar</button>
+                    <button type="enviar" class="btn btn-success" :disabled="form.processing">Guardar</button>
                 </div>
             </form>
         </div>
@@ -120,7 +120,7 @@ const form = useForm({
 })
 
 const codigoGenerado      = ref('')
-const clasificacionPreview = ref('')
+const previsualizacionClasificacion = ref('')
 
 async function actualizarCodigo() {
     if (!form.area_id) return
@@ -131,15 +131,15 @@ async function actualizarCodigo() {
 
 function actualizarClasificacion() {
     if (!form.area_id || !form.pasillo || !form.estante || !form.nivel) {
-        clasificacionPreview.value = ''
+        previsualizacionClasificacion.value = ''
         return
     }
     const area  = props.areas.find(a => a.id === form.area_id)
     const abrev = area?.Abreviado ?? area?.codigo_dewey ?? ''
-    clasificacionPreview.value = `${abrev}-${form.pasillo}-(${form.tipo_almacenamiento})${form.estante}-${form.nivel}`
+    previsualizacionClasificacion.value = `${abrev}-${form.pasillo}-(${form.tipo_almacenamiento})${form.estante}-${form.nivel}`
 }
 
-function submit() {
+function enviar() {
     form.post(route('materiales.store'))
 }
 </script>

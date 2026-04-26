@@ -12,7 +12,7 @@
             </div>
             <FlashMessage />
 
-            <form @submit.prevent="submit">
+            <form @enviar.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-8">
                         <label>Título <span class="text-danger">*</span></label>
@@ -64,7 +64,7 @@
                         <Link :href="route('materiales.index')" class="btn btn-outline-secondary mr-2">Cancelar</Link>
                         <button type="button" class="btn btn-outline-danger" @click="eliminar">Eliminar</button>
                     </div>
-                    <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
+                    <button type="enviar" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
                 </div>
             </form>
         </div>
@@ -95,7 +95,7 @@ const form = useForm({
     editorial: props.material.editorial,
 })
 
-function submit() {
+function enviar() {
     form.put(route('materiales.update', props.material.id))
 }
 

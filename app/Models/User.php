@@ -18,12 +18,15 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'nombre',
+        'apellido',
         'email',
         'usuario',
         'password',
         'picture',
         'wallpaper',
         'telefono',
+        'anio',
+        'division',
         'activo',
         'institucion_id',
         'socio_id',
@@ -45,18 +48,18 @@ class User extends Authenticatable
 
     public function getPictureUrlAttribute(): ?string
     {
-        $file = trim((string) $this->picture);
-        if ($file && Storage::disk('public')->exists('uploads/' . $file)) {
-            return asset('storage/uploads/' . $file);
+        $archivo = trim((string) $this->picture);
+        if ($archivo && Storage::disk('public')->exists('uploads/' . $archivo)) {
+            return asset('storage/uploads/' . $archivo);
         }
         return null;
     }
 
     public function getWallpaperUrlAttribute(): ?string
     {
-        $file = trim((string) $this->wallpaper);
-        if ($file && Storage::disk('public')->exists('wallpapers/' . $file)) {
-            return asset('storage/wallpapers/' . $file);
+        $archivo = trim((string) $this->wallpaper);
+        if ($archivo && Storage::disk('public')->exists('wallpapers/' . $archivo)) {
+            return asset('storage/wallpapers/' . $archivo);
         }
         return null;
     }

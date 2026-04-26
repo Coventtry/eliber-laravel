@@ -62,6 +62,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => session('success'),
                 'error'   => session('error'),
+                'info'    => session('info'),
             ],
             'vencimientos_proximos'  => $vencimientos,
             'alertas_no_leidas'      => $alertasNoLeidas,

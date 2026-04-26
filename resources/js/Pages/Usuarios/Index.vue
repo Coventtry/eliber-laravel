@@ -13,14 +13,53 @@
 
             <FlashMessage />
 
+            <!-- Solicitudes pendientes de aprobación -->
+            <div v-if="pendientes.length" class="card border-warning mb-4">
+                <div class="card-header d-flex align-items-center" style="background: #fff8e1;">
+                    <i class="bi bi-hourglass-split text-warning mr-2"></i>
+                    <strong class="text-warning">Solicitudes pendientes de aprobación</strong>
+                    <span class="badge badge-warning ml-2">{{ pendientes.length }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Usuario</th>
+                                <th>Rol solicitado</th>
+                                <th>Registrado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="p in pendientes" :key="p.id">
+                                <td>{{ p.nombre }}</td>
+                                <td>{{ p.email }}</td>
+                                <td><code>{{ p.usuario }}</code></td>
+                                <td>
+                                    <span :class="badgeRol(p.rol)">{{ p.rol }}</span>
+                                </td>
+                                <td class="text-muted small">{{ p.creado_at }}</td>
+                                <td class="text-right">
+                                    <button
+                                        class="btn btn-sm btn-success"
+                                        :disabled="aprobando === p.id"
+                                        @click="aprobar(p)"
+                                    >
+                                        <span v-if="aprobando === p.id" class="spinner-border spinner-border-sm mr-1"></span>
+                                        <i v-else class="bi bi-check-lg mr-1"></i>
+                                        Aprobar
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <form @submit.prevent="buscar" class="form-inline mb-3">
-                <input v-model="search" type="text" class="form-control mr-2" placeholder="Nombre, email o usuario…">
-                <select v-model="rolFiltro" class="form-control mr-2" style="width:auto;">
-                    <option value="">Todos los roles</option>
-                    <option value="admin">Admin</option>
-                    <option value="bibliotecario">Bibliotecario</option>
-                    <option value="alumno">Alumno</option>
-                </select>
+                <input v-model="busqueda" type="text" class="form-control mr-2" placeholder="Nombre, email o usuario…">
                 <button type="submit" class="btn btn-outline-success mr-2">Buscar</button>
                 <Link :href="route('usuarios.index')" class="btn btn-outline-secondary">Limpiar</Link>
             </form>
@@ -32,7 +71,6 @@
                             <th>Nombre</th>
                             <th>Email</th>
                             <th>Usuario</th>
-                            <th>Rol</th>
                             <th>Socio vinculado</th>
                             <th>Estado</th>
                             <th></th>
@@ -44,14 +82,11 @@
                             <td>{{ u.email }}</td>
                             <td><code>{{ u.usuario }}</code></td>
                             <td>
-                                <span :class="badgeRol(u.rol)">{{ u.rol }}</span>
-                            </td>
-                            <td>
                                 <span v-if="u.rol === 'alumno'">
                                     <span v-if="u.socio" class="badge badge-info">
                                         <i class="bi bi-person-check mr-1"></i>{{ u.socio }}
                                     </span>
-                                    <span v-else class="badge badge-warning">Sin vincular</span>
+                                    <span v-else class="badge badge-warning">Pendiente de Alta</span>
                                 </span>
                                 <span v-else class="text-muted">—</span>
                             </td>
@@ -104,15 +139,24 @@ import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
 
 const props = defineProps({
-    usuarios: { type: Object, required: true },
-    filters:  { type: Object, default: () => ({}) },
+    usuarios:   { type: Object, required: true },
+    filters:    { type: Object, default: () => ({}) },
+    pendientes: { type: Array,  default: () => [] },
 })
 
-const search   = ref(props.filters.search ?? '')
-const rolFiltro = ref(props.filters.rol ?? '')
+const busqueda    = ref(props.filters.busqueda ?? '')
+const aprobando = ref(null)
 
 function buscar() {
-    router.get(route('usuarios.index'), { search: search.value, rol: rolFiltro.value }, { preserveState: true, replace: true })
+    router.get(route('usuarios.index'), { busqueda: busqueda.value }, { preserveState: true, replace: true })
+}
+
+function aprobar(usuario) {
+    aprobando.value = usuario.id
+    router.patch(route('usuarios.aprobar', usuario.id), {}, {
+        preserveScroll: true,
+        onFinish: () => { aprobando.value = null },
+    })
 }
 
 function badgeRol(rol) {

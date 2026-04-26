@@ -42,13 +42,13 @@ class MaterialController extends Controller
 
     public function store(StoreMaterialRequest $request): RedirectResponse
     {
-        $data    = $request->validated();
-        $area    = Area::findOrFail($data['area_id']);
-        $data['codigo'] = $this->materialService->generarCodigo($area);
-        $data['institucion_id'] = $request->user()->institucion_id;
+        $datos    = $request->validated();
+        $area    = Area::findOrFail($datos['area_id']);
+        $datos['codigo'] = $this->materialService->generarCodigo($area);
+        $datos['institucion_id'] = $request->user()->institucion_id;
 
         if ($request->filled('pasillo')) {
-            $data['clasificacion_fisica'] = $this->materialService->generarClasificacionFisica(
+            $datos['clasificacion_fisica'] = $this->materialService->generarClasificacionFisica(
                 $area,
                 $request->pasillo,
                 $request->tipo_almacenamiento,
@@ -57,7 +57,7 @@ class MaterialController extends Controller
             );
         }
 
-        $material = Material::create($data);
+        $material = Material::create($datos);
         $this->materialService->generarQR($material);
 
         return redirect()->route('materiales.index')->with('success', 'Material registrado correctamente.');
@@ -68,7 +68,7 @@ class MaterialController extends Controller
         return Inertia::render('Materiales/Edit', [
             'material' => $material->load('area', 'ubicacion'),
             'areas'    => Area::orderBy('nombre')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
-            'qrUrl'    => $this->materialService->urlQR($material),
+            'qrUrl'    => $this->materialService->urlCodigoQr($material),
         ]);
     }
 
@@ -88,12 +88,12 @@ class MaterialController extends Controller
 
     public function qrCode(Material $material): Response
     {
-        $qrUrl = $this->materialService->urlQR($material)
+        $urlQr = $this->materialService->urlCodigoQr($material)
             ?? $this->materialService->generarQR($material);
 
         return Inertia::render('Materiales/QrCode', [
             'material' => $material->only('id', 'titulo', 'codigo'),
-            'qrUrl'    => $qrUrl,
+            'qrUrl'    => $urlQr,
         ]);
     }
 
@@ -101,8 +101,12 @@ class MaterialController extends Controller
     {
         $materiales = Material::disponible()
             ->when($request->area_id, fn($q, $a) => $q->where('area_id', $a))
+            ->when($request->busqueda, fn($q, $s) => $q->where(function ($sq) use ($s) {
+                $sq->where('titulo', 'like', "%{$s}%")
+                   ->orWhere('codigo', 'like', "%{$s}%");
+            }))
             ->select('id', 'titulo', 'codigo', 'disponibilidad')
-            ->limit(50)
+            ->limit(20)
             ->get();
 
         return response()->json($materiales);

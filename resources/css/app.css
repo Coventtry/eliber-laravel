@@ -389,6 +389,12 @@ html, body {
     transition: all 0.3s ease;
 }
 
+/* Bootstrap 4 fija height para inputs pero no recalcula al cambiar el padding.
+   Los <select> necesitan height: auto para que el texto no quede cortado. */
+select.form-control {
+    height: auto;
+}
+
 .form-control:focus {
     border-color: var(--eliber-primary);
     box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.15);

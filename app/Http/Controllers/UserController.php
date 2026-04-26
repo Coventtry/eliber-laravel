@@ -6,6 +6,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\Socio;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -31,13 +32,11 @@ class UserController extends Controller
 
         $usuarios = User::with(['roles', 'socio'])
             ->where('institucion_id', auth()->user()->institucion_id)
-            ->when($request->search, fn($q, $s) =>
+            ->whereHas('roles', fn($q) => $q->where('name', 'alumno'))
+            ->when($request->busqueda, fn($q, $s) =>
                 $q->where('nombre', 'like', "%{$s}%")
                   ->orWhere('email', 'like', "%{$s}%")
                   ->orWhere('usuario', 'like', "%{$s}%")
-            )
-            ->when($request->rol, fn($q, $r) =>
-                $q->whereHas('roles', fn($rq) => $rq->where('name', $r))
             )
             ->orderBy('nombre')
             ->paginate(20)
@@ -53,9 +52,25 @@ class UserController extends Controller
                 'socio'    => $u->socio ? $u->socio->nombre . ' ' . $u->socio->apellido : null,
             ]);
 
+        $pendientes = User::with('roles')
+            ->where('institucion_id', auth()->user()->institucion_id)
+            ->where('activo', false)
+            ->whereHas('roles', fn($q) => $q->where('name', 'alumno'))
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($u) => [
+                'id'        => $u->id,
+                'nombre'    => $u->nombre,
+                'email'     => $u->email,
+                'usuario'   => $u->usuario,
+                'rol'       => $u->roles->first()?->name ?? 'sin rol',
+                'creado_at' => $u->created_at->format('d/m/Y H:i'),
+            ]);
+
         return Inertia::render('Usuarios/Index', [
-            'usuarios' => $usuarios,
-            'filters'  => $request->only(['search', 'rol']),
+            'usuarios'   => $usuarios,
+            'filters'    => $request->only(['busqueda']),
+            'pendientes' => $pendientes,
         ]);
     }
 
@@ -125,7 +140,7 @@ class UserController extends Controller
 
         return Inertia::render('Usuarios/Edit', [
             'usuario'          => array_merge(
-                $user->only('id', 'nombre', 'email', 'usuario', 'activo', 'socio_id'),
+                $user->only('id', 'nombre', 'apellido', 'email', 'usuario', 'activo', 'socio_id', 'anio', 'division'),
                 ['rol' => $user->roles->first()?->name ?? 'sin rol']
             ),
             'permisos_usuario' => $user->getDirectPermissions()->pluck('name'),
@@ -141,18 +156,19 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $data = $request->only('nombre', 'email', 'usuario');
-        $data['name'] = $request->nombre;
+        $datos = $request->only('nombre', 'apellido', 'email', 'usuario');
+        $datos['name'] = $request->nombre;
 
         if ($request->filled('password')) {
-            $data['password'] = $request->password;
+            $datos['password'] = $request->password;
         }
 
         if ($user->hasRole('alumno')) {
-            $data['socio_id'] = $request->socio_id;
+            $datos['anio']    = $request->anio;
+            $datos['division'] = $request->division;
         }
 
-        $user->update($data);
+        $user->update($datos);
 
         return redirect()->route('usuarios.index')->with('success', 'Usuario actualizado.');
     }
@@ -172,17 +188,50 @@ class UserController extends Controller
         return back()->with('success', 'Permisos actualizados.');
     }
 
+    public function aprobar(User $user): RedirectResponse
+    {
+        $this->authorize('update', $user);
+
+        $socioCreado = null;
+
+        DB::transaction(function () use ($user, &$socioCreado) {
+            $datos = ['activo' => true];
+
+            if ($user->hasRole('alumno') && !$user->socio_id) {
+                $socioCreado = Socio::create([
+                    'nombre'         => $user->nombre,
+                    'apellido'       => $user->apellido ?? '',
+                    'email'          => $user->email,
+                    'anio'           => $user->anio,
+                    'division'       => $user->division,
+                    'activo'         => true,
+                    'institucion_id' => $user->institucion_id,
+                ]);
+                $datos['socio_id'] = $socioCreado->id;
+            }
+
+            $user->update($datos);
+        });
+
+        if ($socioCreado) {
+            return redirect()->route('socios.edit', $socioCreado->id)
+                ->with('success', "Cuenta de {$user->nombre} habilitada. Completá los datos del socio (apellido, año, división).");
+        }
+
+        return back()->with('success', "Usuario {$user->nombre} activado.");
+    }
+
     public function toggleActivo(User $user): RedirectResponse
     {
-        $me = auth()->user();
+        $usuarioActual = auth()->user();
 
-        if (!$me->hasRole('admin') && !$me->hasRole('bibliotecario')) {
+        if (!$usuarioActual->hasRole('admin') && !$usuarioActual->hasRole('bibliotecario')) {
             return back()->with('error', 'No tenés permiso para realizar esta acción.');
         }
-        if ($user->id === $me->id) {
+        if ($user->id === $usuarioActual->id) {
             return back()->with('error', 'No podés desactivar tu propio usuario.');
         }
-        if ($user->hasRole('admin') && !$me->hasRole('admin')) {
+        if ($user->hasRole('admin') && !$usuarioActual->hasRole('admin')) {
             return back()->with('error', 'Solo un administrador puede desactivar a otro administrador.');
         }
 

@@ -24,12 +24,12 @@ class AdminController extends Controller
 
     public function dashboard(): Response
     {
-        $instId     = auth()->user()->institucion_id;
-        $diasAlerta = (int) Configuracion::get($instId, 'dias_alerta_previa', 4);
+        $idInstitucion     = auth()->user()->institucion_id;
+        $diasAlerta = (int) Configuracion::get($idInstitucion, 'dias_alerta_previa', 4);
 
         $stats = [
             'socios_activos'   => Socio::where('activo', true)->count(),
-            'prestamos_mes'    => Prestamo::where('institucion_id', $instId)
+            'prestamos_mes'    => Prestamo::where('institucion_id', $idInstitucion)
                                     ->whereMonth('fecha_prestamo', now()->month)
                                     ->whereYear('fecha_prestamo', now()->year)
                                     ->count(),
@@ -68,10 +68,10 @@ class AdminController extends Controller
 
     public function usuarios(Request $request): Response
     {
-        $instId = auth()->user()->institucion_id;
+        $idInstitucion = auth()->user()->institucion_id;
 
         $usuarios = User::with('roles')
-            ->where('institucion_id', $instId)
+            ->where('institucion_id', $idInstitucion)
             ->when($request->search, fn($q, $s) =>
                 $q->where(fn($q2) =>
                     $q2->where('nombre', 'like', "%{$s}%")
@@ -100,11 +100,27 @@ class AdminController extends Controller
             ->get(['id', 'nombre', 'apellido'])
             ->map(fn($s) => ['id' => $s->id, 'nombre' => $s->full_name]);
 
+        $pendientes = User::with('roles')
+            ->where('institucion_id', $idInstitucion)
+            ->where('activo', false)
+            ->whereHas('roles', fn($q) => $q->where('name', 'bibliotecario'))
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($u) => [
+                'id'        => $u->id,
+                'nombre'    => $u->nombre,
+                'email'     => $u->email,
+                'usuario'   => $u->usuario,
+                'rol'       => $u->roles->first()?->name ?? 'sin rol',
+                'creado_at' => $u->created_at->format('d/m/Y H:i'),
+            ]);
+
         return Inertia::render('Admin/Usuarios/Index', [
-            'usuarios' => $usuarios,
-            'socios'   => $socios,
-            'roles'    => self::ROLES_DISPONIBLES,
-            'filters'  => $request->only(['search', 'rol']),
+            'usuarios'   => $usuarios,
+            'socios'     => $socios,
+            'roles'      => self::ROLES_DISPONIBLES,
+            'filters'    => $request->only(['search', 'rol']),
+            'pendientes' => $pendientes,
         ]);
     }
 
@@ -120,7 +136,7 @@ class AdminController extends Controller
             'picture'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $data = [
+        $datos = [
             'name'           => $request->nombre,
             'nombre'         => $request->nombre,
             'email'          => $request->email,
@@ -132,11 +148,11 @@ class AdminController extends Controller
         ];
 
         if ($request->hasFile('picture')) {
-            $data['picture'] = basename($request->file('picture')->store('uploads', 'public'));
+            $datos['picture'] = basename($request->file('picture')->store('uploads', 'public'));
         }
 
-        $user = User::create($data);
-        $user->assignRole($request->rol);
+        $usuario = User::create($datos);
+        $usuario->assignRole($request->rol);
 
         return back()->with('success', "Usuario «{$request->nombre}» creado correctamente.");
     }
@@ -153,7 +169,7 @@ class AdminController extends Controller
             'picture'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $data = [
+        $datos = [
             'name'     => $request->nombre,
             'nombre'   => $request->nombre,
             'email'    => $request->email,
@@ -162,17 +178,17 @@ class AdminController extends Controller
         ];
 
         if ($request->filled('password')) {
-            $data['password'] = $request->password;
+            $datos['password'] = $request->password;
         }
 
         if ($request->hasFile('picture')) {
             if ($user->picture) {
                 Storage::disk('public')->delete('uploads/' . $user->picture);
             }
-            $data['picture'] = basename($request->file('picture')->store('uploads', 'public'));
+            $datos['picture'] = basename($request->file('picture')->store('uploads', 'public'));
         }
 
-        $user->update($data);
+        $user->update($datos);
         $user->syncRoles([$request->rol]);
 
         return back()->with('success', "Usuario «{$request->nombre}» actualizado.");
@@ -189,6 +205,12 @@ class AdminController extends Controller
         }
         $user->delete();
         return back()->with('success', "Usuario «{$nombre}» eliminado.");
+    }
+
+    public function aprobarUsuario(User $user): RedirectResponse
+    {
+        $user->update(['activo' => true]);
+        return back()->with('success', "Cuenta de {$user->nombre} aprobada. Ya puede ingresar al sistema.");
     }
 
     public function toggleActivoUsuario(User $user): RedirectResponse

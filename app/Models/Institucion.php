@@ -20,7 +20,6 @@ class Institucion extends Model
     protected function casts(): array
     {
         return [
-            'estado'         => 'boolean',
             'anuncio_activo' => 'boolean',
         ];
     }

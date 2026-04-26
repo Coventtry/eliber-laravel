@@ -14,7 +14,7 @@
             <FlashMessage />
 
             <form @submit.prevent="buscar" class="form-inline mb-3">
-                <input v-model="search" type="text" class="form-control mr-2" placeholder="Título o autor…">
+                <input v-model="busqueda" type="text" class="form-control mr-2" placeholder="Título o autor…">
                 <select v-model="area_id" class="form-control mr-2">
                     <option value="">Todas las áreas</option>
                     <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.nombre }}</option>
@@ -98,10 +98,10 @@ const props = defineProps({
     filters:    { type: Object, default: () => ({}) },
 })
 
-const search  = ref(props.filters.search ?? '')
+const busqueda  = ref(props.filters.busqueda ?? '')
 const area_id = ref(props.filters.area_id ?? '')
 
 function buscar() {
-    router.get(route('materiales.index'), { search: search.value, area_id: area_id.value }, { preserveState: true })
+    router.get(route('materiales.index'), { busqueda: busqueda.value, area_id: area_id.value }, { preserveState: true })
 }
 </script>

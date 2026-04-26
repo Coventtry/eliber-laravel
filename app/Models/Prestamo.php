@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Prestamo extends Model
 {
@@ -40,16 +39,6 @@ class Prestamo extends Model
         return $this->belongsTo(Material::class);
     }
 
-    public function detalles(): HasMany
-    {
-        return $this->hasMany(PrestamoDetalle::class);
-    }
-
-    public function notificaciones(): HasMany
-    {
-        return $this->hasMany(Notificacion::class);
-    }
-
     public function scopeActivo($query)
     {
         return $query->where('estado', 'activo');
@@ -81,7 +70,7 @@ class Prestamo extends Model
         if (!$this->socio) return null;
         $telefono = preg_replace('/\D/', '', $this->socio->telefono ?? '');
         if (empty($telefono)) return null;
-        $msg = urlencode("Hola {$this->socio->nombre}, recordamos que el préstamo de *{$this->material->titulo}* vence el {$this->fecha_devolucion->format('d/m/Y')}.");
-        return "https://wa.me/54{$telefono}?text={$msg}";
+        $mensaje = urlencode("Hola {$this->socio->nombre}, recordamos que el préstamo de *{$this->material->titulo}* vence el {$this->fecha_devolucion->format('d/m/Y')}.");
+        return "https://wa.me/54{$telefono}?text={$mensaje}";
     }
 }

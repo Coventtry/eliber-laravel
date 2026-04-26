@@ -13,19 +13,19 @@
 
                 <div class="card shadow-sm mb-4">
                     <!-- Wallpaper banner -->
-                    <div class="perfil-banner" :style="bannerStyle">
+                    <div class="perfil-banner" :style="estiloFondo">
                         <label class="perfil-banner-edit" title="Cambiar portada">
                             <i class="bi bi-camera"></i>
                             <input type="file" class="d-none" accept="image/jpg,image/jpeg,image/png,image/webp"
-                                   @change="onWallpaper">
+                                   @change="alCambiarBanner">
                         </label>
                     </div>
 
                     <div class="card-body pt-0">
                         <!-- Avatar sobre el banner -->
                         <div class="perfil-avatar-wrap">
-                            <img v-if="avatarPreview || perfil.picture_url"
-                                 :src="avatarPreview || perfil.picture_url"
+                            <img v-if="previsualizacionAvatar || perfil.picture_url"
+                                 :src="previsualizacionAvatar || perfil.picture_url"
                                  class="perfil-avatar rounded-circle"
                                  alt="foto de perfil">
                             <div v-else class="perfil-avatar rounded-circle bg-light border d-flex align-items-center justify-content-center">
@@ -47,13 +47,36 @@
                             </div>
 
                             <div class="form-group">
+                                <label class="font-weight-bold">Apellido</label>
+                                <input v-model="form.apellido" type="text" class="form-control"
+                                       placeholder="Tu apellido">
+                            </div>
+
+                            <!-- Año y División (solo alumno, solo lectura) -->
+                            <div v-if="es_alumno" class="form-row">
+                                <div class="form-group col-6">
+                                    <label class="font-weight-bold">Año</label>
+                                    <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
+                                        {{ perfil.anio ? perfil.anio + '°' : '—' }}
+                                    </div>
+                                    <small class="text-muted">Solo puede modificarlo el bibliotecario.</small>
+                                </div>
+                                <div class="form-group col-6">
+                                    <label class="font-weight-bold">División</label>
+                                    <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
+                                        {{ perfil.division ?? '—' }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label class="font-weight-bold">Foto de perfil</label>
                                 <div class="custom-file">
                                     <input type="file" class="custom-file-input" id="picture"
                                            accept="image/jpg,image/jpeg,image/png,image/webp"
-                                           @change="onAvatar">
+                                           @change="alCambiarAvatar">
                                     <label class="custom-file-label" for="picture">
-                                        {{ avatarNombre }}
+                                        {{ nombreAvatar }}
                                     </label>
                                 </div>
                                 <small class="text-muted">JPG, PNG o WebP — máx. 2 MB</small>
@@ -64,9 +87,9 @@
                                 <div class="custom-file">
                                     <input type="file" class="custom-file-input" id="wallpaper"
                                            accept="image/jpg,image/jpeg,image/png,image/webp"
-                                           @change="onWallpaper">
+                                           @change="alCambiarBanner">
                                     <label class="custom-file-label" for="wallpaper">
-                                        {{ wallpaperNombre }}
+                                        {{ nombreBanner }}
                                     </label>
                                 </div>
                                 <small class="text-muted">JPG, PNG o WebP — máx. 4 MB. Se muestra como banner en tu perfil.</small>
@@ -108,56 +131,63 @@ import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
 
 const props = defineProps({
-    perfil: { type: Object, required: true },
+    perfil:    { type: Object, required: true },
+    es_alumno: { type: Boolean, default: false },
 })
 
 const page     = usePage()
 const esAdmin  = computed(() => page.props.auth?.roles?.includes('admin') ?? false)
 const esAlumno = computed(() => page.props.auth?.roles?.includes('alumno') ?? false)
 
-const form           = ref({ email: props.perfil.email ?? '' })
-const avatarFile     = ref(null)
-const wallpaperFile  = ref(null)
-const avatarNombre   = ref('Seleccioná una imagen...')
-const wallpaperNombre= ref('Seleccioná una imagen...')
-const avatarPreview  = ref(null)
-const wallpaperPreview = ref(props.perfil.wallpaper_url ?? null)
+const form = ref({
+    email:    props.perfil.email    ?? '',
+    apellido: props.perfil.apellido ?? '',
+    anio:     props.perfil.anio     ?? '',
+    division: props.perfil.division ?? '',
+})
+const archivoAvatar     = ref(null)
+const archivoBanner  = ref(null)
+const nombreAvatar   = ref('Seleccioná una imagen...')
+const nombreBanner= ref('Seleccioná una imagen...')
+const previsualizacionAvatar  = ref(null)
+const previsualizacionBanner = ref(props.perfil.wallpaper_url ?? null)
 const guardando      = ref(false)
 
-const bannerStyle = computed(() => {
-    const img = wallpaperPreview.value
+const estiloFondo = computed(() => {
+    const img = previsualizacionBanner.value
     return img
         ? `background-image:url('${img}');background-size:cover;background-position:center;`
         : ''
 })
 
-function onAvatar(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    avatarFile.value   = file
-    avatarNombre.value = file.name
-    avatarPreview.value = URL.createObjectURL(file)
+function alCambiarAvatar(e) {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+    archivoAvatar.value   = archivo
+    nombreAvatar.value = archivo.name
+    previsualizacionAvatar.value = URL.createObjectURL(archivo)
 }
 
-function onWallpaper(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    wallpaperFile.value    = file
-    wallpaperNombre.value  = file.name
-    wallpaperPreview.value = URL.createObjectURL(file)
+function alCambiarBanner(e) {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+    archivoBanner.value    = archivo
+    nombreBanner.value  = archivo.name
+    previsualizacionBanner.value = URL.createObjectURL(archivo)
 }
 
 function guardar() {
     guardando.value = true
     const data = new FormData()
     data.append('_method', 'PUT')
-    if (form.value.email)   data.append('email', form.value.email)
-    if (avatarFile.value)   data.append('picture', avatarFile.value)
-    if (wallpaperFile.value)data.append('wallpaper', wallpaperFile.value)
+    if (form.value.email)    data.append('email',    form.value.email)
+    if (form.value.apellido) data.append('apellido', form.value.apellido)
+    if (archivoAvatar.value) data.append('picture',  archivoAvatar.value)
+    if (archivoBanner.value) data.append('wallpaper', archivoBanner.value)
 
     router.post(route('perfil.update'), data, {
         forceFormData: true,
-        onSuccess: () => { guardando.value = false; avatarPreview.value = null },
+        onSuccess: () => { guardando.value = false; previsualizacionAvatar.value = null },
         onError:   () => { guardando.value = false },
     })
 }

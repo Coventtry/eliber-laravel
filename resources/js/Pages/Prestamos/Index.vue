@@ -38,12 +38,12 @@
                         <tr v-for="p in prestamos.data" :key="p.id">
                             <td>{{ p.socio?.apellido }}, {{ p.socio?.nombre }}</td>
                             <td>{{ p.material?.titulo }}</td>
-                            <td>{{ formatDate(p.fecha_prestamo) }}</td>
+                            <td>{{ formatearFecha(p.fecha_prestamo) }}</td>
                             <td :class="{ 'text-danger font-weight-bold': p.estado === 'atrasado' }">
-                                {{ formatDate(p.fecha_devolucion) }}
+                                {{ formatearFecha(p.fecha_devolucion) }}
                             </td>
                             <td>
-                                <span :class="`badge badge-${estadoClass(p.estado)}`">{{ p.estado }}</span>
+                                <span :class="`badge badge-${claseEstado(p.estado)}`">{{ p.estado }}</span>
                             </td>
                             <td class="text-right">
                                 <template v-if="p.estado !== 'devuelto'">
@@ -52,7 +52,7 @@
                                         <i class="bi bi-arrow-return-left"></i>
                                     </Link>
                                 </template>
-                                <a v-if="p.material?.socio?.telefono" :href="whatsapp(p)" target="_blank"
+                                <a v-if="p.material?.socio?.telefono" :href="enlaceWhatsapp(p)" target="_blank"
                                    class="btn btn-sm btn-outline-success">
                                     <i class="bi bi-whatsapp"></i>
                                 </a>
@@ -110,18 +110,18 @@ const estados = [
     { label: 'Devueltos', value: 'devuelto' },
 ]
 
-function estadoClass(estado) {
+function claseEstado(estado) {
     return { activo: 'info', pendiente: 'warning', atrasado: 'danger', devuelto: 'success' }[estado] ?? 'secondary'
 }
 
-function formatDate(d) {
+function formatearFecha(d) {
     if (!d) return ''
     return new Date(d).toLocaleDateString('es-AR')
 }
 
-function whatsapp(p) {
-    const tel = (p.socio?.telefono ?? '').replace(/\D/g, '')
-    const msg = encodeURIComponent(`Hola ${p.socio?.nombre}, recordamos que el préstamo de *${p.material?.titulo}* vence el ${formatDate(p.fecha_devolucion)}.`)
-    return `https://wa.me/54${tel}?text=${msg}`
+function enlaceWhatsapp(p) {
+    const telefono = (p.socio?.telefono ?? '').replace(/\D/g, '')
+    const mensaje = encodeURIComponent(`Hola ${p.socio?.nombre}, recordamos que el préstamo de *${p.material?.titulo}* vence el ${formatearFecha(p.fecha_devolucion)}.`)
+    return `https://wa.me/54${telefono}?text=${mensaje}`
 }
 </script>

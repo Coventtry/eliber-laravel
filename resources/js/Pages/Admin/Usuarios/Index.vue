@@ -13,6 +13,51 @@
             </button>
         </div>
 
+        <!-- Solicitudes pendientes de bibliotecarios -->
+        <div v-if="pendientes.length" class="card border-warning mb-4">
+            <div class="card-header d-flex align-items-center py-2" style="background:#fff8e1;">
+                <i class="bi bi-hourglass-split text-warning mr-2"></i>
+                <strong class="text-warning">Solicitudes de acceso pendientes</strong>
+                <span class="badge badge-warning ml-2">{{ pendientes.length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Registrado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="p in pendientes" :key="p.id">
+                            <td class="align-middle">{{ p.nombre }}</td>
+                            <td class="align-middle small">{{ p.email }}</td>
+                            <td class="align-middle"><code>{{ p.usuario }}</code></td>
+                            <td class="align-middle">
+                                <span class="badge" :class="badgeRol(p.rol)">{{ labelRol(p.rol) }}</span>
+                            </td>
+                            <td class="align-middle text-muted small">{{ p.creado_at }}</td>
+                            <td class="align-middle text-right">
+                                <button
+                                    class="btn btn-sm btn-success"
+                                    :disabled="aprobando === p.id"
+                                    @click="aprobar(p)"
+                                >
+                                    <span v-if="aprobando === p.id" class="spinner-border spinner-border-sm mr-1"></span>
+                                    <i v-else class="bi bi-check-lg mr-1"></i>
+                                    Aprobar
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Filtros -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body py-2">
@@ -232,13 +277,23 @@ import { ref, reactive } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 
 const props = defineProps({
-    usuarios: { type: Object, required: true },
-    socios:   { type: Array,  default: () => [] },
-    roles:    { type: Array,  default: () => [] },
-    filters:  { type: Object, default: () => ({}) },
+    usuarios:   { type: Object, required: true },
+    socios:     { type: Array,  default: () => [] },
+    roles:      { type: Array,  default: () => [] },
+    filters:    { type: Object, default: () => ({}) },
+    pendientes: { type: Array,  default: () => [] },
 })
 
 const page = usePage()
+const aprobando = ref(null)
+
+function aprobar(p) {
+    aprobando.value = p.id
+    router.patch(route('admin.usuarios.aprobar', p.id), {}, {
+        preserveScroll: true,
+        onFinish: () => { aprobando.value = null },
+    })
+}
 
 // ─── Filtros ───
 const filtros  = reactive({ search: props.filters.search ?? '', rol: props.filters.rol ?? '' })

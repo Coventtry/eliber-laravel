@@ -28,8 +28,8 @@
                         <div class="form-group mb-0">
                             <label class="font-weight-bold small">Logo institucional</label>
                             <div class="d-flex align-items-center" style="gap:1rem;">
-                                <img v-if="logoPreview || config.logo_url"
-                                     :src="logoPreview || config.logo_url"
+                                <img v-if="previsualizacionLogo || config.logo_url"
+                                     :src="previsualizacionLogo || config.logo_url"
                                      alt="Logo" height="56"
                                      class="border rounded p-1" style="max-width:120px;object-fit:contain;">
                                 <div v-else class="border rounded d-flex align-items-center justify-content-center text-muted"
@@ -38,9 +38,9 @@
                                     <div class="custom-file" style="width:200px;">
                                         <input type="file" class="custom-file-input" id="logo"
                                                accept="image/jpg,image/jpeg,image/png,image/webp,image/svg+xml"
-                                               @change="onLogo">
+                                               @change="alSeleccionarLogo">
                                         <label class="custom-file-label" for="logo" style="font-size:.82rem;">
-                                            {{ logoNombre }}
+                                            {{ nombreLogo }}
                                         </label>
                                     </div>
                                     <small class="text-muted">JPG, PNG, WebP o SVG — máx. 1 MB</small>
@@ -141,17 +141,17 @@ const form = reactive({
     dias_alerta_previa: parseInt(props.config.dias_alerta_previa ?? '4'),
 })
 
-const logoFile    = ref(null)
-const logoNombre  = ref('Seleccioná una imagen...')
-const logoPreview = ref(null)
+const archivoLogo    = ref(null)
+const nombreLogo  = ref('Seleccioná una imagen...')
+const previsualizacionLogo = ref(null)
 const saving      = ref(false)
 
-function onLogo(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    logoFile.value    = file
-    logoNombre.value  = file.name
-    logoPreview.value = URL.createObjectURL(file)
+function alSeleccionarLogo(e) {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+    archivoLogo.value    = archivo
+    nombreLogo.value  = archivo.name
+    previsualizacionLogo.value = URL.createObjectURL(archivo)
 }
 
 function guardar() {
@@ -161,7 +161,7 @@ function guardar() {
     data.append('nombre_institucion', form.nombre_institucion)
     data.append('dias_prestamo',      String(form.dias_prestamo))
     data.append('dias_alerta_previa', String(form.dias_alerta_previa))
-    if (logoFile.value) data.append('logo', logoFile.value)
+    if (archivoLogo.value) data.append('logo', archivoLogo.value)
 
     router.post(route('admin.configuracion.update'), data, {
         forceFormData: true,

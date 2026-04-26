@@ -29,7 +29,7 @@
                         <p class="card-text text-muted small">{{ noticia.descripcion }}</p>
                     </div>
                     <div class="card-footer text-muted" style="background: var(--eliber-crema);">
-                        <small><i class="bi bi-calendar3 me-1"></i>{{ formatDate(noticia.fecha) }}</small>
+                        <small><i class="bi bi-calendar3 me-1"></i>{{ formatearFecha(noticia.fecha) }}</small>
                     </div>
                 </div>
             </div>
@@ -42,7 +42,7 @@
 
     <footer class="footer-eliber text-center py-3">
         <div class="container">
-            <small>&copy; {{ year }} E-liber — Sistema de Gestión de Biblioteca</small>
+            <small>&copy; {{ anio }} E-liber — Sistema de Gestión de Biblioteca</small>
         </div>
     </footer>
 </template>
@@ -57,9 +57,9 @@ defineProps({
     }
 });
 
-const year = new Date().getFullYear();
+const anio = new Date().getFullYear();
 
-function formatDate(date) {
+function formatearFecha(date) {
     if (!date) return '';
     const d = new Date(date);
     return isNaN(d) ? '' : d.toLocaleDateString('es-AR');

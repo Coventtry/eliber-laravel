@@ -18,12 +18,10 @@
             <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav mr-auto">
                     <!-- Socios -->
-                    <li v-if="can('gestionar-socios')" class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Socios</a>
-                        <div class="dropdown-menu">
-                            <Link :href="route('socios.create')" class="dropdown-item">Nuevo socio</Link>
-                            <Link :href="route('socios.index')" class="dropdown-item">Buscar / Modificar</Link>
-                        </div>
+                    <li v-if="can('gestionar-socios')" class="nav-item">
+                        <Link :href="route('socios.index')" class="nav-link">
+                            <i class="bi bi-people mr-1"></i>Socios
+                        </Link>
                     </li>
 
                     <!-- Materiales -->
@@ -51,8 +49,13 @@
                     <li v-if="can('gestionar-prestamos')" class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Préstamos</a>
                         <div class="dropdown-menu">
-                            <Link :href="route('prestamos.create')" class="dropdown-item">Nuevo préstamo</Link>
-                            <Link :href="route('prestamos.index')" class="dropdown-item">Listado / Devolución</Link>
+                            <Link :href="route('prestamos.create')" class="dropdown-item">
+                                <i class="bi bi-journal-plus mr-1"></i>Terminal de préstamos
+                            </Link>
+                            <div class="dropdown-divider"></div>
+                            <Link :href="route('prestamos.index')" class="dropdown-item">
+                                <i class="bi bi-list-ul mr-1"></i>Listado / Devolución
+                            </Link>
                         </div>
                     </li>
 
@@ -69,7 +72,7 @@
                     <!-- Usuarios -->
                     <li v-if="can('gestionar-usuarios')" class="nav-item">
                         <Link :href="route('usuarios.index')" class="nav-link">
-                            <i class="bi bi-people mr-1"></i>Usuarios
+                            <i class="bi bi-person-check mr-1"></i>Usuarios
                         </Link>
                     </li>
 

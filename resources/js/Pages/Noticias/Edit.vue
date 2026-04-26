@@ -5,7 +5,7 @@
         <div class="main-container" style="max-width: 600px; margin: auto;">
             <h3 class="mb-4"><i class="bi bi-newspaper mr-2"></i>Editar noticia</h3>
             <FlashMessage />
-            <form @submit.prevent="submit" enctype="multipart/form-data">
+            <form @submit.prevent="enviar" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Título <span class="text-danger">*</span></label>
                     <input v-model="form.titulo" type="text" class="form-control"
@@ -22,8 +22,8 @@
                         <img :src="noticia.imagen_url" class="img-thumbnail" style="max-height: 120px;">
                         <small class="d-block text-muted">Seleccioná una nueva imagen para reemplazar.</small>
                     </div>
-                    <input type="file" class="form-control-file" accept="image/*" @change="handleFile">
-                    <img v-if="preview" :src="preview" class="mt-2 img-thumbnail" style="max-height: 120px;">
+                    <input type="file" class="form-control-file" accept="image/*" @change="alSeleccionarImagen">
+                    <img v-if="previsualizacion" :src="previsualizacion" class="mt-2 img-thumbnail" style="max-height: 120px;">
                 </div>
                 <div class="d-flex justify-content-between">
                     <Link :href="route('noticias.index')" class="btn btn-outline-secondary">Cancelar</Link>
@@ -43,17 +43,17 @@ import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
 
 const props = defineProps({ noticia: { type: Object, required: true } })
-const preview = ref(null)
+const previsualizacion = ref(null)
 const form    = useForm({ titulo: props.noticia.titulo, descripcion: props.noticia.descripcion, imagen: null })
 
-function handleFile(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    form.imagen  = file
-    preview.value = URL.createObjectURL(file)
+function alSeleccionarImagen(e) {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+    form.imagen  = archivo
+    previsualizacion.value = URL.createObjectURL(archivo)
 }
 
-function submit() {
+function enviar() {
     form.post(route('noticias.update', props.noticia.id), { _method: 'PUT' })
 }
 </script>

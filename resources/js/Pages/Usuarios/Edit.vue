@@ -21,11 +21,41 @@
                 <div class="card-header"><strong>Datos del usuario</strong></div>
                 <div class="card-body">
                     <form @submit.prevent="submitInfo">
-                        <div class="form-group">
-                            <label>Nombre <span class="text-danger">*</span></label>
-                            <input v-model="form.nombre" type="text" class="form-control"
-                                   :class="{ 'is-invalid': form.errors.nombre }">
-                            <div class="invalid-feedback">{{ form.errors.nombre }}</div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Nombre <span class="text-danger">*</span></label>
+                                <input v-model="form.nombre" type="text" class="form-control"
+                                       :class="{ 'is-invalid': form.errors.nombre }">
+                                <div class="invalid-feedback">{{ form.errors.nombre }}</div>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Apellido</label>
+                                <input v-model="form.apellido" type="text" class="form-control"
+                                       :class="{ 'is-invalid': form.errors.apellido }">
+                                <div class="invalid-feedback">{{ form.errors.apellido }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Año y División (solo alumno) -->
+                        <div v-if="esAlumnoTarget" class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Año</label>
+                                <select v-model.number="form.anio" class="form-control"
+                                        :class="{ 'is-invalid': form.errors.anio }">
+                                    <option :value="null">— Sin asignar —</option>
+                                    <option v-for="n in 6" :key="n" :value="n">{{ n }}°</option>
+                                </select>
+                                <div class="invalid-feedback">{{ form.errors.anio }}</div>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>División</label>
+                                <select v-model.number="form.division" class="form-control"
+                                        :class="{ 'is-invalid': form.errors.division }">
+                                    <option :value="null">— Sin asignar —</option>
+                                    <option v-for="n in 6" :key="n" :value="n">{{ n }}</option>
+                                </select>
+                                <div class="invalid-feedback">{{ form.errors.division }}</div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -59,13 +89,14 @@
                         <!-- Socio vinculado (solo alumno) -->
                         <div v-if="esAlumnoTarget" class="form-group">
                             <label>Socio vinculado</label>
-                            <select v-model="form.socio_id" class="form-control"
-                                    :class="{ 'is-invalid': form.errors.socio_id }">
-                                <option :value="null">— Sin vincular —</option>
-                                <option v-for="s in socios" :key="s.id" :value="s.id">{{ s.label }}</option>
-                            </select>
-                            <small class="form-text text-muted">Vinculá este usuario al registro de socio correspondiente.</small>
-                            <div class="invalid-feedback">{{ form.errors.socio_id }}</div>
+                            <div class="form-control-plaintext">
+                                <span v-if="usuario.socio_id" class="badge badge-info">
+                                    <i class="bi bi-person-check mr-1"></i>Vinculado — ID {{ usuario.socio_id }}
+                                </span>
+                                <span v-else class="badge badge-warning">
+                                    <i class="bi bi-hourglass-split mr-1"></i>Sin vincular
+                                </span>
+                            </div>
                         </div>
 
                         <div class="d-flex justify-content-between mt-2">
@@ -106,11 +137,45 @@
                 El rol <strong>admin</strong> tiene acceso total. Los permisos individuales no aplican.
             </div>
 
+            <!-- Alta de Socio (alumno sin socio vinculado) -->
+            <div v-if="esAlumnoTarget && !usuario.socio_id" class="card border-success mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-person-plus mr-1"></i><strong>Alta en el sistema</strong>
+                </div>
+                <div class="card-body">
+                    <div v-if="!usuario.activo" class="alert alert-warning py-2 mb-3">
+                        <i class="bi bi-hourglass-split mr-1"></i>
+                        Cuenta <strong>inactiva</strong> — el alumno no puede ingresar todavía.
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Al dar de alta se activa la cuenta y se crea automáticamente el registro de Socio, habilitando préstamos y reservas.
+                    </p>
+                    <button @click="darDeAlta" class="btn btn-success" :disabled="aprobando">
+                        <span v-if="aprobando" class="spinner-border spinner-border-sm mr-1"></span>
+                        <i v-else class="bi bi-check-circle mr-1"></i>
+                        Dar de Alta
+                    </button>
+                </div>
+            </div>
+
+            <!-- Socio ya vinculado: info -->
+            <div v-if="esAlumnoTarget && usuario.socio_id" class="card mb-4">
+                <div class="card-header"><strong>Socio vinculado</strong></div>
+                <div class="card-body py-2">
+                    <span class="badge badge-info">
+                        <i class="bi bi-person-check mr-1"></i>ID Socio: {{ usuario.socio_id }}
+                    </span>
+                    <Link :href="route('socios.index')" class="btn btn-sm btn-outline-secondary ml-3">
+                        <i class="bi bi-people mr-1"></i>Ver en Panel de Socios
+                    </Link>
+                </div>
+            </div>
+
             <!-- Activar / Desactivar (no para uno mismo) -->
             <div v-if="!esYo" class="card">
                 <div class="card-header"><strong>Estado de la cuenta</strong></div>
                 <div class="card-body">
-                    <p class="text-muted small">
+                    <p class="text-muted small mb-2">
                         {{ usuario.activo ? 'El usuario puede iniciar sesión.' : 'El usuario no puede iniciar sesión.' }}
                     </p>
                     <button @click="toggleActivo" class="btn"
@@ -144,11 +209,13 @@ const props = defineProps({
 
 const form = useForm({
     nombre:                props.usuario.nombre,
+    apellido:              props.usuario.apellido ?? '',
     email:                 props.usuario.email,
     usuario:               props.usuario.usuario,
     password:              '',
     password_confirmation: '',
-    socio_id:              props.usuario.socio_id ?? null,
+    anio:                  props.usuario.anio ?? '',
+    division:              props.usuario.division ?? '',
 })
 
 const esAdminTarget          = ref(props.es_admin_target)
@@ -156,6 +223,7 @@ const esAlumnoTarget         = ref(props.es_alumno_target)
 const esYo                   = ref(props.es_yo)
 const permisosSeleccionados  = ref([...props.permisos_usuario])
 const savingPermisos         = ref(false)
+const aprobando              = ref(false)
 
 const ROLES = { admin: 'Administrador', bibliotecario: 'Bibliotecario', alumno: 'Alumno' }
 const labelRol = computed(() => ROLES[props.usuario.rol] ?? props.usuario.rol ?? '')
@@ -181,5 +249,12 @@ function guardarPermisos() {
 
 function toggleActivo() {
     router.patch(route('usuarios.toggle-activo', props.usuario.id))
+}
+
+function darDeAlta() {
+    aprobando.value = true
+    router.patch(route('usuarios.aprobar', props.usuario.id), {}, {
+        onFinish: () => { aprobando.value = false },
+    })
 }
 </script>

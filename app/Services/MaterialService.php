@@ -35,8 +35,8 @@ class MaterialService
      */
     public function generarClasificacionFisica(Area $area, string $pasillo, string $tipo, int $estante, int $nivel): string
     {
-        $abrev = strtoupper($area->Abreviado ?? $area->codigo_dewey);
-        return "{$abrev}-{$pasillo}-({$tipo}){$estante}-{$nivel}";
+        $abreviatura = strtoupper($area->Abreviado ?? $area->codigo_dewey);
+        return "{$abreviatura}-{$pasillo}-({$tipo}){$estante}-{$nivel}";
     }
 
     /**
@@ -53,26 +53,26 @@ class MaterialService
         ]);
 
         try {
-            $data = QrCode::format('png')->size(300)->errorCorrection('H')->generate($contenido);
-            $path = "qrcodes/QR_{$material->id}.png";
+            $contenidoQr = QrCode::format('png')->size(300)->errorCorrection('H')->generate($contenido);
+            $ruta = "qrcodes/QR_{$material->id}.png";
         } catch (RuntimeException) {
-            $data = QrCode::format('svg')->size(300)->errorCorrection('H')->generate($contenido);
-            $path = "qrcodes/QR_{$material->id}.svg";
+            $contenidoQr = QrCode::format('svg')->size(300)->errorCorrection('H')->generate($contenido);
+            $ruta = "qrcodes/QR_{$material->id}.svg";
         }
 
-        Storage::disk('public')->put($path, $data);
+        Storage::disk('public')->put($ruta, $contenidoQr);
 
-        return Storage::disk('public')->url($path);
+        return Storage::disk('public')->url($ruta);
     }
 
     /**
      * Devuelve la URL del QR si ya existe, o null.
      */
-    public function urlQR(Material $material): ?string
+    public function urlCodigoQr(Material $material): ?string
     {
-        foreach (["qrcodes/QR_{$material->id}.png", "qrcodes/QR_{$material->id}.svg"] as $path) {
-            if (Storage::disk('public')->exists($path)) {
-                return Storage::disk('public')->url($path);
+        foreach (["qrcodes/QR_{$material->id}.png", "qrcodes/QR_{$material->id}.svg"] as $ruta) {
+            if (Storage::disk('public')->exists($ruta)) {
+                return Storage::disk('public')->url($ruta);
             }
         }
 

@@ -7,7 +7,7 @@
             <h3 class="mb-4"><i class="bi bi-person-plus mr-2"></i>Nuevo socio</h3>
             <FlashMessage />
 
-            <form @submit.prevent="submit">
+            <form @submit.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label>Nombre <span class="text-danger">*</span></label>
@@ -81,7 +81,7 @@ const form = useForm({
     telefono: '', direccion: '', anio: null, division: null,
 })
 
-function submit() {
+function enviar() {
     form.post(route('socios.store'))
 }
 </script>

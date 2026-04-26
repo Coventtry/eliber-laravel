@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePrestamoRequest;
 use App\Models\Area;
 use App\Models\Prestamo;
+use App\Models\Socio;
 use App\Services\PrestamoService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -36,10 +38,24 @@ class PrestamoController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $socioInicial = null;
+        if ($request->socio_id) {
+            $socio = Socio::find($request->socio_id);
+            if ($socio) {
+                $socioInicial = [
+                    'id'       => $socio->id,
+                    'nombre'   => $socio->nombre,
+                    'apellido' => $socio->apellido,
+                    'email'    => $socio->email,
+                ];
+            }
+        }
+
         return Inertia::render('Prestamos/Create', [
-            'areas' => Area::orderBy('nombre')->get(['id', 'nombre']),
+            'areas'        => Area::orderBy('nombre')->get(['id', 'nombre']),
+            'socioInicial' => $socioInicial,
         ]);
     }
 
@@ -78,7 +94,7 @@ class PrestamoController extends Controller
         return redirect()->route('prestamos.index')->with('success', 'Devolución registrada.');
     }
 
-    public function extender(Request $request, Prestamo $prestamo): RedirectResponse
+    public function extender(Request $request, Prestamo $prestamo): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $prestamo);
         $request->validate(['dias' => 'required|integer|min:1|max:30']);
@@ -86,7 +102,18 @@ class PrestamoController extends Controller
         try {
             $this->prestamoService->extenderPrestamo($prestamo, $request->dias);
         } catch (ValidationException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['errors' => $e->errors()], 422);
+            }
             return back()->withErrors($e->errors());
+        }
+
+        if ($request->wantsJson()) {
+            $prestamo->refresh();
+            return response()->json([
+                'message'          => "Préstamo extendido {$request->dias} días.",
+                'fecha_devolucion' => $prestamo->fecha_devolucion->format('Y-m-d'),
+            ]);
         }
 
         return redirect()->route('prestamos.index')->with('success', "Préstamo extendido {$request->dias} días.");

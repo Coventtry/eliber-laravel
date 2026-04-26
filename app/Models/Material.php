@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Material extends Model
@@ -27,11 +26,6 @@ class Material extends Model
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
-    }
-
-    public function ubicacion(): HasOne
-    {
-        return $this->hasOne(UbicacionFisica::class);
     }
 
     public function prestamos(): HasMany

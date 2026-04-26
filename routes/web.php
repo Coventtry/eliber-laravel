@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SocioController;
 use App\Http\Controllers\MaterialController;
@@ -36,6 +37,7 @@ Route::get('/faqs', function () {
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login')->middleware('guest');
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('guest');
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+Route::post('/register', [RegisterController::class, 'store'])->name('register')->middleware('guest');
 
 // Password reset (público)
 Route::get('/reset-password', [PasswordResetController::class, 'showForm'])->name('password.reset');
@@ -67,6 +69,7 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'create', 'store', 'edit', 'update']);
     Route::patch('usuarios/{user}/permisos', [UserController::class, 'updatePermisos'])->name('usuarios.permisos');
     Route::patch('usuarios/{user}/toggle-activo', [UserController::class, 'toggleActivo'])->name('usuarios.toggle-activo');
+    Route::patch('usuarios/{user}/aprobar', [UserController::class, 'aprobar'])->name('usuarios.aprobar');
 
     // Alertas
     Route::get('alertas', [AlertaController::class, 'index'])->name('alertas.index');
@@ -82,6 +85,7 @@ Route::middleware('auth')->group(function () {
         Route::put('usuarios/{user}', [AdminController::class, 'updateUsuario'])->name('usuarios.update');
         Route::delete('usuarios/{user}', [AdminController::class, 'destroyUsuario'])->name('usuarios.destroy');
         Route::patch('usuarios/{user}/toggle-activo', [AdminController::class, 'toggleActivoUsuario'])->name('usuarios.toggle');
+        Route::patch('usuarios/{user}/aprobar', [AdminController::class, 'aprobarUsuario'])->name('usuarios.aprobar');
 
         // Feedback Kanban
         Route::get('feedback', [FeedbackController::class, 'index'])->name('feedback.index');
@@ -123,6 +127,7 @@ Route::middleware('auth')->group(function () {
 
     // AJAX endpoints
     Route::get('api/socios/buscar', [SocioController::class, 'buscar'])->name('api.socios.buscar');
+    Route::get('api/socios/{socio}/prestamos', [SocioController::class, 'prestamosSocio'])->name('api.socios.prestamos');
     Route::get('api/materiales/disponibles', [MaterialController::class, 'disponibles'])->name('api.materiales.disponibles');
     Route::get('api/materiales/ultimo-codigo', [MaterialController::class, 'ultimoCodigo'])->name('api.materiales.ultimo-codigo');
 });

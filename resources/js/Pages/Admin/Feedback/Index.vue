@@ -7,10 +7,10 @@
             <p class="text-muted small mb-0">Seguimiento de sugerencias y solicitudes del sistema</p>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary btn-sm" @click="showSettings = true">
+            <button class="btn btn-outline-secondary btn-sm" @click="mostrarConfiguracion = true">
                 <i class="bi bi-gear mr-1"></i>Configuración
             </button>
-            <button class="btn btn-primary btn-sm" @click="openCreate">
+            <button class="btn btn-primary btn-sm" @click="abrirCrear">
                 <i class="bi bi-plus mr-1"></i>Nueva tarjeta
             </button>
         </div>
@@ -89,10 +89,10 @@
 
                     <!-- Acciones -->
                     <div class="d-flex justify-content-end mt-2" style="gap:.25rem;">
-                        <button class="btn btn-link btn-sm p-0 text-muted" @click="openEdit(card)" title="Editar">
+                        <button class="btn btn-link btn-sm p-0 text-muted" @click="abrirEditar(card)" title="Editar">
                             <i class="bi bi-pencil" style="font-size:.8rem;"></i>
                         </button>
-                        <button class="btn btn-link btn-sm p-0 text-danger" @click="confirmDelete(card)" title="Eliminar">
+                        <button class="btn btn-link btn-sm p-0 text-danger" @click="confirmarEliminar(card)" title="Eliminar">
                             <i class="bi bi-trash" style="font-size:.8rem;"></i>
                         </button>
                     </div>
@@ -106,12 +106,12 @@
     </div>
 
     <!-- Modal crear/editar -->
-    <div v-if="showModal" class="modal-backdrop-custom" @click.self="showModal = false">
+    <div v-if="mostrarModal" class="modal-backdrop-custom" @click.self="mostrarModal = false">
         <div class="modal-dialog-custom">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">{{ editCard ? 'Editar tarjeta' : 'Nueva tarjeta' }}</h5>
-                    <button type="button" class="close" @click="showModal = false"><span>&times;</span></button>
+                    <h5 class="modal-title">{{ tarjetaEdicion ? 'Editar tarjeta' : 'Nueva tarjeta' }}</h5>
+                    <button type="button" class="close" @click="mostrarModal = false"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
@@ -145,7 +145,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" @click="showModal = false">Cancelar</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="mostrarModal = false">Cancelar</button>
                     <button type="button" class="btn btn-primary btn-sm" :disabled="saving" @click="guardar">
                         <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
                         Guardar
@@ -156,12 +156,12 @@
     </div>
 
     <!-- Modal configuración -->
-    <div v-if="showSettings" class="modal-backdrop-custom" @click.self="showSettings = false">
+    <div v-if="mostrarConfiguracion" class="modal-backdrop-custom" @click.self="mostrarConfiguracion = false">
         <div class="modal-dialog-custom">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="bi bi-gear mr-2"></i>Configuración del Kanban</h5>
-                    <button type="button" class="close" @click="showSettings = false"><span>&times;</span></button>
+                    <button type="button" class="close" @click="mostrarConfiguracion = false"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
                     <!-- Tiempo desaparición -->
@@ -215,27 +215,27 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" @click="showSettings = false">Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-sm" @click="saveSettings">Guardar</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="mostrarConfiguracion = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" @click="guardarConfiguracion">Guardar</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Modal confirmación eliminar -->
-    <div v-if="deleteTarget" class="modal-backdrop-custom" @click.self="deleteTarget = null">
+    <div v-if="objetoEliminar" class="modal-backdrop-custom" @click.self="objetoEliminar = null">
         <div class="modal-dialog-custom" style="max-width:420px;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title text-danger"><i class="bi bi-trash mr-2"></i>Eliminar tarjeta</h5>
-                    <button type="button" class="close" @click="deleteTarget = null"><span>&times;</span></button>
+                    <button type="button" class="close" @click="objetoEliminar = null"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <p>¿Eliminás la tarjeta <strong>{{ deleteTarget.titulo }}</strong>? Esta acción no se puede deshacer.</p>
+                    <p>¿Eliminás la tarjeta <strong>{{ objetoEliminar.titulo }}</strong>? Esta acción no se puede deshacer.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" @click="deleteTarget = null">Cancelar</button>
-                    <button type="button" class="btn btn-danger btn-sm" @click="doDelete">Eliminar</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="objetoEliminar = null">Cancelar</button>
+                    <button type="button" class="btn btn-danger btn-sm" @click="ejecutarEliminar">Eliminar</button>
                 </div>
             </div>
         </div>
@@ -274,12 +274,12 @@ const settings = reactive({
     availableTags: ['Bug', 'Mejora', 'Feature', 'Diseño', 'Seguridad', 'UX', 'Documentación', 'Performance'],
 })
 const settingsForm = reactive({ ...JSON.parse(JSON.stringify(settings)) })
-const showSettings = ref(false)
+const mostrarConfiguracion = ref(false)
 const newTag        = ref('')
 
-function saveSettings() {
+function guardarConfiguracion() {
     Object.assign(settings, JSON.parse(JSON.stringify(settingsForm)))
-    showSettings.value = false
+    mostrarConfiguracion.value = false
 }
 function addTag() {
     const t = newTag.value.trim()
@@ -321,20 +321,20 @@ function onDrop(event, colId) {
 }
 
 // ── Modal crear/editar ────────────────────────────────────────────────────────
-const showModal = ref(false)
-const editCard  = ref(null)
+const mostrarModal = ref(false)
+const tarjetaEdicion  = ref(null)
 const saving    = ref(false)
 const errors    = ref({})
 const form      = reactive({ titulo: '', descripcion: '', prioridad: 'medium', tags: [] })
 
-function openCreate() {
-    editCard.value = null
+function abrirCrear() {
+    tarjetaEdicion.value = null
     Object.assign(form, { titulo: '', descripcion: '', prioridad: 'medium', tags: [] })
     errors.value   = {}
-    showModal.value = true
+    mostrarModal.value = true
 }
-function openEdit(card) {
-    editCard.value = card
+function abrirEditar(card) {
+    tarjetaEdicion.value = card
     Object.assign(form, {
         titulo:      card.titulo,
         descripcion: card.descripcion ?? '',
@@ -342,7 +342,7 @@ function openEdit(card) {
         tags:        [...(card.tags ?? [])],
     })
     errors.value   = {}
-    showModal.value = true
+    mostrarModal.value = true
 }
 function toggleTag(tag) {
     const idx = form.tags.indexOf(tag)
@@ -353,25 +353,25 @@ function guardar() {
     saving.value = true
     errors.value = {}
     const data = { titulo: form.titulo, descripcion: form.descripcion, prioridad: form.prioridad, tags: form.tags }
-    const url  = editCard.value
-        ? route('admin.feedback.update', editCard.value.id)
+    const url  = tarjetaEdicion.value
+        ? route('admin.feedback.update', tarjetaEdicion.value.id)
         : route('admin.feedback.store')
-    const method = editCard.value ? 'put' : 'post'
+    const method = tarjetaEdicion.value ? 'put' : 'post'
 
     router[method](url, data, {
         preserveScroll: true,
-        onSuccess: () => { saving.value = false; showModal.value = false },
+        onSuccess: () => { saving.value = false; mostrarModal.value = false },
         onError: (e)  => { saving.value = false; errors.value = e },
     })
 }
 
 // ── Eliminar ──────────────────────────────────────────────────────────────────
-const deleteTarget = ref(null)
-function confirmDelete(card) { deleteTarget.value = card }
-function doDelete() {
-    router.delete(route('admin.feedback.destroy', deleteTarget.value.id), {
+const objetoEliminar = ref(null)
+function confirmarEliminar(card) { objetoEliminar.value = card }
+function ejecutarEliminar() {
+    router.delete(route('admin.feedback.destroy', objetoEliminar.value.id), {
         preserveScroll: true,
-        onSuccess: () => { deleteTarget.value = null },
+        onSuccess: () => { objetoEliminar.value = null },
     })
 }
 </script>

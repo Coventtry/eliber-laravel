@@ -13,7 +13,7 @@
             </h3>
             <FlashMessage />
 
-            <form @submit.prevent="submit">
+            <form @enviar.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label>Nombre <span class="text-danger">*</span></label>
@@ -60,7 +60,7 @@
 
                 <div class="d-flex justify-content-between mt-2">
                     <Link :href="route('socios.index')" class="btn btn-outline-secondary">Cancelar</Link>
-                    <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
+                    <button type="enviar" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
                 </div>
             </form>
 
@@ -69,18 +69,18 @@
             <!-- Baja / Reactivar -->
             <div class="d-flex justify-content-between align-items-center">
                 <div v-if="socio.activo">
-                    <button class="btn btn-outline-danger" @click="showBajaConfirm = true">
+                    <button class="btn btn-outline-danger" @click="mostrarConfirmBaja = true">
                         <i class="bi bi-person-dash mr-1"></i>Dar de baja
                     </button>
-                    <div v-if="showBajaConfirm" class="mt-2 p-3 border rounded">
+                    <div v-if="mostrarConfirmBaja" class="mt-2 p-3 border rounded">
                         <p class="mb-2">¿Dar de baja a {{ socio.nombre }} {{ socio.apellido }}?</p>
-                        <button class="btn btn-secondary btn-sm mr-2" @click="showBajaConfirm = false">Cancelar</button>
-                        <button class="btn btn-danger btn-sm" @click="confirmBaja">Confirmar</button>
+                        <button class="btn btn-secondary btn-sm mr-2" @click="mostrarConfirmBaja = false">Cancelar</button>
+                        <button class="btn btn-danger btn-sm" @click="confirmarBaja">Confirmar</button>
                     </div>
                 </div>
                 <div v-else>
-                    <form @submit.prevent="reactivar">
-                        <button type="submit" class="btn btn-outline-success">
+                    <form @enviar.prevent="reactivar">
+                        <button type="enviar" class="btn btn-outline-success">
                             <i class="bi bi-person-check mr-1"></i>Reactivar
                         </button>
                     </form>
@@ -118,14 +118,14 @@ const props = defineProps({
 })
 
 const form = useForm({ ...props.socio })
-const showBajaConfirm = ref(false)
+const mostrarConfirmBaja = ref(false)
 
-function submit() {
+function enviar() {
     form.put(route('socios.update', props.socio.id))
 }
 
-function confirmBaja() {
-    console.log('confirmBaja called for socio:', props.socio.id)
+function confirmarBaja() {
+    console.log('confirmarBaja called for socio:', props.socio.id)
     router.patch(route('socios.baja', props.socio.id))
 }
 
