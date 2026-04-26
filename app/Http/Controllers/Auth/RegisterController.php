@@ -47,7 +47,10 @@ class RegisterController extends Controller
 
         $usuario->assignRole($request->rol);
 
-        return redirect()->route('login')
-            ->with('info', 'Tu cuenta fue creada. Un bibliotecario revisará tu solicitud y te habilitará el acceso.');
+        $mensaje = $request->rol === 'bibliotecario'
+            ? 'Tu cuenta fue creada. Un administrador revisará tu solicitud y te habilitará el acceso.'
+            : 'Tu cuenta fue creada. Un bibliotecario revisará tu solicitud y te habilitará el acceso.';
+
+        return redirect()->route('login')->with('info', $mensaje);
     }
 }
