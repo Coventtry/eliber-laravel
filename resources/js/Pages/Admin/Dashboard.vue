@@ -131,4 +131,12 @@ const statCards = computed(() => [
 
 .stat-value  { font-size: 1.6rem; font-weight: 700; line-height: 1; }
 .stat-label  { font-size: .78rem; color: #6c757d; margin-top: 2px; }
+
+/* Dark mode */
+:global([data-theme="dark"]) .stat-blue   { background: #1e3a5f; color: #93c5fd; }
+:global([data-theme="dark"]) .stat-green  { background: #14532d; color: #6ee7b7; }
+:global([data-theme="dark"]) .stat-purple { background: #3b0764; color: #c4b5fd; }
+:global([data-theme="dark"]) .stat-red    { background: #450a0a; color: #fca5a5; }
+:global([data-theme="dark"]) .stat-label  { color: #94a3b8; }
+:global([data-theme="dark"]) .stat-value  { color: #f1f5f9; }
 </style>
