@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Alerta;
 use App\Models\Configuracion;
 use App\Models\FooterLink;
+use App\Models\Institucion;
 use App\Services\PrestamoService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -20,28 +21,45 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        $vencimientos    = 0;
-        $alertasNoLeidas = 0;
-        $anuncio         = null;
-        $footerLinks     = [];
+        $vencimientos      = 0;
+        $alertasNoLeidas   = 0;
+        $anuncio           = null;
+        $footerLinks       = [];
+        $institucionActiva = null;
+        $instituciones     = [];
         $user = $request->user();
 
         if ($user) {
-            $diasAlerta   = (int) Configuracion::get($user->institucion_id, 'dias_alerta_previa', 4);
+            $diasAlerta   = (int) Configuracion::get(tenantId(), 'dias_alerta_previa', 4);
             $vencimientos = app(PrestamoService::class)->obtenerVencimientosProximos($diasAlerta)->count();
             $alertasNoLeidas = Alerta::noLeidas()->count();
 
-            $institucion = $user->institucion;
+            $institucion = $user->hasRole('admin')
+                ? Institucion::find(tenantId())
+                : $user->institucion;
+
             if ($institucion) {
+                $institucionActiva = [
+                    'id'     => $institucion->id,
+                    'nombre' => $institucion->nombre,
+                    'slug'   => $institucion->slug,
+                ];
                 if ($institucion->anuncio_activo && $institucion->anuncio_texto) {
                     $anuncio = [
                         'texto'  => $institucion->anuncio_texto,
                         'estilo' => $institucion->anuncio_estilo ?? 'info',
                     ];
                 }
-                $footerLinks = FooterLink::where('institucion_id', $user->institucion_id)
+                $footerLinks = FooterLink::where('institucion_id', $institucion->id)
                     ->orderBy('orden')->orderBy('id')
                     ->get(['id', 'label', 'url'])
+                    ->toArray();
+            }
+
+            if ($user->hasRole('admin')) {
+                $instituciones = Institucion::where('estado', 'activa')
+                    ->orderBy('nombre')
+                    ->get(['id', 'nombre'])
                     ->toArray();
             }
         }
@@ -68,6 +86,8 @@ class HandleInertiaRequests extends Middleware
             'alertas_no_leidas'      => $alertasNoLeidas,
             'anuncio'                => $anuncio,
             'footer_links'           => $footerLinks,
+            'institucion_activa'     => $institucionActiva,
+            'instituciones'          => $instituciones,
         ]);
     }
 

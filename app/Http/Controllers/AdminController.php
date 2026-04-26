@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Alerta;
 use App\Models\Configuracion;
+use App\Models\Institucion;
 use App\Models\Material;
 use App\Models\Prestamo;
 use App\Models\Reserva;
@@ -24,7 +25,7 @@ class AdminController extends Controller
 
     public function dashboard(): Response
     {
-        $idInstitucion     = auth()->user()->institucion_id;
+        $idInstitucion     = tenantId();
         $diasAlerta = (int) Configuracion::get($idInstitucion, 'dias_alerta_previa', 4);
 
         $stats = [
@@ -68,7 +69,7 @@ class AdminController extends Controller
 
     public function usuarios(Request $request): Response
     {
-        $idInstitucion = auth()->user()->institucion_id;
+        $idInstitucion = tenantId();
 
         $usuarios = User::with('roles')
             ->where('institucion_id', $idInstitucion)
@@ -143,7 +144,7 @@ class AdminController extends Controller
             'usuario'        => $request->usuario,
             'password'       => $request->password,
             'activo'         => true,
-            'institucion_id' => auth()->user()->institucion_id,
+            'institucion_id' => tenantId(),
             'socio_id'       => $request->rol === 'alumno' ? $request->socio_id : null,
         ];
 
@@ -221,5 +222,16 @@ class AdminController extends Controller
         $user->update(['activo' => !$user->activo]);
         return redirect()->route('admin.usuarios')
             ->with('success', $user->activo ? 'Usuario activado.' : 'Usuario desactivado.');
+    }
+
+    // ─────────────────────── Selector de institución ────────────────────────
+
+    public function switchInstitucion(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'institucion_id' => 'required|exists:instituciones,id,estado,activa',
+        ]);
+        session(['admin_institucion_id' => (int) $request->institucion_id]);
+        return back();
     }
 }

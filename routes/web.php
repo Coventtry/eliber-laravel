@@ -110,6 +110,9 @@ Route::middleware('auth')->group(function () {
         // Configuración
         Route::get('configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
         Route::put('configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
+
+        // Selector de institución
+        Route::post('switch-institucion', [AdminController::class, 'switchInstitucion'])->name('switch-institucion');
     });
 
     // Perfil (todos los roles)
