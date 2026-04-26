@@ -523,10 +523,12 @@ select.form-control {
     color: var(--dm-text);
 }
 
-[data-theme="dark"] .page-content {
-    background-color: var(--dm-bg);
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .admin-content {
+    background-color: var(--dm-bg) !important;
     color: var(--dm-text);
 }
+
 [data-theme="dark"] .main-container {
     background-color: var(--dm-surface) !important;
     color: var(--dm-text);
