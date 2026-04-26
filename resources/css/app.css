@@ -547,7 +547,8 @@ select.form-control {
     border-color: var(--dm-border) !important;
     color: var(--dm-text);
 }
-[data-theme="dark"] .card-body {
+[data-theme="dark"] .card-body,
+[data-theme="dark"] .card-body *:not(.badge):not(.btn):not(.text-danger):not(.text-warning):not(.text-success):not(.text-info):not(.text-muted) {
     color: var(--dm-text);
 }
 [data-theme="dark"] .card-noticia {
