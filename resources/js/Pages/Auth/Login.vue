@@ -75,12 +75,17 @@
                             <input
                                 id="password"
                                 v-model="loginForm.password"
-                                type="password"
+                                :type="verPassword ? 'text' : 'password'"
                                 class="form-control"
                                 :class="{ 'is-invalid': errors.password }"
                                 autocomplete="current-password"
                                 placeholder="Ingresa tu contraseña"
                             >
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" @click="verPassword = !verPassword" tabindex="-1">
+                                    <i :class="verPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                                </button>
+                            </div>
                         </div>
                         <div v-if="errors.password" class="invalid-feedback d-block">{{ errors.password }}</div>
                     </div>
@@ -243,12 +248,17 @@
                             <input
                                 id="reg-password"
                                 v-model="regForm.password"
-                                type="password"
+                                :type="verRegPassword ? 'text' : 'password'"
                                 class="form-control"
                                 :class="{ 'is-invalid': regErrors.password }"
                                 placeholder="Mínimo 8 caracteres"
                                 autocomplete="new-password"
                             >
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" @click="verRegPassword = !verRegPassword" tabindex="-1">
+                                    <i :class="verRegPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                                </button>
+                            </div>
                         </div>
                         <div v-if="regErrors.password" class="invalid-feedback d-block">{{ regErrors.password }}</div>
                     </div>
@@ -262,7 +272,7 @@
                             <input
                                 id="reg-password-confirm"
                                 v-model="regForm.password_confirmation"
-                                type="password"
+                                :type="verRegPassword ? 'text' : 'password'"
                                 class="form-control"
                                 placeholder="Repetí la contraseña"
                                 autocomplete="new-password"
@@ -317,6 +327,8 @@ const hasRegisterErrors = computed(() =>
 )
 
 const tab = ref(hasRegisterErrors.value ? 'register' : 'login')
+const verPassword    = ref(false)
+const verRegPassword = ref(false)
 
 function cambiarPestana(t) {
     tab.value = t
