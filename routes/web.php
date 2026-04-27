@@ -6,6 +6,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SocioController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\AreaController;
+use App\Http\Controllers\CategoriaFisicaController;
 use App\Http\Controllers\PrestamoController;
 use App\Http\Controllers\NoticiaController;
 use App\Http\Controllers\AnotacionController;
@@ -21,6 +22,9 @@ use App\Http\Controllers\ContenidoController;
 use App\Http\Controllers\AnaliticaController;
 use App\Http\Controllers\ConfiguracionController;
 use Illuminate\Support\Facades\Route;
+
+// Ficha pública de material (accesible sin login — para QR)
+Route::get('/materiales/{id}/ficha', [MaterialController::class, 'fichaPublica'])->name('materiales.ficha');
 
 // Landing page - pública
 Route::get('/', [LandingController::class, '__invoke'])->name('landing');
@@ -46,15 +50,17 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name(
 // Protected routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('feedback/nota', [FeedbackController::class, 'storeNota'])->name('feedback.nota');
 
     Route::resource('socios', SocioController::class);
     Route::patch('socios/{socio}/baja', [SocioController::class, 'baja'])->name('socios.baja');
     Route::patch('socios/{socio}/reactivar', [SocioController::class, 'reactivar'])->name('socios.reactivar');
 
-    Route::resource('materiales', MaterialController::class);
+    Route::resource('materiales', MaterialController::class)->parameters(['materiales' => 'material']);
     Route::get('materiales/{material}/qr', [MaterialController::class, 'qrCode'])->name('materiales.qr');
 
     Route::resource('areas', AreaController::class);
+    Route::resource('categorias', CategoriaFisicaController::class)->except(['show']);
 
     Route::resource('prestamos', PrestamoController::class)->only(['index', 'create', 'store']);
     Route::patch('prestamos/{prestamo}/devolver', [PrestamoController::class, 'devolver'])->name('prestamos.devolver');
@@ -66,7 +72,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('usuarios', UserController::class)
         ->parameters(['usuarios' => 'user'])
-        ->only(['index', 'create', 'store', 'edit', 'update']);
+        ->only(['index', 'edit', 'update']);
     Route::patch('usuarios/{user}/permisos', [UserController::class, 'updatePermisos'])->name('usuarios.permisos');
     Route::patch('usuarios/{user}/toggle-activo', [UserController::class, 'toggleActivo'])->name('usuarios.toggle-activo');
     Route::patch('usuarios/{user}/aprobar', [UserController::class, 'aprobar'])->name('usuarios.aprobar');

@@ -7,7 +7,7 @@
             <h3 class="mb-4"><i class="bi bi-book-plus mr-2"></i>Nuevo material</h3>
             <FlashMessage />
 
-            <form @enviar.prevent="enviar">
+            <form @submit.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-8">
                         <label>Título <span class="text-danger">*</span></label>
@@ -34,22 +34,38 @@
 
                 <div class="form-row">
                     <div class="form-group col-md-6">
-                        <label>Área <span class="text-danger">*</span></label>
+                        <label>Clasificación Dewey <span class="text-danger">*</span></label>
                         <select v-model.number="form.area_id" class="form-control"
                                 :class="{ 'is-invalid': form.errors.area_id }"
                                 @change="actualizarCodigo">
                             <option value="">— Seleccioná —</option>
-                            <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+                            <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.codigo_dewey }} — {{ a.nombre }}</option>
                         </select>
                         <div class="invalid-feedback">{{ form.errors.area_id }}</div>
                     </div>
                     <div class="form-group col-md-3">
-                        <label>Categoría</label>
-                        <input v-model="form.categoria" type="text" class="form-control">
+                        <label>Categoría física</label>
+                        <select v-model="form.categoria" class="form-control">
+                            <option value="">— Seleccioná —</option>
+                            <option v-for="c in categorias" :key="c" :value="c">{{ c }}</option>
+                        </select>
                     </div>
                     <div class="form-group col-md-3">
                         <label>Disponibilidad <span class="text-danger">*</span></label>
                         <input v-model.number="form.disponibilidad" type="number" min="0" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Tipo de préstamo</label>
+                        <select v-model="form.tipo_prestamo" class="form-control">
+                            <option value="">— Sin especificar —</option>
+                            <option>Solo consulta</option>
+                            <option>Copia única</option>
+                            <option>Transitorio</option>
+                        </select>
+                        <small class="text-muted">Define cómo puede prestarse este material.</small>
                     </div>
                 </div>
 
@@ -94,7 +110,7 @@
 
                 <div class="d-flex justify-content-between">
                     <Link :href="route('materiales.index')" class="btn btn-outline-secondary">Cancelar</Link>
-                    <button type="enviar" class="btn btn-success" :disabled="form.processing">Guardar</button>
+                    <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar</button>
                 </div>
             </form>
         </div>
@@ -111,11 +127,14 @@ import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
 
-const props = defineProps({ areas: { type: Array, default: () => [] } })
+const props = defineProps({
+    areas:      { type: Array, default: () => [] },
+    categorias: { type: Array, default: () => [] },
+})
 
 const form = useForm({
     titulo: '', autor: '', anio_publicacion: null, area_id: '',
-    categoria: '', disponibilidad: 1, editorial: '',
+    categoria: '', disponibilidad: 1, editorial: '', tipo_prestamo: '',
     pasillo: '', tipo_almacenamiento: 'E', estante: null, nivel: null,
 })
 

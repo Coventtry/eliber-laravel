@@ -30,18 +30,15 @@
                         <div class="dropdown-menu">
                             <Link :href="route('materiales.create')" class="dropdown-item">Nuevo material</Link>
                             <Link :href="route('materiales.index')" class="dropdown-item">Buscar / Modificar</Link>
-                            <Link :href="route('materiales.index')" class="dropdown-item">
-                                <i class="bi bi-qr-code me-2"></i>Imprimir Código
-                            </Link>
                         </div>
                     </li>
 
-                    <!-- Áreas -->
+                    <!-- Categorías -->
                     <li v-if="can('gestionar-areas')" class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Áreas</a>
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Categorías</a>
                         <div class="dropdown-menu">
-                            <Link :href="route('areas.create')" class="dropdown-item">Nueva área</Link>
-                            <Link :href="route('areas.index')" class="dropdown-item">Modificar / Eliminar</Link>
+                            <Link :href="route('categorias.create')" class="dropdown-item">Nueva categoría</Link>
+                            <Link :href="route('categorias.index')" class="dropdown-item">Modificar / Eliminar</Link>
                         </div>
                     </li>
 

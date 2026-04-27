@@ -1,9 +1,9 @@
 <template>
-    <Head title="Nueva área" />
+    <Head title="Nueva categoría" />
     <AppNavbar />
     <div class="container page-content">
         <div class="main-container" style="max-width: 560px; margin: auto;">
-            <h3 class="mb-4"><i class="bi bi-tag-fill mr-2"></i>Nueva área</h3>
+            <h3 class="mb-4"><i class="bi bi-tag-fill mr-2"></i>Nueva categoría</h3>
             <FlashMessage />
             <form @submit.prevent="submit">
                 <div class="form-group">

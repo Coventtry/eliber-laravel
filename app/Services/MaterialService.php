@@ -44,19 +44,25 @@ class MaterialService
      */
     public function generarQR(Material $material): string
     {
-        $contenido = implode("\n", [
-            "Título: {$material->titulo}",
-            "Autor: {$material->autor}",
-            "Año: {$material->anio_publicacion}",
-            "Categoría: {$material->categoria}",
-            "Código: {$material->codigo}",
+        $material->loadMissing('area');
+
+        $lineas = array_filter([
+            mb_strimwidth($material->titulo, 0, 60, '…'),
+            $material->autor               ? 'Autor: '  . mb_strimwidth($material->autor, 0, 40, '…') : null,
+            $material->area                ? 'Dewey: '  . $material->area->codigo_dewey               : null,
+            $material->categoria           ? 'Tipo: '   . $material->categoria                        : null,
+            $material->clasificacion_fisica ? 'Ubic: '       . $material->clasificacion_fisica        : null,
+            'Ejemplares: ' . ($material->disponibilidad ?? 0),
+            'Prestamo: ' . ($material->tipo_prestamo ?: 'Sin especificar'),
         ]);
 
+        $contenido = implode("\n", $lineas);
+
         try {
-            $contenidoQr = QrCode::format('png')->size(300)->errorCorrection('H')->generate($contenido);
+            $contenidoQr = QrCode::format('png')->size(400)->errorCorrection('M')->generate($contenido);
             $ruta = "qrcodes/QR_{$material->id}.png";
         } catch (RuntimeException) {
-            $contenidoQr = QrCode::format('svg')->size(300)->errorCorrection('H')->generate($contenido);
+            $contenidoQr = QrCode::format('svg')->size(400)->errorCorrection('M')->generate($contenido);
             $ruta = "qrcodes/QR_{$material->id}.svg";
         }
 

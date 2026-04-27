@@ -6,9 +6,6 @@
         <div class="main-container">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0"><i class="bi bi-people mr-2"></i>Usuarios</h3>
-                <Link :href="route('usuarios.create')" class="btn btn-success">
-                    <i class="bi bi-person-plus mr-1"></i>Nuevo
-                </Link>
             </div>
 
             <FlashMessage />

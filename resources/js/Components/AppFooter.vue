@@ -78,8 +78,9 @@
                     </div>
                     <div class="modal-footer py-2">
                         <button type="button" class="btn btn-sm btn-secondary" @click="cerrarNota">Cancelar</button>
-                        <button type="submit" class="btn btn-sm btn-primary" :disabled="!textoNota.trim() || guardando">
-                            <i class="bi bi-check2 mr-1"></i>Guardar
+                        <button type="submit" class="btn btn-sm btn-primary" :disabled="!textoNota.trim() || guardando || cooldown > 0">
+                            <span v-if="cooldown > 0"><i class="bi bi-hourglass-split mr-1"></i>Esperá {{ cooldown }}s…</span>
+                            <span v-else><i class="bi bi-check2 mr-1"></i>Guardar</span>
                         </button>
                     </div>
                 </form>
@@ -101,6 +102,7 @@ const footerLinks = computed(() => page.props.footer_links ?? [])
 const modalNota = ref(false)
 const textoNota = ref('')
 const guardando = ref(false)
+const cooldown  = ref(0)
 
 function abrirNota() {
     textoNota.value = ''
@@ -114,12 +116,19 @@ function cerrarNota() {
 }
 
 function guardarNota() {
-    if (!textoNota.value.trim()) return
+    if (!textoNota.value.trim() || cooldown.value > 0) return
     guardando.value = true
     router.post(
-        route('anotaciones.store'),
-        { anotacion: textoNota.value, from_modal: true },
-        { onSuccess: cerrarNota, onError: () => { guardando.value = false } }
+        route('feedback.nota'),
+        { anotacion: textoNota.value },
+        {
+            onSuccess: () => {
+                cerrarNota()
+                cooldown.value = 5
+                const t = setInterval(() => { if (--cooldown.value <= 0) clearInterval(t) }, 1000)
+            },
+            onError: () => { guardando.value = false },
+        }
     )
 }
 </script>

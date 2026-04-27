@@ -27,10 +27,12 @@ class HandleInertiaRequests extends Middleware
         $footerLinks       = [];
         $institucionActiva = null;
         $instituciones     = [];
+        $logoUrl           = '';
         $user = $request->user();
 
         if ($user) {
             $diasAlerta   = (int) Configuracion::get(tenantId(), 'dias_alerta_previa', 4);
+            $logoUrl      = Configuracion::get(tenantId(), 'logo_url', '');
             $vencimientos = app(PrestamoService::class)->obtenerVencimientosProximos($diasAlerta)->count();
             $alertasNoLeidas = Alerta::noLeidas()->count();
 
@@ -88,6 +90,7 @@ class HandleInertiaRequests extends Middleware
             'footer_links'           => $footerLinks,
             'institucion_activa'     => $institucionActiva,
             'instituciones'          => $instituciones,
+            'logo_url'               => $logoUrl,
         ]);
     }
 

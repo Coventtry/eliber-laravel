@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
+use App\Models\Institucion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,15 +21,14 @@ class ConfiguracionController extends Controller
 
     public function index(): Response
     {
-        $instId      = auth()->user()->institucion_id;
-        $institucion = auth()->user()->institucion;
+        $instId      = tenantId();
+        $institucion = Institucion::find($instId);
 
         $config = [];
         foreach ($this->DEFAULTS as $clave => $default) {
             $config[$clave] = Configuracion::get($instId, $clave, $default);
         }
 
-        // nombre_institucion toma el valor real de instituciones si no tiene config propia
         if (empty($config['nombre_institucion'])) {
             $config['nombre_institucion'] = $institucion->nombre ?? '';
         }
@@ -47,14 +47,15 @@ class ConfiguracionController extends Controller
             'logo'               => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:1024',
         ]);
 
-        $instId = auth()->user()->institucion_id;
+        $instId      = tenantId();
+        $institucion = Institucion::find($instId);
 
         Configuracion::set($instId, 'dias_prestamo',      (string) $data['dias_prestamo']);
         Configuracion::set($instId, 'dias_alerta_previa', (string) $data['dias_alerta_previa']);
 
         if (!empty($data['nombre_institucion'])) {
             Configuracion::set($instId, 'nombre_institucion', $data['nombre_institucion']);
-            auth()->user()->institucion->update(['nombre' => $data['nombre_institucion']]);
+            $institucion?->update(['nombre' => $data['nombre_institucion']]);
         }
 
         if ($request->hasFile('logo')) {
