@@ -18,6 +18,7 @@ class StoreMaterialRequest extends FormRequest
             'categoria'         => 'nullable|string|max:255',
             'disponibilidad'    => 'required|integer|min:0',
             'editorial'         => 'nullable|string|max:255',
+            'tipo_prestamo'     => 'nullable|in:Solo consulta,Copia única,Transitorio',
             'pasillo'           => 'nullable|string|max:10',
             'tipo_almacenamiento' => 'nullable|in:E,M',
             'estante'           => 'nullable|integer|min:1|max:30',

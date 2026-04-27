@@ -6,18 +6,15 @@
         <div class="main-container">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0"><i class="bi bi-people mr-2"></i>Usuarios</h3>
-                <Link :href="route('usuarios.create')" class="btn btn-success">
-                    <i class="bi bi-person-plus mr-1"></i>Nuevo
-                </Link>
             </div>
 
             <FlashMessage />
 
             <!-- Solicitudes pendientes de aprobación -->
             <div v-if="pendientes.length" class="card border-warning mb-4">
-                <div class="card-header d-flex align-items-center" style="background: #fff8e1;">
-                    <i class="bi bi-hourglass-split text-warning mr-2"></i>
-                    <strong class="text-warning">Solicitudes pendientes de aprobación</strong>
+                <div class="card-header d-flex align-items-center pendientes-header">
+                    <i class="bi bi-hourglass-split mr-2" style="color: #d97706;"></i>
+                    <strong>Solicitudes pendientes de aprobación</strong>
                     <span class="badge badge-warning ml-2">{{ pendientes.length }}</span>
                 </div>
                 <div class="table-responsive">

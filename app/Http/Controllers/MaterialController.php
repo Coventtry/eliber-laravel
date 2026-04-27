@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMaterialRequest;
 use App\Models\Area;
+use App\Models\CategoriaFisica;
 use App\Models\Material;
 use App\Services\MaterialService;
 use Illuminate\Http\RedirectResponse;
@@ -18,8 +19,8 @@ class MaterialController extends Controller
     public function index(Request $request): Response
     {
         $materiales = Material::with('area')
-            ->when($request->search, fn($q, $s) =>
-                $q->where('titulo', 'like', "%{$s}%")->orWhere('autor', 'like', "%{$s}%")
+            ->when($request->busqueda, fn($q, $s) =>
+                $q->where('titulo', 'like', "%{$s}%")->orWhere('autor', 'like', "%{$s}%")->orWhere('codigo', 'like', "%{$s}%")
             )
             ->when($request->area_id, fn($q, $a) => $q->where('area_id', $a))
             ->orderBy('titulo')
@@ -29,14 +30,15 @@ class MaterialController extends Controller
         return Inertia::render('Materiales/Index', [
             'materiales' => $materiales,
             'areas'      => Area::orderBy('nombre')->get(['id', 'nombre']),
-            'filters'    => $request->only(['search', 'area_id']),
+            'filters'    => $request->only(['busqueda', 'area_id']),
         ]);
     }
 
     public function create(): Response
     {
         return Inertia::render('Materiales/Create', [
-            'areas' => Area::orderBy('nombre')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
+            'areas'      => Area::orderBy('codigo_dewey')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
+            'categorias' => CategoriaFisica::orderBy('nombre')->pluck('nombre'),
         ]);
     }
 
@@ -66,16 +68,32 @@ class MaterialController extends Controller
     public function edit(Material $material): Response
     {
         return Inertia::render('Materiales/Edit', [
-            'material' => $material->load('area', 'ubicacion'),
-            'areas'    => Area::orderBy('nombre')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
-            'qrUrl'    => $this->materialService->urlCodigoQr($material),
+            'material'   => $material->load('area'),
+            'areas'      => Area::orderBy('codigo_dewey')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
+            'categorias' => CategoriaFisica::orderBy('nombre')->pluck('nombre'),
+            'qrUrl'      => $this->materialService->urlCodigoQr($material),
         ]);
     }
 
     public function update(StoreMaterialRequest $request, Material $material): RedirectResponse
     {
         $this->authorize('update', $material);
-        $material->update($request->validated());
+        $datos = $request->validated();
+
+        if ($request->filled('pasillo')) {
+            $area = Area::findOrFail($datos['area_id']);
+            $datos['clasificacion_fisica'] = $this->materialService->generarClasificacionFisica(
+                $area,
+                $request->pasillo,
+                $request->tipo_almacenamiento,
+                $request->estante,
+                $request->nivel
+            );
+        }
+
+        $material->update($datos);
+        $this->materialService->generarQR($material);
+
         return redirect()->route('materiales.index')->with('success', 'Material actualizado.');
     }
 
@@ -86,13 +104,18 @@ class MaterialController extends Controller
         return redirect()->route('materiales.index')->with('success', 'Material eliminado.');
     }
 
+    public function fichaPublica(int $id): Response
+    {
+        $material = Material::withoutGlobalScopes()->with('area', 'ubicacion')->findOrFail($id);
+        return Inertia::render('Materiales/Ficha', ['material' => $material]);
+    }
+
     public function qrCode(Material $material): Response
     {
-        $urlQr = $this->materialService->urlCodigoQr($material)
-            ?? $this->materialService->generarQR($material);
+        $urlQr = $this->materialService->generarQR($material);
 
         return Inertia::render('Materiales/QrCode', [
-            'material' => $material->only('id', 'titulo', 'codigo'),
+            'material' => $material->only('id', 'titulo', 'codigo', 'autor', 'clasificacion_fisica'),
             'qrUrl'    => $urlQr,
         ]);
     }

@@ -91,10 +91,7 @@ class AreaController extends Controller
             'Abreviado'    => 'nullable|string|max:50',
         ]);
 
-        $area = Area::create([
-            ...$request->only('codigo_dewey', 'nombre', 'Abreviado'),
-            'institucion_id' => $request->user()->institucion_id,
-        ]);
+        $area = Area::create($request->only('codigo_dewey', 'nombre', 'Abreviado'));
 
         return response()->json($area, 201);
     }

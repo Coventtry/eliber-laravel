@@ -12,7 +12,7 @@
         <!-- Stat cards -->
         <div class="row mb-4">
             <div v-for="card in statCards" :key="card.label" class="col-sm-6 col-xl-3 mb-3">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body d-flex align-items-center">
                         <div class="stat-icon mr-3" :class="card.color">
                             <i :class="['bi', card.icon]"></i>
@@ -29,8 +29,8 @@
         <div class="row">
             <!-- Reservas pendientes -->
             <div class="col-lg-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
+                <div class="card h-100">
+                    <div class="card-header border-bottom d-flex justify-content-between align-items-center py-2">
                         <span class="font-weight-bold">Reservas pendientes</span>
                         <Link :href="route('prestamos.index')" class="btn btn-sm btn-outline-primary">Ver todas</Link>
                     </div>
@@ -60,8 +60,8 @@
 
             <!-- Préstamos próximos a vencer -->
             <div class="col-lg-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
+                <div class="card h-100">
+                    <div class="card-header border-bottom d-flex justify-content-between align-items-center py-2">
                         <span class="font-weight-bold">Próximos vencimientos <span class="badge badge-warning ml-1">{{ diasAlerta }} días</span></span>
                         <Link :href="route('prestamos.index')" class="btn btn-sm btn-outline-warning">Ver todos</Link>
                     </div>
@@ -131,4 +131,12 @@ const statCards = computed(() => [
 
 .stat-value  { font-size: 1.6rem; font-weight: 700; line-height: 1; }
 .stat-label  { font-size: .78rem; color: #6c757d; margin-top: 2px; }
+
+/* Dark mode */
+:global([data-theme="dark"]) .stat-blue   { background: #1e3a5f; color: #93c5fd; }
+:global([data-theme="dark"]) .stat-green  { background: #14532d; color: #6ee7b7; }
+:global([data-theme="dark"]) .stat-purple { background: #3b0764; color: #c4b5fd; }
+:global([data-theme="dark"]) .stat-red    { background: #450a0a; color: #fca5a5; }
+:global([data-theme="dark"]) .stat-label  { color: #94a3b8; }
+:global([data-theme="dark"]) .stat-value  { color: #f1f5f9; }
 </style>

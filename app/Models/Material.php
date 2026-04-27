@@ -20,7 +20,7 @@ class Material extends Model
     protected $fillable = [
         'titulo', 'autor', 'anio_publicacion', 'area_id',
         'categoria', 'codigo', 'disponibilidad', 'editorial',
-        'clasificacion_fisica', 'institucion_id',
+        'clasificacion_fisica', 'tipo_prestamo', 'institucion_id',
     ];
 
     public function area(): BelongsTo

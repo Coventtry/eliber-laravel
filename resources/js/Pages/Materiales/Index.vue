@@ -14,9 +14,10 @@
             <FlashMessage />
 
             <form @submit.prevent="buscar" class="form-inline mb-3">
-                <input v-model="busqueda" type="text" class="form-control mr-2" placeholder="Título o autor…">
+                <input v-model="busqueda" type="text" class="form-control mr-2"
+                       style="min-width:220px;" placeholder="Título, autor o código…">
                 <select v-model="area_id" class="form-control mr-2">
-                    <option value="">Todas las áreas</option>
+                    <option value="">Todas las categorías</option>
                     <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.nombre }}</option>
                 </select>
                 <button type="submit" class="btn btn-outline-success mr-2">Buscar</button>
@@ -24,14 +25,19 @@
             </form>
 
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover table-sm" style="font-size:.82rem;">
                     <thead>
                         <tr>
                             <th>Código</th>
                             <th>Título</th>
                             <th>Autor</th>
-                            <th>Área</th>
-                            <th>Disp.</th>
+                            <th>Año</th>
+                            <th>Editorial</th>
+                            <th>Clasificación Dewey</th>
+                            <th>Categoría física</th>
+                            <th>Ubic. física</th>
+                            <th class="text-center">Disp.</th>
+                            <th>Tipo préstamo</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -39,24 +45,45 @@
                         <tr v-for="m in materiales.data" :key="m.id">
                             <td><code>{{ m.codigo }}</code></td>
                             <td>{{ m.titulo }}</td>
-                            <td>{{ m.autor }}</td>
-                            <td><small>{{ m.area?.nombre }}</small></td>
+                            <td>{{ m.autor || '—' }}</td>
+                            <td>{{ m.anio_publicacion || '—' }}</td>
+                            <td>{{ m.editorial || '—' }}</td>
                             <td>
+                                <span v-if="m.area">
+                                    <code>{{ m.area.codigo_dewey }}</code>
+                                    <span class="ml-1" style="font-size:.8rem;">{{ m.area.nombre }}</span>
+                                </span>
+                                <span v-else>—</span>
+                            </td>
+                            <td>{{ m.categoria || '—' }}</td>
+                            <td>
+                                <code v-if="m.clasificacion_fisica">{{ m.clasificacion_fisica }}</code>
+                                <span v-else>—</span>
+                            </td>
+                            <td class="text-center">
                                 <span :class="m.disponibilidad > 0 ? 'badge badge-success' : 'badge badge-danger'">
                                     {{ m.disponibilidad }}
                                 </span>
                             </td>
-                            <td class="text-right">
-                                <Link :href="route('materiales.edit', m.id)" class="btn btn-sm btn-outline-primary mr-1">
+                            <td>
+                                <span v-if="m.tipo_prestamo" class="badge badge-info">{{ m.tipo_prestamo }}</span>
+                                <span v-else>—</span>
+                            </td>
+                            <td class="text-right" style="white-space:nowrap;">
+                                <Link :href="route('materiales.edit', m.id)"
+                                      class="btn btn-sm btn-outline-primary mr-1"
+                                      title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </Link>
-                                <Link :href="route('materiales.qr', m.id)" class="btn btn-sm btn-outline-secondary">
+                                <Link :href="route('materiales.qr', m.id)"
+                                      class="btn btn-sm btn-outline-secondary"
+                                      title="Ver QR">
                                     <i class="bi bi-qr-code"></i>
                                 </Link>
                             </td>
                         </tr>
                         <tr v-if="!materiales.data.length">
-                            <td colspan="6" class="text-center text-muted">No se encontraron materiales.</td>
+                            <td colspan="11" class="text-center py-4">No se encontraron materiales.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -98,8 +125,8 @@ const props = defineProps({
     filters:    { type: Object, default: () => ({}) },
 })
 
-const busqueda  = ref(props.filters.busqueda ?? '')
-const area_id = ref(props.filters.area_id ?? '')
+const busqueda = ref(props.filters.busqueda ?? '')
+const area_id  = ref(props.filters.area_id ?? '')
 
 function buscar() {
     router.get(route('materiales.index'), { busqueda: busqueda.value, area_id: area_id.value }, { preserveState: true })

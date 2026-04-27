@@ -22,7 +22,7 @@
             </div>
             <div class="col-sm-4 col-md-3">
                 <select v-model="form.area_id" class="form-control">
-                    <option value="">Todas las áreas</option>
+                    <option value="">Todas las categorías</option>
                     <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.nombre }}</option>
                 </select>
             </div>

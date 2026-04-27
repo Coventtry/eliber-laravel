@@ -26,15 +26,15 @@
                         <button v-for="s in sociosEncontrados" :key="s.id" type="button"
                                 class="list-group-item list-group-item-action"
                                 @click="seleccionarSocio(s)">
-                            <strong>{{ s.apellido }}, {{ s.nombre }}</strong>
-                            <span class="text-muted ml-2">{{ s.email }}</span>
-                            <small class="text-muted ml-2" v-if="s.anio">— {{ s.anio }}° {{ s.division }}</small>
+                            <strong>{{ s.apellido ? `${s.apellido}, ${s.nombre}` : s.nombre }}</strong>
+                            <span class="ml-2">{{ s.email }}</span>
+                            <small class="ml-2" v-if="s.anio">— {{ s.anio }}° {{ s.division }}</small>
                         </button>
                     </ul>
                     <div v-if="form.socio_id" class="alert alert-success mb-0 mt-2">
                         <i class="bi bi-person-check mr-1"></i>
-                        <strong>{{ socioSeleccionado?.apellido }}, {{ socioSeleccionado?.nombre }}</strong>
-                        <span class="text-muted ml-2">{{ socioSeleccionado?.email }}</span>
+                        <strong>{{ socioSeleccionado?.apellido ? `${socioSeleccionado.apellido}, ${socioSeleccionado.nombre}` : socioSeleccionado?.nombre }}</strong>
+                        <span class="ml-2">{{ socioSeleccionado?.email }}</span>
                     </div>
                 </div>
             </div>
@@ -156,7 +156,7 @@ function seleccionarSocio(s) {
     socioSeleccionado.value       = s
     form.socio_id                 = s.id
     sociosEncontrados.value       = []
-    terminoBusquedaSocio.value    = `${s.apellido}, ${s.nombre}`
+    terminoBusquedaSocio.value    = s.apellido ? `${s.apellido}, ${s.nombre}` : s.nombre
 }
 
 function limpiarSocio() {

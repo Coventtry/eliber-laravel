@@ -30,18 +30,15 @@
                         <div class="dropdown-menu">
                             <Link :href="route('materiales.create')" class="dropdown-item">Nuevo material</Link>
                             <Link :href="route('materiales.index')" class="dropdown-item">Buscar / Modificar</Link>
-                            <Link :href="route('materiales.index')" class="dropdown-item">
-                                <i class="bi bi-qr-code me-2"></i>Imprimir Código
-                            </Link>
                         </div>
                     </li>
 
-                    <!-- Áreas -->
+                    <!-- Categorías -->
                     <li v-if="can('gestionar-areas')" class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Áreas</a>
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Categorías</a>
                         <div class="dropdown-menu">
-                            <Link :href="route('areas.create')" class="dropdown-item">Nueva área</Link>
-                            <Link :href="route('areas.index')" class="dropdown-item">Modificar / Eliminar</Link>
+                            <Link :href="route('categorias.create')" class="dropdown-item">Nueva categoría</Link>
+                            <Link :href="route('categorias.index')" class="dropdown-item">Modificar / Eliminar</Link>
                         </div>
                     </li>
 
@@ -118,7 +115,7 @@
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" style="border-radius: 10px; border: none; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
-                            <h6 class="dropdown-header" style="color: var(--eliber-primary); font-weight: 600;">{{ auth.user.usuario }}</h6>
+                            <h6 class="dropdown-header navbar-dropdown-user">{{ auth.user.usuario }}</h6>
                             <div class="dropdown-divider"></div>
                             <Link :href="route('perfil.edit')" class="dropdown-item">
                                 <i class="bi bi-person-gear mr-1"></i>Mi perfil
