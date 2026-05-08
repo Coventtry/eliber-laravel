@@ -1,26 +1,27 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\PasswordResetController;
-use App\Http\Controllers\SocioController;
-use App\Http\Controllers\MaterialController;
-use App\Http\Controllers\AreaController;
-use App\Http\Controllers\CategoriaFisicaController;
-use App\Http\Controllers\PrestamoController;
-use App\Http\Controllers\NoticiaController;
-use App\Http\Controllers\AnotacionController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\LandingController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\AlumnoController;
-use App\Http\Controllers\PerfilController;
-use App\Http\Controllers\FeedbackController;
-use App\Http\Controllers\ContenidoController;
 use App\Http\Controllers\AnaliticaController;
+use App\Http\Controllers\AnotacionController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\CategoriaFisicaController;
 use App\Http\Controllers\ConfiguracionController;
+use App\Http\Controllers\ContenidoController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\NoticiaController;
+use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\PrestamoController;
+use App\Http\Controllers\SocioController;
+use App\Http\Controllers\UserController;
+use App\Models\Faq;
 use Illuminate\Support\Facades\Route;
 
 // Ficha pública de material (accesible sin login — para QR)
@@ -28,12 +29,13 @@ Route::get('/materiales/{id}/ficha', [MaterialController::class, 'fichaPublica']
 
 // Landing page - pública
 Route::get('/', [LandingController::class, '__invoke'])->name('landing');
-Route::get('/acerca', fn() => inertia('Acerca'))->name('acerca');
+Route::get('/acerca', fn () => inertia('Acerca'))->name('acerca');
 Route::get('/faqs', function () {
     // Muestra FAQs activas de la primera institución activa (público)
-    $faqs = \App\Models\Faq::where('activa', true)
+    $faqs = Faq::where('activa', true)
         ->orderBy('orden')->orderBy('id')
         ->get(['id', 'pregunta', 'respuesta']);
+
     return inertia('FAQs', ['faqs' => $faqs]);
 })->name('faqs');
 
@@ -58,6 +60,8 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('materiales', MaterialController::class)->parameters(['materiales' => 'material']);
     Route::get('materiales/{material}/qr', [MaterialController::class, 'qrCode'])->name('materiales.qr');
+    Route::get('materiales/{material}/ejemplares', [MaterialController::class, 'ejemplares'])->name('materiales.ejemplares');
+    Route::get('api/materiales/ejemplares-disponibles', [MaterialController::class, 'ejemplaresDisponibles'])->name('api.materiales.ejemplares-disponibles');
 
     Route::resource('areas', AreaController::class);
     Route::resource('categorias', CategoriaFisicaController::class)->except(['show']);

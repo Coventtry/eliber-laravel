@@ -10,11 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Material extends Model
 {
     protected $table = 'materiales';
+
     public $timestamps = false;
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     protected $fillable = [
@@ -31,6 +32,16 @@ class Material extends Model
     public function prestamos(): HasMany
     {
         return $this->hasMany(Prestamo::class);
+    }
+
+    public function ejemplares(): HasMany
+    {
+        return $this->hasMany(MaterialEjemplar::class);
+    }
+
+    public function ejemplaresDisponibles(): HasMany
+    {
+        return $this->hasMany(MaterialEjemplar::class)->where('estado', 'disponible');
     }
 
     public function scopeDisponible($query)

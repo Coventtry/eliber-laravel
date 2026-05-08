@@ -22,10 +22,9 @@ class PrestamoController extends Controller
     {
         $this->prestamoService->marcarAtrasados();
 
-        $prestamos = Prestamo::with(['socio', 'material.area'])
-            ->when($request->estado, fn($q, $e) => $q->where('estado', $e))
-            ->when($request->search, fn($q, $s) => $q->whereHas('socio', fn($sq) =>
-                $sq->where('nombre', 'like', "%{$s}%")->orWhere('apellido', 'like', "%{$s}%")
+        $prestamos = Prestamo::with(['socio', 'material.area', 'ejemplar'])
+            ->when($request->estado, fn ($q, $e) => $q->where('estado', $e))
+            ->when($request->search, fn ($q, $s) => $q->whereHas('socio', fn ($sq) => $sq->where('nombre', 'like', "%{$s}%")->orWhere('apellido', 'like', "%{$s}%")
             ))
             ->orderByRaw("FIELD(estado, 'atrasado', 'pendiente', 'activo', 'devuelto')")
             ->orderBy('fecha_devolucion')
@@ -34,7 +33,7 @@ class PrestamoController extends Controller
 
         return Inertia::render('Prestamos/Index', [
             'prestamos' => $prestamos,
-            'filters'   => $request->only(['estado', 'search']),
+            'filters' => $request->only(['estado', 'search']),
         ]);
     }
 
@@ -45,16 +44,16 @@ class PrestamoController extends Controller
             $socio = Socio::find($request->socio_id);
             if ($socio) {
                 $socioInicial = [
-                    'id'       => $socio->id,
-                    'nombre'   => $socio->nombre,
+                    'id' => $socio->id,
+                    'nombre' => $socio->nombre,
                     'apellido' => $socio->apellido,
-                    'email'    => $socio->email,
+                    'email' => $socio->email,
                 ];
             }
         }
 
         return Inertia::render('Prestamos/Create', [
-            'areas'        => Area::orderBy('nombre')->get(['id', 'nombre']),
+            'areas' => Area::orderBy('nombre')->get(['id', 'nombre']),
             'socioInicial' => $socioInicial,
         ]);
     }
@@ -63,7 +62,7 @@ class PrestamoController extends Controller
     {
         $this->authorize('create', Prestamo::class);
         try {
-            $prestamo = $this->prestamoService->crearPrestamo(
+            $prestamos = $this->prestamoService->crearPrestamo(
                 $request->socio_id,
                 $request->material_id,
                 $request->cantidad,
@@ -73,13 +72,18 @@ class PrestamoController extends Controller
             return back()->withErrors($e->errors())->withInput();
         }
 
-        return redirect()->route('prestamos.index')->with('success', 'Préstamo registrado correctamente.');
+        $cantidad = count($prestamos);
+        $msg = $cantidad === 1
+            ? 'Préstamo registrado correctamente.'
+            : "{$cantidad} préstamos registrados correctamente.";
+
+        return redirect()->route('prestamos.index')->with('success', $msg);
     }
 
     public function showDevolucion(Prestamo $prestamo): Response
     {
         return Inertia::render('Prestamos/Return', [
-            'prestamo' => $prestamo->load('socio', 'material'),
+            'prestamo' => $prestamo->load('socio', 'material', 'ejemplar'),
         ]);
     }
 
@@ -91,6 +95,7 @@ class PrestamoController extends Controller
         }
 
         $this->prestamoService->devolverPrestamo($prestamo);
+
         return redirect()->route('prestamos.index')->with('success', 'Devolución registrada.');
     }
 
@@ -105,13 +110,15 @@ class PrestamoController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['errors' => $e->errors()], 422);
             }
+
             return back()->withErrors($e->errors());
         }
 
         if ($request->wantsJson()) {
             $prestamo->refresh();
+
             return response()->json([
-                'message'          => "Préstamo extendido {$request->dias} días.",
+                'message' => "Préstamo extendido {$request->dias} días.",
                 'fecha_devolucion' => $prestamo->fecha_devolucion->format('Y-m-d'),
             ]);
         }

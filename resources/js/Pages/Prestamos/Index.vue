@@ -28,6 +28,7 @@
                         <tr>
                             <th>Socio</th>
                             <th>Material</th>
+                            <th>Ejemplar</th>
                             <th>Préstamo</th>
                             <th>Devolución</th>
                             <th>Estado</th>
@@ -38,6 +39,7 @@
                         <tr v-for="p in prestamos.data" :key="p.id">
                             <td>{{ p.socio?.apellido }}, {{ p.socio?.nombre }}</td>
                             <td>{{ p.material?.titulo }}</td>
+                            <td><code v-if="p.ejemplar">{{ p.ejemplar.codigo_ejemplar }}</code><span v-else class="text-muted">—</span></td>
                             <td>{{ formatearFecha(p.fecha_prestamo) }}</td>
                             <td :class="{ 'text-danger font-weight-bold': p.estado === 'atrasado' }">
                                 {{ formatearFecha(p.fecha_devolucion) }}

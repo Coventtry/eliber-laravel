@@ -6,9 +6,14 @@
         <div class="main-container" style="max-width: 760px; margin: auto;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="mb-0"><i class="bi bi-pencil-square mr-2"></i>Editar material</h3>
-                <Link v-if="qrUrl" :href="route('materiales.qr', material.id)" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-qr-code mr-1"></i>Ver QR
-                </Link>
+                <div>
+                    <Link v-if="qrUrl" :href="route('materiales.qr', material.id)" class="btn btn-outline-secondary btn-sm mr-2">
+                        <i class="bi bi-qr-code mr-1"></i>Ver QR
+                    </Link>
+                    <button type="button" class="btn btn-outline-info btn-sm" @click="verEjemplares">
+                        <i class="bi bi-collection mr-1"></i>Ejemplares
+                    </button>
+                </div>
             </div>
             <FlashMessage />
 
@@ -107,13 +112,57 @@
                 </fieldset>
 
                 <div class="d-flex justify-content-between">
-                    <div>
+<div>
                         <Link :href="route('materiales.index')" class="btn btn-outline-secondary mr-2">Cancelar</Link>
                         <button type="button" class="btn btn-outline-danger" @click="eliminar">Eliminar</button>
                     </div>
                     <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
                 </div>
             </form>
+
+            <!-- Modal de ejemplares -->
+            <div v-if="ejemplaresModal" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5);" @click.self="cerrarEjemplares">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Ejemplares — {{ props.material.titulo }}</h5>
+                            <button type="button" class="close" @click="cerrarEjemplares">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div v-if="ejemplaresLoading" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary"></div>
+                            </div>
+                            <div v-else-if="!ejemplaresModal.lista.length" class="text-muted text-center py-3">
+                                No hay ejemplares registrados.
+                            </div>
+                            <table v-else class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Estado</th>
+                                        <th>Notas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="ej in ejemplaresModal.lista" :key="ej.id">
+                                        <td><code>{{ ej.codigo_ejemplar }}</code></td>
+                                        <td>
+                                            <span :class="claseEstadoEjemplar(ej.estado)">{{ ej.estado }}</span>
+                                            <span v-if="ej.prestamo_activo" class="ml-2 text-muted" style="font-size:.75rem;">
+                                                → {{ ej.prestamo_activo.socio?.apellido }}, {{ ej.prestamo_activo.socio?.nombre }}
+                                            </span>
+                                        </td>
+                                        <td style="max-width:120px;"><small class="text-muted">{{ ej.notas || '—' }}</small></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" @click="cerrarEjemplares">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -121,7 +170,9 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
+import axios from 'axios'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
@@ -167,4 +218,79 @@ function eliminar() {
         router.delete(route('materiales.destroy', props.material.id))
     }
 }
+
+const ejemplaresModal   = ref(null)
+const ejemplaresLoading = ref(false)
+
+async function verEjemplares() {
+    ejemplaresModal.value   = { lista: [] }
+    ejemplaresLoading.value  = true
+    try {
+        const { data } = await axios.get(route('materiales.ejemplares', props.material.id))
+        ejemplaresModal.value.lista = data
+    } finally {
+        ejemplaresLoading.value = false
+    }
+}
+
+function cerrarEjemplares() {
+    ejemplaresModal.value = null
+}
+
+function claseEstadoEjemplar(estado) {
+    return {
+        disponible: 'badge badge-success',
+        prestado:   'badge badge-warning',
+        reservado:  'badge badge-info',
+        baja:       'badge badge-secondary',
+    }[estado] ?? 'badge badge-secondary'
+}
 </script>
+
+<!-- Modal de ejemplares -->
+<template v-if="ejemplaresModal">
+    <Teleport to="body">
+        <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5);" @click.self="cerrarEjemplares">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ejemplares — {{ props.material.titulo }}</h5>
+                        <button type="button" class="close" @click="cerrarEjemplares">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div v-if="ejemplaresLoading" class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary"></div>
+                        </div>
+                        <div v-else-if="!ejemplaresModal.lista.length" class="text-muted text-center py-3">
+                            No hay ejemplares registrados.
+                        </div>
+                        <table v-else class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Estado</th>
+                                    <th>Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="ej in ejemplaresModal.lista" :key="ej.id">
+                                    <td><code>{{ ej.codigo_ejemplar }}</code></td>
+                                    <td>
+                                        <span :class="claseEstadoEjemplar(ej.estado)">{{ ej.estado }}</span>
+                                        <span v-if="ej.prestamo_activo" class="ml-2 text-muted" style="font-size:.75rem;">
+                                            → {{ ej.prestamo_activo.socio?.apellido }}, {{ ej.prestamo_activo.socio?.nombre }}
+                                        </span>
+                                    </td>
+                                    <td style="max-width:120px;"><small class="text-muted">{{ ej.notas || '—' }}</small></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" @click="cerrarEjemplares">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Teleport>
+</template>

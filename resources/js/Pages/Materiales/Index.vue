@@ -37,6 +37,7 @@
                             <th>Categoría física</th>
                             <th>Ubic. física</th>
                             <th class="text-center">Disp.</th>
+                            <th>Ejemplares</th>
                             <th>Tipo préstamo</th>
                             <th></th>
                         </tr>
@@ -64,6 +65,11 @@
                                 <span :class="m.disponibilidad > 0 ? 'badge badge-success' : 'badge badge-danger'">
                                     {{ m.disponibilidad }}
                                 </span>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" @click="verEjemplares(m)">
+                                    <i class="bi bi-collection"></i> {{ m.disponibilidad }} / {{ m.total_ejemplares ?? m.disponibilidad }}
+                                </button>
                             </td>
                             <td>
                                 <span v-if="m.tipo_prestamo" class="badge badge-info">{{ m.tipo_prestamo }}</span>
@@ -109,12 +115,54 @@
         </div>
     </div>
 
+    <!-- Modal de ejemplares -->
+    <div v-if="ejemplaresModal" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5);" @click.self="cerrarEjemplares">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ejemplares — {{ ejemplaresModal.titulo }}</h5>
+                    <button type="button" class="close" @click="cerrarEjemplares">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="ejemplaresLoading" class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary"></div>
+                    </div>
+                    <table v-else class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Estado</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="ej in ejemplaresModal.lista" :key="ej.id">
+                                <td><code>{{ ej.codigo_ejemplar }}</code></td>
+                                <td>
+                                    <span :class="claseEstadoEjemplar(ej.estado)">{{ ej.estado }}</span>
+                                    <span v-if="ej.prestamo_activo" class="ml-2 text-muted" style="font-size:.75rem;">
+                                        → {{ ej.prestamo_activo.socio?.apellido }}, {{ ej.prestamo_activo.socio?.nombre }}
+                                    </span>
+                                </td>
+                                <td style="max-width:120px;"><small class="text-muted">{{ ej.notas || '—' }}</small></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" @click="cerrarEjemplares">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <AppFooter />
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
+import axios from 'axios'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
@@ -128,7 +176,34 @@ const props = defineProps({
 const busqueda = ref(props.filters.busqueda ?? '')
 const area_id  = ref(props.filters.area_id ?? '')
 
+const ejemplaresModal    = ref(null)
+const ejemplaresLoading  = ref(false)
+
 function buscar() {
     router.get(route('materiales.index'), { busqueda: busqueda.value, area_id: area_id.value }, { preserveState: true })
+}
+
+async function verEjemplares(m) {
+    ejemplaresModal.value    = { ...m, lista: [] }
+    ejemplaresLoading.value  = true
+    try {
+        const { data } = await axios.get(route('materiales.ejemplares', m.id))
+        ejemplaresModal.value.lista = data
+    } finally {
+        ejemplaresLoading.value = false
+    }
+}
+
+function cerrarEjemplares() {
+    ejemplaresModal.value = null
+}
+
+function claseEstadoEjemplar(estado) {
+    return {
+        disponible: 'badge badge-success',
+        prestado:   'badge badge-warning',
+        reservado:  'badge badge-info',
+        baja:       'badge badge-secondary',
+    }[estado] ?? 'badge badge-secondary'
 }
 </script>

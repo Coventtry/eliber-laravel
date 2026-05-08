@@ -12,6 +12,8 @@
                 <dd class="col-sm-8">{{ prestamo.socio?.apellido }}, {{ prestamo.socio?.nombre }}</dd>
                 <dt class="col-sm-4">Material</dt>
                 <dd class="col-sm-8">{{ prestamo.material?.titulo }}</dd>
+                <dt class="col-sm-4">Ejemplar</dt>
+                <dd class="col-sm-8"><code v-if="prestamo.ejemplar">{{ prestamo.ejemplar.codigo_ejemplar }}</code><span v-else class="text-muted">—</span></dd>
                 <dt class="col-sm-4">Vencimiento</dt>
                 <dd class="col-sm-8" :class="{ 'text-danger': prestamo.estado === 'atrasado' }">
                     {{ prestamo.fecha_devolucion }}

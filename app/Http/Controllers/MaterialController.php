@@ -6,9 +6,12 @@ use App\Http\Requests\StoreMaterialRequest;
 use App\Models\Area;
 use App\Models\CategoriaFisica;
 use App\Models\Material;
+use App\Models\MaterialEjemplar;
 use App\Services\MaterialService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,33 +22,32 @@ class MaterialController extends Controller
     public function index(Request $request): Response
     {
         $materiales = Material::with('area')
-            ->when($request->busqueda, fn($q, $s) =>
-                $q->where('titulo', 'like', "%{$s}%")->orWhere('autor', 'like', "%{$s}%")->orWhere('codigo', 'like', "%{$s}%")
+            ->when($request->busqueda, fn ($q, $s) => $q->where('titulo', 'like', "%{$s}%")->orWhere('autor', 'like', "%{$s}%")->orWhere('codigo', 'like', "%{$s}%")
             )
-            ->when($request->area_id, fn($q, $a) => $q->where('area_id', $a))
+            ->when($request->area_id, fn ($q, $a) => $q->where('area_id', $a))
             ->orderBy('titulo')
             ->paginate(20)
             ->withQueryString();
 
         return Inertia::render('Materiales/Index', [
             'materiales' => $materiales,
-            'areas'      => Area::orderBy('nombre')->get(['id', 'nombre']),
-            'filters'    => $request->only(['busqueda', 'area_id']),
+            'areas' => Area::orderBy('nombre')->get(['id', 'nombre']),
+            'filters' => $request->only(['busqueda', 'area_id']),
         ]);
     }
 
     public function create(): Response
     {
         return Inertia::render('Materiales/Create', [
-            'areas'      => Area::orderBy('codigo_dewey')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
+            'areas' => Area::orderBy('codigo_dewey')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
             'categorias' => CategoriaFisica::orderBy('nombre')->pluck('nombre'),
         ]);
     }
 
     public function store(StoreMaterialRequest $request): RedirectResponse
     {
-        $datos    = $request->validated();
-        $area    = Area::findOrFail($datos['area_id']);
+        $datos = $request->validated();
+        $area = Area::findOrFail($datos['area_id']);
         $datos['codigo'] = $this->materialService->generarCodigo($area);
         $datos['institucion_id'] = $request->user()->institucion_id;
 
@@ -59,7 +61,14 @@ class MaterialController extends Controller
             );
         }
 
-        $material = Material::create($datos);
+        $material = null;
+        DB::transaction(function () use ($datos, &$material) {
+            $material = Material::create($datos);
+            if (($datos['disponibilidad'] ?? 0) > 0) {
+                $this->materialService->crearEjemplares($material, $datos['disponibilidad']);
+            }
+        });
+
         $this->materialService->generarQR($material);
 
         return redirect()->route('materiales.index')->with('success', 'Material registrado correctamente.');
@@ -68,10 +77,10 @@ class MaterialController extends Controller
     public function edit(Material $material): Response
     {
         return Inertia::render('Materiales/Edit', [
-            'material'   => $material->load('area'),
-            'areas'      => Area::orderBy('codigo_dewey')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
+            'material' => $material->load('area'),
+            'areas' => Area::orderBy('codigo_dewey')->get(['id', 'nombre', 'codigo_dewey', 'Abreviado']),
             'categorias' => CategoriaFisica::orderBy('nombre')->pluck('nombre'),
-            'qrUrl'      => $this->materialService->urlCodigoQr($material),
+            'qrUrl' => $this->materialService->urlCodigoQr($material),
         ]);
     }
 
@@ -91,7 +100,11 @@ class MaterialController extends Controller
             );
         }
 
-        $material->update($datos);
+        DB::transaction(function () use ($datos, $material) {
+            $this->materialService->ajustarEjemplares($material, (int) ($datos['disponibilidad'] ?? 0));
+            $material->update($datos);
+        });
+
         $this->materialService->generarQR($material);
 
         return redirect()->route('materiales.index')->with('success', 'Material actualizado.');
@@ -101,12 +114,14 @@ class MaterialController extends Controller
     {
         $this->authorize('delete', $material);
         $material->delete();
+
         return redirect()->route('materiales.index')->with('success', 'Material eliminado.');
     }
 
     public function fichaPublica(int $id): Response
     {
         $material = Material::withoutGlobalScopes()->with('area', 'ubicacion')->findOrFail($id);
+
         return Inertia::render('Materiales/Ficha', ['material' => $material]);
     }
 
@@ -116,17 +131,17 @@ class MaterialController extends Controller
 
         return Inertia::render('Materiales/QrCode', [
             'material' => $material->only('id', 'titulo', 'codigo', 'autor', 'clasificacion_fisica'),
-            'qrUrl'    => $urlQr,
+            'qrUrl' => $urlQr,
         ]);
     }
 
     public function disponibles(Request $request)
     {
         $materiales = Material::disponible()
-            ->when($request->area_id, fn($q, $a) => $q->where('area_id', $a))
-            ->when($request->busqueda, fn($q, $s) => $q->where(function ($sq) use ($s) {
+            ->when($request->area_id, fn ($q, $a) => $q->where('area_id', $a))
+            ->when($request->busqueda, fn ($q, $s) => $q->where(function ($sq) use ($s) {
                 $sq->where('titulo', 'like', "%{$s}%")
-                   ->orWhere('codigo', 'like', "%{$s}%");
+                    ->orWhere('codigo', 'like', "%{$s}%");
             }))
             ->select('id', 'titulo', 'codigo', 'disponibilidad')
             ->limit(20)
@@ -137,8 +152,34 @@ class MaterialController extends Controller
 
     public function ultimoCodigo(Request $request)
     {
-        $area   = Area::findOrFail($request->area_id);
+        $area = Area::findOrFail($request->area_id);
         $codigo = $this->materialService->generarCodigo($area);
+
         return response()->json(['codigo' => $codigo]);
+    }
+
+    public function ejemplares(Material $material): JsonResponse
+    {
+        $ejemplares = $material->ejemplares()
+            ->with('prestamoActivo.socio')
+            ->orderBy('codigo_ejemplar')
+            ->get(['id', 'codigo_ejemplar', 'estado', 'notas']);
+
+        return response()->json($ejemplares);
+    }
+
+    public function ejemplaresDisponibles(Request $request): JsonResponse
+    {
+        $request->validate([
+            'material_id' => 'required|exists:materiales,id',
+            'cantidad' => 'required|integer|min:1',
+        ]);
+
+        $ejemplares = MaterialEjemplar::where('material_id', $request->material_id)
+            ->where('estado', 'disponible')
+            ->limit($request->cantidad)
+            ->get(['id', 'codigo_ejemplar']);
+
+        return response()->json($ejemplares);
     }
 }

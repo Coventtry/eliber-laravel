@@ -3,8 +3,9 @@
 namespace App\Services;
 
 use App\Models\Material;
-use App\Models\Reserva;
+use App\Models\MaterialEjemplar;
 use App\Models\Prestamo;
+use App\Models\Reserva;
 use Illuminate\Support\Facades\DB;
 
 class ReservaService
@@ -12,9 +13,12 @@ class ReservaService
     public function crearReserva(int $socioId, int $materialId): Reserva
     {
         $material = Material::findOrFail($materialId);
-        $stockReal = $material->disponibilidad - $material->disponibilidad_reservada;
 
-        if ($stockReal <= 0) {
+        $disponibleReal = MaterialEjemplar::where('material_id', $materialId)
+            ->where('estado', 'disponible')
+            ->count();
+
+        if ($disponibleReal <= 0) {
             throw new \Exception('Material no disponible');
         }
 
@@ -28,8 +32,20 @@ class ReservaService
         }
 
         return DB::transaction(function () use ($material, $socioId) {
+            $ejemplar = MaterialEjemplar::where('material_id', $material->id)
+                ->where('estado', 'disponible')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $ejemplar) {
+                throw new \Exception('Material no disponible');
+            }
+
+            $ejemplar->update(['estado' => 'reservado']);
+
             $reserva = Reserva::create([
                 'material_id' => $material->id,
+                'ejemplar_id' => $ejemplar->id,
                 'socio_id' => $socioId,
                 'estado' => 'pendiente',
                 'fecha_reserva' => now(),
@@ -49,19 +65,17 @@ class ReservaService
             throw new \Exception('Solo reservas pendientes pueden ser aprobadas');
         }
 
-        $material = $reserva->material;
-        $disponible = $material->disponibilidad - $material->disponibilidad_reservada;
-
-        if ($disponible < 1) {
-            throw new \Exception('Material ya no disponible');
-        }
-
         $fechaDevolucion = now()->addDays($dias);
 
         return DB::transaction(function () use ($reserva, $fechaDevolucion) {
+            if ($reserva->ejemplar_id) {
+                $reserva->ejemplar->update(['estado' => 'prestado']);
+            }
+
             $prestamo = Prestamo::create([
                 'socio_id' => $reserva->socio_id,
                 'material_id' => $reserva->material_id,
+                'ejemplar_id' => $reserva->ejemplar_id,
                 'fecha_prestamo' => now(),
                 'fecha_devolucion' => $fechaDevolucion,
                 'estado' => 'activo',
@@ -76,20 +90,21 @@ class ReservaService
 
             $reserva->material->decrement('disponibilidad_reservada');
 
-            $reserva->material->decrement('disponibilidad');
-
             return $prestamo;
         });
     }
 
-    public function rechazarReserva(Reserva $reserva, string $motivo = null): void
+    public function rechazarReserva(Reserva $reserva, ?string $motivo = null): void
     {
-        if (!in_array($reserva->estado, ['pendiente', 'aprobada'])) {
+        if (! in_array($reserva->estado, ['pendiente', 'aprobada'])) {
             throw new \Exception('La reserva no puede ser rechazada');
         }
 
         DB::transaction(function () use ($reserva) {
             if ($reserva->estado === 'pendiente') {
+                if ($reserva->ejemplar_id) {
+                    $reserva->ejemplar->update(['estado' => 'disponible']);
+                }
                 $reserva->material->decrement('disponibilidad_reservada');
             }
             $reserva->update(['estado' => 'rechazada']);
@@ -100,6 +115,9 @@ class ReservaService
     {
         DB::transaction(function () use ($reserva) {
             if ($reserva->estado === 'pendiente') {
+                if ($reserva->ejemplar_id) {
+                    $reserva->ejemplar->update(['estado' => 'disponible']);
+                }
                 $reserva->material->decrement('disponibilidad_reservada');
             }
             $reserva->update(['estado' => 'expirada']);
@@ -113,6 +131,9 @@ class ReservaService
             ->get();
 
         foreach ($vencidas as $reserva) {
+            if ($reserva->ejemplar_id) {
+                $reserva->ejemplar->update(['estado' => 'disponible']);
+            }
             $reserva->material->decrement('disponibilidad_reservada');
             $reserva->update(['estado' => 'expirada']);
         }
