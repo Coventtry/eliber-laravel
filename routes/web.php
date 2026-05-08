@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('materiales', MaterialController::class)->parameters(['materiales' => 'material']);
     Route::get('materiales/{material}/qr', [MaterialController::class, 'qrCode'])->name('materiales.qr');
     Route::get('materiales/{material}/ejemplares', [MaterialController::class, 'ejemplares'])->name('materiales.ejemplares');
+    Route::patch('materiales/{material}/ejemplares/{ejemplar}/baja', [MaterialController::class, 'bajaEjemplar'])->name('materiales.ejemplares.baja');
     Route::get('api/materiales/ejemplares-disponibles', [MaterialController::class, 'ejemplaresDisponibles'])->name('api.materiales.ejemplares-disponibles');
 
     Route::resource('areas', AreaController::class);

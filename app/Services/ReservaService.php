@@ -14,14 +14,6 @@ class ReservaService
     {
         $material = Material::findOrFail($materialId);
 
-        $disponibleReal = MaterialEjemplar::where('material_id', $materialId)
-            ->where('estado', 'disponible')
-            ->count();
-
-        if ($disponibleReal <= 0) {
-            throw new \Exception('Material no disponible');
-        }
-
         $yaReservado = Reserva::where('material_id', $materialId)
             ->where('socio_id', $socioId)
             ->whereIn('estado', ['pendiente', 'aprobada'])
@@ -106,6 +98,10 @@ class ReservaService
                     $reserva->ejemplar->update(['estado' => 'disponible']);
                 }
                 $reserva->material->decrement('disponibilidad_reservada');
+            } elseif ($reserva->estado === 'aprobada') {
+                if ($reserva->ejemplar_id) {
+                    $reserva->ejemplar->update(['estado' => 'disponible']);
+                }
             }
             $reserva->update(['estado' => 'rechazada']);
         });

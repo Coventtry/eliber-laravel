@@ -49,7 +49,7 @@ class MaterialService
      * Sincroniza los ejemplares cuando cambia la disponibilidad en una edición.
      * Agrega ejemplares si aumenta, da de baja disponibles si disminuye.
      */
-    public function ajustarEjemplares(Material $material, int $nuevaDisponibilidad): void
+    public function ajustarEjemplares(Material $material, int $nuevaDisponibilidad): int
     {
         $totalActuales = MaterialEjemplar::withoutGlobalScopes()
             ->where('material_id', $material->id)
@@ -76,6 +76,18 @@ class MaterialService
                 ->get()
                 ->each(fn ($ej) => $ej->update(['estado' => 'baja']));
         }
+
+        return $nuevaDisponibilidad;
+    }
+
+    public function sincronizarDisponibilidad(Material $material): void
+    {
+        $total = MaterialEjemplar::withoutGlobalScopes()
+            ->where('material_id', $material->id)
+            ->whereIn('estado', ['disponible', 'prestado', 'reservado'])
+            ->count();
+
+        $material->update(['disponibilidad' => $total]);
     }
 
     /**

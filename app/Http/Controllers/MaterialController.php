@@ -102,6 +102,7 @@ class MaterialController extends Controller
 
         DB::transaction(function () use ($datos, $material) {
             $this->materialService->ajustarEjemplares($material, (int) ($datos['disponibilidad'] ?? 0));
+            $this->materialService->sincronizarDisponibilidad($material);
             $material->update($datos);
         });
 
@@ -113,6 +114,15 @@ class MaterialController extends Controller
     public function destroy(Material $material): RedirectResponse
     {
         $this->authorize('delete', $material);
+
+        $activo = $material->ejemplares()
+            ->whereIn('estado', ['prestado', 'reservado'])
+            ->exists();
+
+        if ($activo) {
+            return back()->withErrors(['destroy' => 'No se puede eliminar un material con ejemplares prestados o reservados.']);
+        }
+
         $material->delete();
 
         return redirect()->route('materiales.index')->with('success', 'Material eliminado.');
@@ -175,11 +185,34 @@ class MaterialController extends Controller
             'cantidad' => 'required|integer|min:1',
         ]);
 
+        $material = Material::find($request->material_id);
+        if (! $material || $material->institucion_id !== auth()->user()->institucion_id) {
+            return response()->json(['message' => 'Material no encontrado.'], 404);
+        }
+
         $ejemplares = MaterialEjemplar::where('material_id', $request->material_id)
             ->where('estado', 'disponible')
             ->limit($request->cantidad)
             ->get(['id', 'codigo_ejemplar']);
 
         return response()->json($ejemplares);
+    }
+
+    public function bajaEjemplar(MaterialEjemplar $ejemplar): JsonResponse
+    {
+        $this->authorize('update', $ejemplar->material);
+
+        if ($ejemplar->estado === 'prestado') {
+            return response()->json(['message' => 'No se puede dar de baja un ejemplar prestado.'], 422);
+        }
+
+        $ejemplar->update(['estado' => 'baja']);
+
+        $material = Material::find($ejemplar->material_id);
+        if ($material) {
+            $this->materialService->sincronizarDisponibilidad($material);
+        }
+
+        return response()->json(['message' => 'Ejemplar dado de baja.']);
     }
 }

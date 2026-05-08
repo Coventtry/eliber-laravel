@@ -6,6 +6,10 @@
         <div class="main-container" style="max-width: 600px; margin: auto;">
             <h3 class="mb-4"><i class="bi bi-arrow-return-left mr-2"></i>Devolución de préstamo</h3>
             <FlashMessage />
+            <div v-if="flash" :class="`alert alert-${flash.type} alert-dismissible fade show`" role="alert">
+                {{ flash.message }}
+                <button type="button" class="close" @click="flash = null">&times;</button>
+            </div>
 
             <dl class="row">
                 <dt class="col-sm-4">Socio</dt>
@@ -57,23 +61,30 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
 
 const props = defineProps({ prestamo: { type: Object, required: true } })
 const dias  = ref(7)
+const flash = ref(null)
 
 const estadoClass = computed(() =>
     ({ activo: 'info', pendiente: 'warning', atrasado: 'danger', devuelto: 'success' }[props.prestamo.estado] ?? 'secondary')
 )
 
 function devolver() {
-    router.patch(route('prestamos.devolver', props.prestamo.id))
+    router.patch(route('prestamos.devolver', props.prestamo.id), {}, {
+        onSuccess: () => { flash.value = { type: 'success', message: 'Devolución registrada.' } },
+    })
 }
 
 function extender() {
-    router.patch(route('prestamos.extender', props.prestamo.id), { dias: dias.value })
+    if (! confirm(`¿Extender el préstamo ${dias.value} días?`)) { return }
+    router.patch(route('prestamos.extender', props.prestamo.id), { dias: dias.value }, {
+        onSuccess: () => { flash.value = { type: 'success', message: `Préstamo extendido ${dias.value} días.` } },
+        onError: (err) => { flash.value = { type: 'danger', message: Object.values(err).join(' ') } },
+    })
 }
 </script>

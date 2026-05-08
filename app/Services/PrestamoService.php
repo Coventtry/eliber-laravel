@@ -28,6 +28,8 @@ class PrestamoService
         $this->validarCreacion($socio, $material, $cantidad, $fechaDevolucion);
 
         return DB::transaction(function () use ($socio, $material, $cantidad, $fechaDevolucion) {
+            Material::where('id', $material->id)->lockForUpdate();
+
             $ejemplares = MaterialEjemplar::where('material_id', $material->id)
                 ->where('estado', 'disponible')
                 ->lockForUpdate()

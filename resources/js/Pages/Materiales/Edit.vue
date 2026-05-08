@@ -141,6 +141,7 @@
                                         <th>Código</th>
                                         <th>Estado</th>
                                         <th>Notas</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -153,9 +154,17 @@
                                             </span>
                                         </td>
                                         <td style="max-width:120px;"><small class="text-muted">{{ ej.notas || '—' }}</small></td>
+                                        <td class="text-right">
+                                            <button v-if="ej.estado !== 'prestado' && ej.estado !== 'baja'"
+                                                    type="button" class="btn btn-outline-danger btn-sm py-0 px-1"
+                                                    title="Dar de baja" @click="darBajaEjemplar(ej)">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
+                            <div v-if="ejemplarError" class="alert alert-danger py-1 mt-2" style="font-size:.8rem;">{{ ejemplarError }}</div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary btn-sm" @click="cerrarEjemplares">Cerrar</button>
@@ -221,15 +230,30 @@ function eliminar() {
 
 const ejemplaresModal   = ref(null)
 const ejemplaresLoading = ref(false)
+const ejemplarError = ref(null)
 
 async function verEjemplares() {
     ejemplaresModal.value   = { lista: [] }
     ejemplaresLoading.value  = true
+    ejemplarError.value      = null
     try {
         const { data } = await axios.get(route('materiales.ejemplares', props.material.id))
         ejemplaresModal.value.lista = data
+    } catch {
+        ejemplarError.value = 'Error al cargar exemplares.'
     } finally {
         ejemplaresLoading.value = false
+    }
+}
+
+async function darBajaEjemplar(ej) {
+    if (! confirm(`¿Dar de baja ${ej.codigo_ejemplar}?`)) { return }
+    try {
+        await axios.patch(route('materiales.ejemplares.baja', { material: props.material.id, ejemplar: ej.id }))
+        await verEjemplares()
+        ejemplarError.value = null
+    } catch (e) {
+        ejemplarError.value = e.response?.data?.message ?? 'Error al dar de baja.'
     }
 }
 
@@ -246,51 +270,3 @@ function claseEstadoEjemplar(estado) {
     }[estado] ?? 'badge badge-secondary'
 }
 </script>
-
-<!-- Modal de ejemplares -->
-<template v-if="ejemplaresModal">
-    <Teleport to="body">
-        <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5);" @click.self="cerrarEjemplares">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Ejemplares — {{ props.material.titulo }}</h5>
-                        <button type="button" class="close" @click="cerrarEjemplares">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div v-if="ejemplaresLoading" class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-primary"></div>
-                        </div>
-                        <div v-else-if="!ejemplaresModal.lista.length" class="text-muted text-center py-3">
-                            No hay ejemplares registrados.
-                        </div>
-                        <table v-else class="table table-sm table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Estado</th>
-                                    <th>Notas</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="ej in ejemplaresModal.lista" :key="ej.id">
-                                    <td><code>{{ ej.codigo_ejemplar }}</code></td>
-                                    <td>
-                                        <span :class="claseEstadoEjemplar(ej.estado)">{{ ej.estado }}</span>
-                                        <span v-if="ej.prestamo_activo" class="ml-2 text-muted" style="font-size:.75rem;">
-                                            → {{ ej.prestamo_activo.socio?.apellido }}, {{ ej.prestamo_activo.socio?.nombre }}
-                                        </span>
-                                    </td>
-                                    <td style="max-width:120px;"><small class="text-muted">{{ ej.notas || '—' }}</small></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" @click="cerrarEjemplares">Cerrar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </Teleport>
-</template>
