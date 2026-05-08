@@ -4,55 +4,71 @@
 
 ```bash
 composer run dev       # Laravel + Vite (parallel)
-composer run dev:queue # Add queue worker
-composer run test     # Clears config, runs tests
-composer run setup    # Fresh install (deps, .env, migrate, seed, npm)
-php artisan pint      # PHP formatting
+composer run dev:queue # + queue worker
+composer run test      # Clears config, runs tests
+composer run setup     # Fresh install (deps, .env, migrate, seed, npm)
+php artisan pint       # PHP formatting (Laravel Pint)
+```
+
+**Single test:**
+```bash
+php artisan test --filter test_name
 ```
 
 ## Architecture
 
-Inertia.js SPA (Laravel routing + auth + DB; Vue 3 UI) **plus** a REST API under `/api/v1/` authenticated with Laravel Sanctum. One project, one `.env`.
+Inertia.js SPA (Laravel + Vue 3) + REST API under `/api/v1/` (Sanctum auth). One project, one `.env`.
 
-**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService` contain business logic. Controllers delegate to these.
+**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService`. Controllers delegate to these.
 
-**Key models**: `User` (auth), `Socio` (member), `Material` (item), `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey), `Institucion` (tenant)
+**Key models**: `User`, `Socio` (member), `Material`, `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey), `Institucion` (tenant)
+
+**Inertia pages**: `resources/js/Pages/` — `Inertia::render('Socios/Index')` maps to `Socios/Index.vue`. PascalCase. Shared layout: `AdminLayout.vue`.
 
 ## Auth
 
-- Guard: `web` (session), provider: `App\Models\User`
-- Login uses `usuario` field, not `email` — `Auth::attempt(['usuario' => ...])`
-- REST API uses `auth:sanctum` guard
-- Roles/permissions via `spatie/laravel-permission` — roles: `admin`, `bibliotecario`, `alumno`
-- `admin` role has all permissions; `bibliotecario` gets permissions delegated individually
+- Guard: `web`, provider: `App\Models\User`
+- Login uses `usuario` field (NOT `email`): `Auth::attempt(['usuario' => ...])`
+- REST API: `auth:sanctum` guard
+- Roles via `spatie/laravel-permission`: `admin`, `bibliotecario`, `alumno`
+- `admin` has all permissions; `bibliotecario` needs individual permissions
 
 ## Multi-tenancy
 
-`TenantScope` (in `app/Scopes/`) filters all queries by `institucion_id` of the authenticated user. Applied via `booted()` in every model. `institucion_id` is never a form field — always set from `auth()->user()->institucion_id` in controllers.
+`tenantId()` helper in `app/helpers.php`: returns `session('admin_institucion_id')` for admin, else `auth()->user()->institucion_id`.
+
+`App\Scopes\TenantScope` filters all queries. Every scoped model boots it in `booted()`. `institucion_id` is NEVER a form field — always set from `tenantId()` in controllers.
+
+`Configuracion` model uses explicit `institucion_id` in queries (no TenantScope). Use `Configuracion::get(tenantId(), 'key')` / `::set(tenantId(), 'key', $value)`.
 
 ## Authorization
 
-Every model has a Policy in `app/Policies/` (auto-discovered). Base `Controller` includes `AuthorizesRequests` trait. All write operations call `$this->authorize()`. Check for 403s when adding new routes — ensure roles/permissions are seeded.
+Every model has a Policy in `app/Policies/`. Base `Controller` uses `AuthorizesRequests` trait. All write operations call `$this->authorize()`. Check for 403s when adding routes — ensure roles/permissions are seeded.
 
 ## Validation
 
-Form request classes in `app/Http/Requests/`: `StoreSocioRequest`, `StoreMaterialRequest`, `StorePrestamoRequest`, `StoreUserRequest`, `UpdateUserRequest`, etc.
+Form requests in `app/Http/Requests/`: `StoreSocioRequest`, `StoreMaterialRequest`, `StorePrestamoRequest`, `StoreUserRequest`, `UpdateUserRequest`, etc.
 
 ## Database & Migrations
 
-- Migrations use `Schema::table()` with `if (Schema::hasColumn(...))` guards — safe on production DB with data
-- Test DB is SQLite in-memory (set in `phpunit.xml`)
-- All main tables in `biblioteca` database
+- Migrations use `Schema::table()` with `if (Schema::hasColumn(...))` guards — safe on existing data
+- Test DB: SQLite in-memory (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:` in `phpunit.xml`)
+- Main tables in `biblioteca` MySQL database
 
 ## Tests
 
-`tests/Feature/SmokeTest.php` covers all main flows. Helper `createBibliotecario()` creates a `User` with admin role + permissions — required for `authorize()` checks to pass.
+`tests/Feature/SmokeTest.php` covers main flows. Helper `createBibliotecario()` creates a `User` with admin role + permissions — required for `authorize()` checks to pass.
 
 ## Storage
 
+```bash
+php artisan storage:link
+```
+
 - QR codes: `storage/app/public/qrcodes/`
 - News images: `storage/app/public/noticias/`
-- Run `php artisan storage:link` once after setup
+- User avatars: `storage/app/public/uploads/`
+- Wallpapers: `storage/app/public/wallpapers/`
 
 ## Production Deploy
 

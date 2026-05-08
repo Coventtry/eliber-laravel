@@ -13,7 +13,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'name',
@@ -49,18 +49,20 @@ class User extends Authenticatable
     public function getPictureUrlAttribute(): ?string
     {
         $archivo = trim((string) $this->picture);
-        if ($archivo && Storage::disk('public')->exists('uploads/' . $archivo)) {
-            return asset('storage/uploads/' . $archivo);
+        if ($archivo && Storage::disk('public')->exists('uploads/'.$archivo)) {
+            return asset('storage/uploads/'.$archivo);
         }
+
         return null;
     }
 
     public function getWallpaperUrlAttribute(): ?string
     {
         $archivo = trim((string) $this->wallpaper);
-        if ($archivo && Storage::disk('public')->exists('wallpapers/' . $archivo)) {
-            return asset('storage/wallpapers/' . $archivo);
+        if ($archivo && Storage::disk('public')->exists('wallpapers/'.$archivo)) {
+            return asset('storage/wallpapers/'.$archivo);
         }
+
         return null;
     }
 

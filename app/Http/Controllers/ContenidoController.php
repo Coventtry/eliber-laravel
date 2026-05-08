@@ -13,7 +13,7 @@ class ContenidoController extends Controller
 {
     public function index(): Response
     {
-        $user       = auth()->user();
+        $user = auth()->user();
         $institucion = $user->institucion;
 
         $faqs = Faq::where('institucion_id', $user->institucion_id)
@@ -25,10 +25,10 @@ class ContenidoController extends Controller
             ->get(['id', 'label', 'url', 'orden']);
 
         return Inertia::render('Admin/Contenido/Index', [
-            'faqs'        => $faqs,
+            'faqs' => $faqs,
             'footerLinks' => $footerLinks,
-            'anuncio'     => [
-                'texto'  => $institucion->anuncio_texto ?? '',
+            'anuncio' => [
+                'texto' => $institucion->anuncio_texto ?? '',
                 'estilo' => $institucion->anuncio_estilo ?? 'info',
                 'activo' => (bool) ($institucion->anuncio_activo ?? false),
             ],
@@ -42,7 +42,7 @@ class ContenidoController extends Controller
         $data = $request->validate([
             'pregunta' => 'required|string|max:255',
             'respuesta' => 'required|string|max:3000',
-            'orden'    => 'nullable|integer|min:0',
+            'orden' => 'nullable|integer|min:0',
         ]);
 
         Faq::create([...$data, 'institucion_id' => auth()->user()->institucion_id]);
@@ -57,8 +57,8 @@ class ContenidoController extends Controller
         $data = $request->validate([
             'pregunta' => 'required|string|max:255',
             'respuesta' => 'required|string|max:3000',
-            'orden'    => 'nullable|integer|min:0',
-            'activa'   => 'boolean',
+            'orden' => 'nullable|integer|min:0',
+            'activa' => 'boolean',
         ]);
 
         $faq->update($data);
@@ -80,7 +80,7 @@ class ContenidoController extends Controller
     {
         $data = $request->validate([
             'label' => 'required|string|max:100',
-            'url'   => 'required|string|max:500',
+            'url' => 'required|string|max:500',
             'orden' => 'nullable|integer|min:0',
         ]);
 
@@ -95,7 +95,7 @@ class ContenidoController extends Controller
 
         $data = $request->validate([
             'label' => 'required|string|max:100',
-            'url'   => 'required|string|max:500',
+            'url' => 'required|string|max:500',
             'orden' => 'nullable|integer|min:0',
         ]);
 
@@ -117,13 +117,13 @@ class ContenidoController extends Controller
     public function updateAnuncio(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'texto'  => 'nullable|string|max:500',
+            'texto' => 'nullable|string|max:500',
             'estilo' => 'required|in:warning,danger,info,success',
             'activo' => 'boolean',
         ]);
 
         auth()->user()->institucion->update([
-            'anuncio_texto'  => $data['texto'] ?? null,
+            'anuncio_texto' => $data['texto'] ?? null,
             'anuncio_estilo' => $data['estilo'],
             'anuncio_activo' => $data['activo'] ?? false,
         ]);

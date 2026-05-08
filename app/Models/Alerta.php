@@ -18,13 +18,13 @@ class Alerta extends Model
     {
         return [
             'fecha_alerta' => 'datetime',
-            'leida'        => 'boolean',
+            'leida' => 'boolean',
         ];
     }
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     public function prestamo(): BelongsTo

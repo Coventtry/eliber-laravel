@@ -12,7 +12,7 @@ class TenantScope implements Scope
     {
         $id = tenantId();
         if ($id) {
-            $builder->where($model->getTable() . '.institucion_id', $id);
+            $builder->where($model->getTable().'.institucion_id', $id);
         }
     }
 }

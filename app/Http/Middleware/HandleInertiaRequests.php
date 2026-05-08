@@ -21,18 +21,18 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        $vencimientos      = 0;
-        $alertasNoLeidas   = 0;
-        $anuncio           = null;
-        $footerLinks       = [];
+        $vencimientos = 0;
+        $alertasNoLeidas = 0;
+        $anuncio = null;
+        $footerLinks = [];
         $institucionActiva = null;
-        $instituciones     = [];
-        $logoUrl           = '';
+        $instituciones = [];
+        $logoUrl = '';
         $user = $request->user();
 
         if ($user) {
-            $diasAlerta   = (int) Configuracion::get(tenantId(), 'dias_alerta_previa', 4);
-            $logoUrl      = Configuracion::get(tenantId(), 'logo_url', '');
+            $diasAlerta = (int) Configuracion::get(tenantId(), 'dias_alerta_previa', 4);
+            $logoUrl = Configuracion::get(tenantId(), 'logo_url', '');
             $vencimientos = app(PrestamoService::class)->obtenerVencimientosProximos($diasAlerta)->count();
             $alertasNoLeidas = Alerta::noLeidas()->count();
 
@@ -42,13 +42,13 @@ class HandleInertiaRequests extends Middleware
 
             if ($institucion) {
                 $institucionActiva = [
-                    'id'     => $institucion->id,
+                    'id' => $institucion->id,
                     'nombre' => $institucion->nombre,
-                    'slug'   => $institucion->slug,
+                    'slug' => $institucion->slug,
                 ];
                 if ($institucion->anuncio_activo && $institucion->anuncio_texto) {
                     $anuncio = [
-                        'texto'  => $institucion->anuncio_texto,
+                        'texto' => $institucion->anuncio_texto,
                         'estilo' => $institucion->anuncio_estilo ?? 'info',
                     ];
                 }
@@ -69,34 +69,36 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $user ? [
-                    'id'          => $user->id,
-                    'nombre'      => $user->nombre,
-                    'usuario'    => $user->usuario,
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'usuario' => $user->usuario,
                     'picture_url' => $user->picture_url ?? null,
                 ] : null,
                 'permisos' => $user ? $user->getAllPermissions()->pluck('name')->toArray() : [],
-                'roles'    => $user ? $user->getRoleNames()->toArray() : [],
+                'roles' => $user ? $user->getRoleNames()->toArray() : [],
                 'es_admin' => $user ? $user->hasRole('admin') : false,
             ],
             'menu' => $this->buildMenu($user),
             'flash' => [
                 'success' => session('success'),
-                'error'   => session('error'),
-                'info'    => session('info'),
+                'error' => session('error'),
+                'info' => session('info'),
             ],
-            'vencimientos_proximos'  => $vencimientos,
-            'alertas_no_leidas'      => $alertasNoLeidas,
-            'anuncio'                => $anuncio,
-            'footer_links'           => $footerLinks,
-            'institucion_activa'     => $institucionActiva,
-            'instituciones'          => $instituciones,
-            'logo_url'               => $logoUrl,
+            'vencimientos_proximos' => $vencimientos,
+            'alertas_no_leidas' => $alertasNoLeidas,
+            'anuncio' => $anuncio,
+            'footer_links' => $footerLinks,
+            'institucion_activa' => $institucionActiva,
+            'instituciones' => $instituciones,
+            'logo_url' => $logoUrl,
         ]);
     }
 
     private function buildMenu($user): array
     {
-        if (!$user) return [];
+        if (! $user) {
+            return [];
+        }
 
         $items = [
             ['label' => 'Dashboard', 'route' => 'dashboard', 'permission' => null],
@@ -110,7 +112,7 @@ class HandleInertiaRequests extends Middleware
         ];
 
         return collect($items)
-            ->filter(fn($item) => $item['permission'] === null || $user->can($item['permission']))
+            ->filter(fn ($item) => $item['permission'] === null || $user->can($item['permission']))
             ->values()
             ->toArray();
     }

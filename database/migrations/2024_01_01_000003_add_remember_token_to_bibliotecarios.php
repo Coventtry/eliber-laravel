@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('bibliotecarios', 'remember_token')) {
+        if (! Schema::hasColumn('bibliotecarios', 'remember_token')) {
             Schema::table('bibliotecarios', function (Blueprint $table) {
                 $table->rememberToken()->after('password');
             });

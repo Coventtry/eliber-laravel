@@ -61,8 +61,8 @@ class AlertaController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
-        $alertas = Alerta::when($request->tipo, fn($q, $t) => $q->where('tipo', $t))
-            ->when($request->has('leida') && $request->leida !== '', fn($q) => $q->where('leida', $request->leida))
+        $alertas = Alerta::when($request->tipo, fn ($q, $t) => $q->where('tipo', $t))
+            ->when($request->has('leida') && $request->leida !== '', fn ($q) => $q->where('leida', $request->leida))
             ->orderByDesc('fecha_alerta')
             ->paginate(20);
 

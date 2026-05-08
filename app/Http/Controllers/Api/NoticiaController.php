@@ -77,9 +77,9 @@ class NoticiaController extends Controller
     {
         $this->authorize('create', Noticia::class);
         $request->validate([
-            'titulo'      => 'required|string|max:255',
+            'titulo' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
-            'imagen'      => 'nullable|image|max:2048',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
         $nombreImagen = null;
@@ -88,9 +88,9 @@ class NoticiaController extends Controller
         }
 
         $noticia = Noticia::create([
-            'titulo'         => $request->titulo,
-            'descripcion'    => $request->descripcion,
-            'imagen'         => $nombreImagen,
+            'titulo' => $request->titulo,
+            'descripcion' => $request->descripcion,
+            'imagen' => $nombreImagen,
             'institucion_id' => $request->user()->institucion_id,
         ]);
 
@@ -131,16 +131,16 @@ class NoticiaController extends Controller
         $noticia = Noticia::findOrFail($id);
         $this->authorize('update', $noticia);
         $request->validate([
-            'titulo'      => 'required|string|max:255',
+            'titulo' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
-            'imagen'      => 'nullable|image|max:2048',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
         $data = $request->only('titulo', 'descripcion');
 
         if ($request->hasFile('imagen')) {
             if ($noticia->imagen) {
-                Storage::disk('public')->delete('noticias/' . $noticia->imagen);
+                Storage::disk('public')->delete('noticias/'.$noticia->imagen);
             }
             $data['imagen'] = basename($request->file('imagen')->store('noticias', 'public'));
         }
@@ -171,7 +171,7 @@ class NoticiaController extends Controller
         $this->authorize('delete', $noticia);
 
         if ($noticia->imagen) {
-            Storage::disk('public')->delete('noticias/' . $noticia->imagen);
+            Storage::disk('public')->delete('noticias/'.$noticia->imagen);
         }
         $noticia->delete();
 

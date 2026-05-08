@@ -35,7 +35,7 @@ class CategoriaFisicaController extends Controller
         ], ['nombre.unique' => 'Ya existe una categoría con ese nombre.']);
 
         CategoriaFisica::create([
-            'nombre'         => $request->nombre,
+            'nombre' => $request->nombre,
             'institucion_id' => tenantId(),
         ]);
 
@@ -64,6 +64,7 @@ class CategoriaFisicaController extends Controller
     public function destroy(CategoriaFisica $categoria): RedirectResponse
     {
         $categoria->delete();
+
         return redirect()->route('categorias.create')->with('success', 'Categoría eliminada.');
     }
 }

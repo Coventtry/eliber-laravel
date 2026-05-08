@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Tech Stack**: Laravel 12 (PHP 8.2), Vue 3 with Vite, Inertia.js, MySQL 8+/MariaDB, Bootstrap 4.6.2
 - **Architecture**: Monolithic Inertia.js SPA + REST API under `/api/v1/` (Laravel Sanctum auth)
-- **Multi-tenancy**: Implemented — every entity has `institucion_id`; all queries must scope to the authenticated user's institution
+- **Multi-tenancy**: Every entity has `institucion_id`; all queries must scope to the authenticated user's institution
 
 ## Development Commands
 
@@ -51,23 +51,62 @@ Use `nginx/eliber.conf` as the vhost template.
 
 ## Architecture & Key Patterns
 
+### Authentication & Roles
+
+**Primary auth model is `User`** (not `Bibliotecario` — that is a legacy model for the old Bibliotecario-only workflow). `User` uses `Spatie\Permission\Traits\HasRoles` with three roles:
+
+- `admin` — superuser; can switch between institutions via session (`admin_institucion_id`); access to `/admin/*`
+- `bibliotecario` — library staff; manages socios, materiales, préstamos; requires approval (`activo = true`)
+- `alumno` — student; self-registers, pending approval; access to `/alumno/*` (catalog + reservations)
+
+Login uses the `usuario` field (not `email`). New registrations start with `activo = false` and require approval. All protected routes require `auth` middleware; the REST API uses `auth:sanctum`.
+
+### Multi-Tenancy
+
+`tenantId()` (global helper in `app/helpers.php`) resolves the active `institucion_id`: for `admin` role it reads from `session('admin_institucion_id')`, otherwise returns `auth()->user()->institucion_id`.
+
+`App\Scopes\TenantScope` is a global Eloquent scope — models that boot it automatically filter by `tenantId()`. When adding new models scoped to an institution, boot `TenantScope` and always include `institucion_id` in `$fillable`.
+
+Per-institution settings are stored as key-value pairs in `configuraciones` via `Configuracion::get(tenantId(), 'key', $default)` and `Configuracion::set(tenantId(), 'key', $value)`.
+
 ### Routes
 
 All web routes are in `routes/web.php`. The REST API is in `routes/api.php` under the `v1` prefix.
 
-**Web (Inertia, `auth` middleware):**
-- GET `/` — Landing (public); GET `/dashboard` — Dashboard
+**Public web routes:**
+- `GET /` — Landing; `GET /acerca`, `GET /faqs`
+- `GET /materiales/{id}/ficha` — Public material sheet (QR target, no auth)
+- `GET|POST /reset-password` — Password reset
+
+**Auth middleware group:**
+- `GET /dashboard` — Dashboard (role-aware)
 - `socios.*` + PATCH `/baja`, `/reactivar`
 - `materiales.*` + GET `/{material}/qr`
-- `areas.*`, `noticias.*`, `anotaciones.*`
+- `areas.*`, `categorias.*` (CategoriaFisica), `noticias.*`, `anotaciones.*`
 - `prestamos.index/create/store` + PATCH `/devolver`, `/extender` + GET `/{prestamo}/devolucion`
-- AJAX: `GET /api/socios/buscar`, `/api/materiales/disponibles`, `/api/materiales/ultimo-codigo`
+- `usuarios.index/edit/update` + PATCH `/permisos`, `/toggle-activo`, `/aprobar`
+- `alertas.*` (index, marcar leída, baja-material)
+- `GET|PUT /perfil`
+- AJAX: `GET /api/socios/buscar`, `/api/socios/{socio}/prestamos`, `/api/materiales/disponibles`, `/api/materiales/ultimo-codigo`
+
+**Admin group** (`role:admin`, prefix `/admin`, name `admin.*`):
+- `admin.dashboard`, `admin.usuarios.*` (CRUD + toggle/aprobar)
+- `admin.feedback.*` (Kanban board)
+- `admin.contenido.*` (FAQs, footer links, anuncio)
+- `admin.analitica.index`, `admin.configuracion.index/update`
+- `POST admin/switch-institucion` — switches active institution in session
+
+**Alumno group** (`role:alumno`, prefix `/alumno`, name `alumno.*`):
+- `alumno.dashboard`, `alumno.catalogo`, `alumno.reservas` (mis-reservas)
+- `POST alumno/reservas`, `DELETE alumno/reservas/{reserva}`
 
 **REST API (public + Sanctum):**
 - Public: `GET /api/v1/materiales`, `GET /api/v1/materiales/{id}`, `GET /api/v1/noticias`
 - Sanctum-auth: `GET/POST /api/v1/reservas`, `DELETE /api/v1/reservas/{id}`, `PATCH /api/v1/reservas/{id}/aprobar`, `PATCH /api/v1/reservas/{id}/rechazar`
 
 ### Core Models & Relationships
+
+**User** — primary auth user (`bibliotecarios` table via `User` model, uses `HasRoles`); fields: nombre, apellido, email, usuario, password, picture, wallpaper, anio, division, activo, institucion_id, socio_id
 
 **Socio** (Member) — `prestamos()`, `historial()`; scopes: `activos()`, `buscarEmail()`; `full_name` attr; fields: nombre, apellido, telefono, direccion, email, anio, division, activo, institucion_id
 
@@ -79,9 +118,11 @@ All web routes are in `routes/web.php`. The REST API is in `routes/api.php` unde
 
 **Area** (Dewey) — `materiales()`; fields: codigo_dewey, nombre, Abreviado, institucion_id
 
-**Institucion** — `socios()`, `materiales()`, `prestamos()`; uses SoftDeletes; fields: nombre, slug, estado
+**Institucion** — `socios()`, `materiales()`, `prestamos()`; uses SoftDeletes; fields: nombre, slug, estado, anuncio_activo, anuncio_texto, anuncio_estilo
 
-**Supporting**: Bibliotecario (auth user), HistorialSocio (member action log), Noticia, Anotacion, Notificacion, UbicacionFisica, PrestamoDetalle
+**Configuracion** — per-institution key-value settings; no TenantScope (uses explicit `institucion_id` in queries); use `Configuracion::get()` / `::set()` everywhere
+
+**Supporting**: Bibliotecario (legacy auth model — do not use for new features), HistorialSocio, Alerta, Noticia, Anotacion, Notificacion, UbicacionFisica, PrestamoDetalle, CategoriaFisica, Faq, FeedbackCard, FooterLink
 
 ### Service Layer
 
@@ -103,30 +144,33 @@ All web routes are in `routes/web.php`. The REST API is in `routes/api.php` unde
 - `aprobarReserva(Reserva, dias)` — creates Prestamo, decrements both `disponibilidad_reservada` and `disponibilidad`
 - `rechazarReserva(Reserva)`, `cancelarReserva(Reserva)`, `expirarReservasVencidas()`
 
-### Authentication
+### Inertia Shared Props
 
-`Bibliotecario` model is the auth user. Login uses the `usuario` field (not `email`) — the login form posts `usuario` + `password`. All protected routes require `auth` middleware; the REST API uses `auth:sanctum`.
-
-### Form Requests
-
-`StoreSocioRequest`, `StoreMaterialRequest`, `StorePrestamoRequest` — update these when changing model requirements.
+`HandleInertiaRequests` shares these props to every page:
+- `auth.user` (id, nombre, usuario, picture_url), `auth.permisos`, `auth.roles`, `auth.es_admin`
+- `menu` — filtered by user permissions
+- `flash` — success / error / info session messages
+- `vencimientos_proximos`, `alertas_no_leidas` — badge counters
+- `anuncio` — `{texto, estilo}` or null
+- `footer_links`, `institucion_activa` (`{id, nombre, slug}`), `instituciones` (admin only), `logo_url`
 
 ### Vue Components
 
-Components live in `resources/js/Pages/` (version-controlled). Inertia render paths like `Inertia::render('Socios/Index')` map to `resources/js/Pages/Socios/Index.vue`. PascalCase convention throughout.
+Components live in `resources/js/Pages/` (version-controlled). Inertia render paths like `Inertia::render('Socios/Index')` map to `resources/js/Pages/Socios/Index.vue`. PascalCase convention throughout. Shared layout: `resources/js/Layouts/AdminLayout.vue`.
+
+### Form Requests
+
+`StoreSocioRequest`, `StoreMaterialRequest`, `StorePrestamoRequest`, `StoreUserRequest`, `UpdateUserRequest` — update these when changing model requirements.
 
 ### Storage
 
 - QR codes → `storage/app/public/qrcodes/`
 - News images → `storage/app/public/noticias/`
-- Member avatars → `storage/app/public/uploads/`
+- User avatars → `storage/app/public/uploads/`
+- Wallpapers → `storage/app/public/wallpapers/`
 
 Always run `php artisan storage:link` after deployment.
 
 ### Database Safety
 
 Migrations use `Schema::table()` (not `Schema::create()`), preserving existing data. Tests use SQLite in-memory (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`) with `RefreshDatabase`.
-
-### Multi-Tenancy
-
-Every model and query is scoped to `institucion_id`. When adding new models or queries, always include this scope. The `Institucion` model is the root tenant; `Bibliotecario` belongs to one institution and all their data must be isolated per institution.

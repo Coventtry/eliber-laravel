@@ -14,12 +14,12 @@ class NoticiaController extends Controller
     public function index(): Response
     {
         return Inertia::render('Noticias/Index', [
-            'noticias' => Noticia::orderByDesc('id')->paginate(12)->through(fn($n) => [
-                'id'          => $n->id,
-                'titulo'      => $n->titulo,
+            'noticias' => Noticia::orderByDesc('id')->paginate(12)->through(fn ($n) => [
+                'id' => $n->id,
+                'titulo' => $n->titulo,
                 'descripcion' => $n->descripcion,
-                'imagen_url'  => $n->imagen_url,
-                'fecha'       => $n->fecha?->format('d/m/Y'),
+                'imagen_url' => $n->imagen_url,
+                'fecha' => $n->fecha?->format('d/m/Y'),
             ]),
         ]);
     }
@@ -31,11 +31,11 @@ class NoticiaController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('create', \App\Models\Noticia::class);
+        $this->authorize('create', Noticia::class);
         $request->validate([
-            'titulo'      => 'required|string|max:255',
+            'titulo' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
-            'imagen'      => 'nullable|image|max:2048',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
         $nombreImagen = null;
@@ -45,9 +45,9 @@ class NoticiaController extends Controller
         }
 
         Noticia::create([
-            'titulo'      => $request->titulo,
+            'titulo' => $request->titulo,
             'descripcion' => $request->descripcion,
-            'imagen'      => $nombreImagen,
+            'imagen' => $nombreImagen,
             'institucion_id' => $request->user()->institucion_id,
         ]);
 
@@ -65,21 +65,22 @@ class NoticiaController extends Controller
     {
         $this->authorize('update', $noticia);
         $request->validate([
-            'titulo'      => 'required|string|max:255',
+            'titulo' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
-            'imagen'      => 'nullable|image|max:2048',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
         $data = $request->only('titulo', 'descripcion');
 
         if ($request->hasFile('imagen')) {
             if ($noticia->imagen) {
-                Storage::disk('public')->delete('noticias/' . $noticia->imagen);
+                Storage::disk('public')->delete('noticias/'.$noticia->imagen);
             }
             $data['imagen'] = basename($request->file('imagen')->store('noticias', 'public'));
         }
 
         $noticia->update($data);
+
         return redirect()->route('noticias.index')->with('success', 'Noticia actualizada.');
     }
 
@@ -87,9 +88,10 @@ class NoticiaController extends Controller
     {
         $this->authorize('delete', $noticia);
         if ($noticia->imagen) {
-            Storage::disk('public')->delete('noticias/' . $noticia->imagen);
+            Storage::disk('public')->delete('noticias/'.$noticia->imagen);
         }
         $noticia->delete();
+
         return redirect()->route('noticias.index')->with('success', 'Noticia eliminada.');
     }
 }

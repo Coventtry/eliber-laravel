@@ -19,7 +19,7 @@ class CategoriasFisicasSeeder extends Seeder
         foreach ($instituciones as $id) {
             foreach ($nombres as $nombre) {
                 DB::table('categorias_fisicas')->insertOrIgnore([
-                    'nombre'         => $nombre,
+                    'nombre' => $nombre,
                     'institucion_id' => $id,
                 ]);
             }

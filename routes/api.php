@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AlertaController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\MaterialController;
@@ -9,6 +8,7 @@ use App\Http\Controllers\Api\PrestamoController;
 use App\Http\Controllers\Api\ReservaController;
 use App\Http\Controllers\Api\SocioController;
 use App\Http\Controllers\Api\UsuarioController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     // Endpoints públicos

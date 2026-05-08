@@ -13,7 +13,7 @@ class SampleDataSeeder extends Seeder
     {
         $institucion = Institucion::query()->first();
 
-        if (!$institucion) {
+        if (! $institucion) {
             return;
         }
 

@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 class Bibliotecario extends Authenticatable
 {
-    use Notifiable, HasRoles;
+    use HasRoles, Notifiable;
 
     protected $table = 'bibliotecarios';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -39,9 +40,10 @@ class Bibliotecario extends Authenticatable
 
     public function getPictureUrlAttribute(): ?string
     {
-        if ($this->picture && \Storage::disk('public')->exists('uploads/' . $this->picture)) {
-            return asset('storage/uploads/' . $this->picture);
+        if ($this->picture && \Storage::disk('public')->exists('uploads/'.$this->picture)) {
+            return asset('storage/uploads/'.$this->picture);
         }
+
         return null;
     }
 }

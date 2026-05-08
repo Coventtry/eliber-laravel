@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('users', 'socio_id')) {
+        if (! Schema::hasColumn('users', 'socio_id')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->unsignedInteger('socio_id')->nullable()->constrained('socios')->nullOnDelete();
             });

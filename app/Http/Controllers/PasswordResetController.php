@@ -25,7 +25,7 @@ class PasswordResetController extends Controller
 
         $user = User::where('usuario', $request->usuario)->first();
 
-        if (!$user) {
+        if (! $user) {
             return back()->withErrors(['usuario' => 'El usuario no existe.']);
         }
 

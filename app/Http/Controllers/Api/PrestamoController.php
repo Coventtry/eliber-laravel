@@ -52,9 +52,8 @@ class PrestamoController extends Controller
         $this->prestamoService->marcarAtrasados();
 
         $prestamos = Prestamo::with(['socio', 'material'])
-            ->when($request->estado, fn($q, $e) => $q->where('estado', $e))
-            ->when($request->search, fn($q, $s) => $q->whereHas('socio', fn($sq) =>
-                $sq->where('nombre', 'like', "%{$s}%")->orWhere('apellido', 'like', "%{$s}%")
+            ->when($request->estado, fn ($q, $e) => $q->where('estado', $e))
+            ->when($request->search, fn ($q, $s) => $q->whereHas('socio', fn ($sq) => $sq->where('nombre', 'like', "%{$s}%")->orWhere('apellido', 'like', "%{$s}%")
             ))
             ->orderByRaw("FIELD(estado, 'atrasado', 'pendiente', 'activo', 'devuelto')")
             ->orderBy('fecha_devolucion')

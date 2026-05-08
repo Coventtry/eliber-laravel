@@ -87,8 +87,8 @@ class AreaController extends Controller
         $this->authorize('create', Area::class);
         $request->validate([
             'codigo_dewey' => 'required|string|max:50|unique:areas',
-            'nombre'       => 'required|string|max:255|unique:areas',
-            'Abreviado'    => 'nullable|string|max:50',
+            'nombre' => 'required|string|max:255|unique:areas',
+            'Abreviado' => 'nullable|string|max:50',
         ]);
 
         $area = Area::create($request->only('codigo_dewey', 'nombre', 'Abreviado'));
@@ -128,9 +128,9 @@ class AreaController extends Controller
         $area = Area::findOrFail($id);
         $this->authorize('update', $area);
         $request->validate([
-            'codigo_dewey' => 'required|string|max:50|unique:areas,codigo_dewey,' . $area->id,
-            'nombre'       => 'required|string|max:255|unique:areas,nombre,' . $area->id,
-            'Abreviado'    => 'nullable|string|max:50',
+            'codigo_dewey' => 'required|string|max:50|unique:areas,codigo_dewey,'.$area->id,
+            'nombre' => 'required|string|max:255|unique:areas,nombre,'.$area->id,
+            'Abreviado' => 'nullable|string|max:50',
         ]);
 
         $area->update($request->only('codigo_dewey', 'nombre', 'Abreviado'));

@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -14,8 +14,8 @@ return new class extends Migration
         $tables = ['socios', 'materiales', 'prestamos', 'areas', 'noticias', 'anotaciones', 'bibliotecarios'];
 
         foreach ($tables as $table) {
-            if (!Schema::hasColumn($table, 'institucion_id')) {
-                Schema::table($table, function (Blueprint $t) use ($institucionId) {
+            if (! Schema::hasColumn($table, 'institucion_id')) {
+                Schema::table($table, function (Blueprint $t) {
                     $t->unsignedBigInteger('institucion_id')->nullable()->after('id');
                 });
 
@@ -28,8 +28,8 @@ return new class extends Migration
             }
         }
 
-        if (!Schema::hasColumn('users', 'institucion_id')) {
-            Schema::table('users', function (Blueprint $t) use ($institucionId) {
+        if (! Schema::hasColumn('users', 'institucion_id')) {
+            Schema::table('users', function (Blueprint $t) {
                 $t->unsignedBigInteger('institucion_id')->nullable()->after('activo');
             });
 

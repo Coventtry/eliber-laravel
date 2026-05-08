@@ -14,17 +14,17 @@ class AlertaController extends Controller
     public function index(Request $request): Response
     {
         $alertas = Alerta::with('prestamo')
-            ->when($request->tipo, fn($q, $t) => $q->where('tipo', $t))
-            ->when($request->has('leida') && $request->leida !== '', fn($q) => $q->where('leida', $request->leida))
+            ->when($request->tipo, fn ($q, $t) => $q->where('tipo', $t))
+            ->when($request->has('leida') && $request->leida !== '', fn ($q) => $q->where('leida', $request->leida))
             ->orderByDesc('fecha_alerta')
             ->paginate(20)
             ->withQueryString()
-            ->through(fn($a) => [
-                'id'          => $a->id,
-                'tipo'        => $a->tipo,
+            ->through(fn ($a) => [
+                'id' => $a->id,
+                'tipo' => $a->tipo,
                 'descripcion' => $a->descripcion,
                 'fecha_alerta' => $a->fecha_alerta->format('d/m/Y H:i'),
-                'leida'       => $a->leida,
+                'leida' => $a->leida,
                 'prestamo_id' => $a->prestamo_id,
             ]);
 
@@ -37,12 +37,14 @@ class AlertaController extends Controller
     public function marcarLeida(Alerta $alerta): RedirectResponse
     {
         $alerta->update(['leida' => true]);
+
         return back()->with('success', 'Alerta marcada como leída.');
     }
 
     public function marcarTodasLeidas(): RedirectResponse
     {
         Alerta::noLeidas()->update(['leida' => true]);
+
         return back()->with('success', 'Todas las alertas marcadas como leídas.');
     }
 
@@ -54,7 +56,7 @@ class AlertaController extends Controller
 
         $prestamo = $alerta->prestamo()->with('material')->first();
 
-        abort_if(!$prestamo || !$prestamo->material, 404, 'El préstamo o material no existe.');
+        abort_if(! $prestamo || ! $prestamo->material, 404, 'El préstamo o material no existe.');
 
         $material = $prestamo->material;
 
@@ -63,8 +65,8 @@ class AlertaController extends Controller
 
         // Registrar la anotación con el motivo
         Anotacion::create([
-            'anotacion'      => "Baja de material — {$material->titulo}: {$request->observaciones}",
-            'fecha'          => now(),
+            'anotacion' => "Baja de material — {$material->titulo}: {$request->observaciones}",
+            'fecha' => now(),
             'institucion_id' => auth()->user()->institucion_id,
         ]);
 

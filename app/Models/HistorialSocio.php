@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class HistorialSocio extends Model
 {
     protected $table = 'historial_socios';
+
     public $timestamps = false;
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     protected $fillable = ['id_socio', 'accion', 'fecha', 'observaciones', 'institucion_id'];

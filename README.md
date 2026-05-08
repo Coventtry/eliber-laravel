@@ -1,20 +1,20 @@
 # e-LibeR — Sistema de Gestión Bibliotecaria
 
-Laravel 12 + Vue 3 + Inertia.js. Gestión de materiales, socios, préstamos y reservas para instituciones educativas.
+Laravel 12 + Vue 3 + Inertia.js. Gestión de materiales, socios, préstamos y reservas para instituciones educativas pequeñas y medianas.
 
 ---
 
 ## Requisitos previos
 
-| Herramienta | Versión mínima | Descarga |
-|-------------|---------------|---------|
-| PHP | 8.2 | https://www.php.net/downloads |
-| Composer | 2.x | https://getcomposer.org |
-| Node.js | 18 LTS | https://nodejs.org |
-| MySQL / MariaDB | 8.0 / 10.6 | https://dev.mysql.com/downloads |
-| Git | cualquiera | https://git-scm.com |
+| Herramienta | Versión mínima |
+|-------------|---------------|
+| PHP | 8.2 |
+| Composer | 2.x |
+| Node.js | 18 LTS |
+| MySQL / MariaDB | 8.0 / 10.6 |
+| Git | cualquiera |
 
-> **XAMPP** ya incluye PHP, MySQL y Apache. Si lo usás, verificá que estén activas las extensiones `pdo_mysql`, `mbstring`, `openssl`, `fileinfo` y `zip` en `php.ini`.
+> **XAMPP** ya incluye PHP, MySQL y Apache. Verificá que estén activas las extensiones `pdo_mysql`, `mbstring`, `openssl`, `fileinfo` y `zip` en `php.ini`.
 
 ---
 
@@ -29,15 +29,13 @@ cd eliber-laravel
 
 ### 2. Crear la base de datos
 
-En MySQL/MariaDB (phpMyAdmin, DBeaver o consola):
-
 ```sql
 CREATE DATABASE biblioteca CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 ### 3. Configurar el entorno
 
-> **⚠ Importante:** hacé este paso **antes** de ejecutar cualquier comando `php artisan`. Si corrés artisan sin `.env`, Laravel cachea la configuración con valores vacíos y después aparecen errores como `APP_URL: undefined` o fallas de base de datos. Si ya ejecutaste algo antes de copiar el `.env`, corré `php artisan config:clear` para limpiar la caché.
+> **Importante:** realizá este paso **antes** de ejecutar cualquier comando `php artisan`. Si corrés artisan sin `.env`, Laravel cachea configuración vacía. Si ya ejecutaste algo antes de copiar el `.env`, corré `php artisan config:clear` para limpiar.
 
 ```bash
 cp .env.example .env
@@ -52,7 +50,7 @@ DB_DATABASE=biblioteca
 DB_USERNAME=root
 DB_PASSWORD=           # tu contraseña de MySQL
 
-# Institución y usuario admin que se crean al hacer el seed
+# Institución y usuario admin iniciales
 DEFAULT_INSTITUCION_NOMBRE="Mi Escuela"
 DEFAULT_INSTITUCION_SLUG=mi-escuela
 DEFAULT_ADMIN_USUARIO=admin
@@ -66,7 +64,7 @@ DEFAULT_ADMIN_PASSWORD=CambiarEsta123
 composer run setup
 ```
 
-Este comando hace en orden: instala dependencias PHP → copia `.env` si no existe → genera `APP_KEY` → migra la base de datos con seeders → instala dependencias Node → compila los assets.
+Hace en orden: dependencias PHP → copia `.env` si no existe → genera `APP_KEY` → migra BD con seeders → dependencias Node → compila assets.
 
 ### 5. Enlazar el storage público
 
@@ -112,7 +110,7 @@ SEED_SAMPLE_DATA=true
 php artisan migrate:fresh --seed
 ```
 
-> ⚠ Esto **borra y recrea** toda la base de datos.
+> Esto **borra y recrea** toda la base de datos.
 
 ---
 
@@ -131,7 +129,7 @@ php artisan test --filter test_authenticated_bibliotecario_can_create_a_socio
 # Formatear código PHP (Laravel Pint)
 php artisan pint
 
-# Limpiar caché de configuración/rutas (si algo falla)
+# Limpiar caché de configuración/rutas
 php artisan optimize:clear
 
 # Compilar assets para producción
@@ -145,14 +143,14 @@ npm run build
 ```
 1. Alumno se registra en /login (pestaña "Registrarse")
          ↓
-2. Bibliotecario aprueba en /usuarios  →  Socio creado automáticamente
+2. Bibliotecario aprueba en /usuarios → Socio creado automáticamente
          ↓
-3. Bibliotecario completa datos en /socios (apellido, año, división)
+3. Bibliotecario completa datos del socio en /socios (apellido, año, división)
          ↓
-4. Bibliotecario registra préstamo desde /socios (botón "Nuevo préstamo")
-         o desde /prestamos/create  (Terminal de Préstamos)
+4. Bibliotecario registra préstamo desde /prestamos/create (Terminal de Préstamos)
+         o desde el panel del socio en /socios
          ↓
-5. Seguimiento, prórrogas y deudas desde el panel expandible en /socios
+5. Seguimiento, prórrogas y devoluciones desde /prestamos
 ```
 
 ---
@@ -161,9 +159,49 @@ npm run build
 
 | Rol | Acceso |
 |-----|--------|
-| `admin` | Panel de administración, usuarios, configuración, analítica, contenido |
+| `admin` | Panel de administración, instituciones, usuarios, configuración, feedback, contenido |
 | `bibliotecario` | Socios, materiales, préstamos, áreas, noticias, alertas |
 | `alumno` | Catálogo público, mis reservas, perfil |
+
+### Aprobación de cuentas
+
+Las cuentas nuevas se crean con `activo = false` y requieren aprobación:
+- **Alumnos** → aprobados por el bibliotecario en `/usuarios`
+- **Bibliotecarios** → aprobados por el admin en `/admin/usuarios`
+
+---
+
+## Funcionalidades destacadas
+
+### Gestión de materiales
+- Clasificación Dewey por áreas con código generado automáticamente (`{dewey}-{seq:3}`).
+- Ubicación física: pasillo, tipo (estante/mueble), número y nivel.
+- Código QR por material con datos completos incluyendo tipo de préstamo.
+- Tipos de préstamo: Solo consulta, Copia única, Transitorio.
+
+### Terminal de Préstamos (`/prestamos/create`)
+- Búsqueda predictiva de socio y material con debounce 300ms.
+- Validaciones: socio activo, menos de 3 préstamos activos, sin duplicados, fecha máx. 14 días.
+- Alertas de vencimientos próximos en el dashboard con enlace de WhatsApp.
+
+### Reservas (API REST)
+- Alumnos hacen reservas desde el catálogo público vía API Sanctum.
+- Bibliotecario aprueba/rechaza desde el panel — la aprobación crea el préstamo automáticamente.
+
+### Sistema de Feedback (`/admin/feedback`)
+- Kanban 4 columnas: Backlog / En progreso / Completado / Publicado.
+- Cualquier usuario autenticado puede dejar una nota desde el footer ("Dejar una nota").
+- Rate limiting: 1 nota cada 5 segundos, máximo 3 por día por usuario.
+- Las notas aparecen automáticamente en la columna Backlog con la institución del autor.
+
+### Configuración institucional (`/admin/configuracion`)
+- Logo, colores, nombre y parámetros por institución.
+- El logo se muestra centrado en los dashboards de bibliotecario y alumno.
+- Aplica según la institución seleccionada en el dropdown del panel admin.
+
+### Multi-tenant
+- Cada entidad tiene `institucion_id`. Todos los queries están scopeados.
+- Helper `tenantId()`: retorna `session('admin_institucion_id')` para admin, sino `auth()->user()->institucion_id`.
 
 ---
 
@@ -171,7 +209,7 @@ npm run build
 
 - Asegurate de que los servicios **Apache** y **MySQL** estén corriendo en el panel de XAMPP.
 - Colocá el proyecto en `C:\xampp\htdocs\eliber-laravel\`.
-- Usá la terminal de Git Bash o PowerShell para correr los comandos de Composer y Artisan.
+- Usá Git Bash o PowerShell para correr comandos de Composer y Artisan.
 - Si `php` no se reconoce en la terminal, agregá `C:\xampp\php` al PATH del sistema.
 
 ---

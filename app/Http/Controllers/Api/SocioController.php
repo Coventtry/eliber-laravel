@@ -50,12 +50,12 @@ class SocioController extends Controller
     public function index(Request $request): JsonResponse
     {
         $socios = Socio::query()
-            ->when($request->search, fn($q, $s) => $q->where(function ($q) use ($s) {
+            ->when($request->search, fn ($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('nombre', 'like', "%{$s}%")
-                  ->orWhere('apellido', 'like', "%{$s}%")
-                  ->orWhere('email', 'like', "%{$s}%");
+                    ->orWhere('apellido', 'like', "%{$s}%")
+                    ->orWhere('email', 'like', "%{$s}%");
             }))
-            ->when($request->activo !== null, fn($q) => $q->where('activo', $request->activo))
+            ->when($request->activo !== null, fn ($q) => $q->where('activo', $request->activo))
             ->orderBy('apellido')
             ->paginate(20);
 

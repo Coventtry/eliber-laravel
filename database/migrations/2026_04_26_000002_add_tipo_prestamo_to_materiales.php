@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::table('materiales', function (Blueprint $table) {
             $table->enum('tipo_prestamo', ['Solo consulta', 'Copia única', 'Transitorio'])
-                  ->nullable()
-                  ->after('clasificacion_fisica');
+                ->nullable()
+                ->after('clasificacion_fisica');
         });
     }
 
