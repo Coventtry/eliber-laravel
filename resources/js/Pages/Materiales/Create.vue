@@ -53,6 +53,9 @@
                     <div class="form-group col-md-3">
                         <label>Disponibilidad <span class="text-danger">*</span></label>
                         <input v-model.number="form.disponibilidad" type="number" min="0" class="form-control">
+                        <small v-if="form.disponibilidad > 0" class="text-muted">
+                            Se crearán {{ form.disponibilidad }} exemplar(es) físico(s) al guardar.
+                        </small>
                     </div>
                 </div>
 

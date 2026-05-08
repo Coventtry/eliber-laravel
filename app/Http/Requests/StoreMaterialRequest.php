@@ -28,4 +28,13 @@ class StoreMaterialRequest extends FormRequest
             'nivel' => 'nullable|integer|min:1|max:6',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'disponibilidad.required' => 'Cantidad de ejemplares físicos disponibles en la biblioteca.',
+            'disponibilidad.integer' => 'La disponibilidad debe ser un número entero.',
+            'disponibilidad.min' => 'No puede haber cantidad negativa de ejemplares.',
+        ];
+    }
 }

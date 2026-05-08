@@ -148,6 +148,10 @@
                             </tr>
                         </tbody>
                     </table>
+                    <div class="text-center text-muted py-2" style="font-size:.78rem;">
+                        Modal de solo lectura desde el listado.
+                        <Link :href="route('materiales.edit', ejemplaresModal.id)" class="ml-1">Editar material →</Link>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" @click="cerrarEjemplares">Cerrar</button>
@@ -161,7 +165,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 import axios from 'axios'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'

@@ -86,6 +86,10 @@ class PrestamoService
             throw ValidationException::withMessages(['dias' => 'Los días de extensión deben estar entre 1 y 30.']);
         }
 
+        if ($prestamo->ejemplar_id && $prestamo->ejemplar?->estado !== 'prestado') {
+            throw ValidationException::withMessages(['prestamo' => 'El ejemplar no está en préstamo activo.']);
+        }
+
         $prestamo->update([
             'fecha_devolucion' => $prestamo->fecha_devolucion->addDays($dias)->toDateString(),
         ]);
@@ -101,23 +105,26 @@ class PrestamoService
 
     public function marcarAtrasados(): int
     {
-        $atrasados = Prestamo::with(['socio', 'material'])
-            ->whereIn('estado', ['activo', 'pendiente'])
-            ->where('fecha_devolucion', '<', now()->toDateString())
-            ->get();
+        return DB::transaction(function () {
+            $atrasados = Prestamo::with(['socio', 'material'])
+                ->whereIn('estado', ['activo', 'pendiente'])
+                ->where('fecha_devolucion', '<', now()->toDateString())
+                ->lockForUpdate()
+                ->get();
 
-        foreach ($atrasados as $prestamo) {
-            $prestamo->update(['estado' => 'atrasado']);
-            $fecha = $prestamo->fecha_devolucion->format('d/m/Y');
-            $this->registrarAlerta(
-                $prestamo,
-                'vencido',
-                "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (venció el {$fecha})",
-                true
-            );
-        }
+            foreach ($atrasados as $prestamo) {
+                $prestamo->update(['estado' => 'atrasado']);
+                $fecha = $prestamo->fecha_devolucion->format('d/m/Y');
+                $this->registrarAlerta(
+                    $prestamo,
+                    'vencido',
+                    "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (venció el {$fecha})",
+                    true
+                );
+            }
 
-        return count($atrasados);
+            return count($atrasados);
+        });
     }
 
     public function obtenerVencimientosProximos(int $dias = 4): Collection

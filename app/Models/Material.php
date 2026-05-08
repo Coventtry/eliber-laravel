@@ -39,11 +39,6 @@ class Material extends Model
         return $this->hasMany(MaterialEjemplar::class);
     }
 
-    public function ejemplaresDisponibles(): HasMany
-    {
-        return $this->hasMany(MaterialEjemplar::class)->where('estado', 'disponible');
-    }
-
     public function scopeDisponible($query)
     {
         return $query->where('disponibilidad', '>', 0);
