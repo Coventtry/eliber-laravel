@@ -41,16 +41,15 @@ Route::get('/faqs', function () {
 
 // Auth
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login')->middleware('guest');
-Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('guest');
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware(['guest', 'throttle:10,1']);
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 Route::post('/register', [RegisterController::class, 'store'])->name('register')->middleware('guest');
 
-// Password reset (público)
-Route::get('/reset-password', [PasswordResetController::class, 'showForm'])->name('password.reset');
-Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.reset.submit');
-
 // Protected routes
 Route::middleware('auth')->group(function () {
+    // Password change (requiere auth + contraseña actual)
+    Route::get('/reset-password', [PasswordResetController::class, 'showForm'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.reset.submit');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('feedback/nota', [FeedbackController::class, 'storeNota'])->name('feedback.nota');
 

@@ -140,11 +140,23 @@ sudo systemctl reload nginx
 
 ## Scheduler
 
-El proyecto tiene tareas operativas como `reservas:expirar`.
-En produccion debe existir un cron de Laravel:
+El proyecto tiene tareas programadas:
+- `reservas:expirar` — cada hora, expira reservas vencidas y libera stock
+
+En produccion debe existir un cron de Laravel (única entrada necesaria):
 
 ```bash
 * * * * * cd /var/www/eliber && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 Sin ese cron, las reservas no expiraran automaticamente.
+
+## Backup
+
+Respaldo diario recomendado (agregar al cron del sistema):
+
+```bash
+0 3 * * * mysqldump -u usuario -pclave biblioteca | gzip > /var/backups/eliber/biblioteca_$(date +\%Y\%m\%d).sql.gz
+```
+
+Mantener backups de los ultimos 30 dias y del directorio `storage/app/public/`.

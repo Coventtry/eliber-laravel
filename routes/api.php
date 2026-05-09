@@ -11,13 +11,15 @@ use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    // Endpoints públicos
-    Route::get('materiales', [MaterialController::class, 'index']);
-    Route::get('materiales/{material}', [MaterialController::class, 'show']);
-    Route::get('noticias', [NoticiaController::class, 'index']);
+    // Endpoints públicos (con throttle suave)
+    Route::middleware('throttle:30,1')->group(function () {
+        Route::get('materiales', [MaterialController::class, 'index']);
+        Route::get('materiales/{material}', [MaterialController::class, 'show']);
+        Route::get('noticias', [NoticiaController::class, 'index']);
+    });
 
-    // Endpoints autenticados (Sanctum)
-    Route::middleware('auth:sanctum')->group(function () {
+    // Endpoints autenticados (Sanctum) — throttle más permisivo
+    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Materiales
         Route::post('materiales', [MaterialController::class, 'store']);
         Route::put('materiales/{material}', [MaterialController::class, 'update']);

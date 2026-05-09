@@ -26,5 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
+            return inertia('Errors/NotFound')->toResponse(request())->setStatusCode(404);
+        });
     })->create();
