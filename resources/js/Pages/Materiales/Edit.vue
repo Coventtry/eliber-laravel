@@ -155,11 +155,11 @@
                                         </td>
                                         <td style="max-width:120px;"><small class="text-muted">{{ ej.notas || '—' }}</small></td>
                                         <td class="text-right">
-                                            <button v-if="ej.estado !== 'prestado' && ej.estado !== 'baja'"
-                                                    type="button" class="btn btn-outline-danger btn-sm py-0 px-1"
-                                                    title="Dar de baja" @click="darBajaEjemplar(ej)">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
+<button v-if="ej.estado === 'disponible'"
+                                                type="button" class="btn btn-outline-danger btn-sm py-0 px-1"
+                                                title="Dar de baja" @click="darBajaEjemplar(ej)">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
                                         </td>
                                     </tr>
                                 </tbody>

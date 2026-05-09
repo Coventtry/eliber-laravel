@@ -462,6 +462,158 @@ class SmokeTest extends TestCase
         $this->actingAs($alumno)->get('/admin/dashboard')->assertStatus(403);
     }
 
+    public function test_cannot_baja_prestado_ejemplar(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Baja Test',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2020,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-007',
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 0,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-7',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $ejemplar = MaterialEjemplar::forceCreate([
+            'material_id' => $material->id,
+            'institucion_id' => $user->institucion_id,
+            'codigo_ejemplar' => '200-007-E01',
+            'estado' => 'prestado',
+        ]);
+
+        $prestamoId = \DB::table('prestamos')->insertGetId([
+            'socio_id' => $socio->id,
+            'material_id' => $material->id,
+            'ejemplar_id' => $ejemplar->id,
+            'fecha_prestamo' => now()->subDays(2)->toDateString(),
+            'fecha_devolucion' => now()->addDays(5)->toDateString(),
+            'estado' => 'activo',
+            'cantidad' => 1,
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $response = $this->actingAs($user)->patchJson(
+            "/materiales/{$material->id}/ejemplares/{$ejemplar->id}/baja"
+        );
+
+        $response->assertStatus(422);
+        $this->assertDatabaseHas('material_ejemplares', [
+            'id' => $ejemplar->id,
+            'estado' => 'prestado',
+        ]);
+    }
+
+    public function test_ejemplar_baja_removes_from_available(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Disponible Test',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2021,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-008',
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 0,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-8',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $ejemplar = MaterialEjemplar::forceCreate([
+            'material_id' => $material->id,
+            'institucion_id' => $user->institucion_id,
+            'codigo_ejemplar' => '200-008-E01',
+            'estado' => 'disponible',
+        ]);
+
+        $response = $this->actingAs($user)->patchJson(
+            "/materiales/{$material->id}/ejemplares/{$ejemplar->id}/baja"
+        );
+
+        $response->assertOk();
+        $this->assertDatabaseHas('material_ejemplares', [
+            'id' => $ejemplar->id,
+            'estado' => 'baja',
+        ]);
+        $this->assertDatabaseHas('materiales', [
+            'id' => $material->id,
+            'disponibilidad' => 0,
+        ]);
+    }
+
+    public function test_reserva_approval_transitions_ejemplar_to_prestado(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Reserva Aprob Test',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2022,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-009',
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 1,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-9',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $ejemplar = MaterialEjemplar::forceCreate([
+            'material_id' => $material->id,
+            'institucion_id' => $user->institucion_id,
+            'codigo_ejemplar' => '200-009-E01',
+            'estado' => 'reservado',
+        ]);
+
+        $reservaId = \DB::table('reservas')->insertGetId([
+            'material_id' => $material->id,
+            'ejemplar_id' => $ejemplar->id,
+            'socio_id' => $socio->id,
+            'estado' => 'pendiente',
+            'fecha_reserva' => now(),
+            'fecha_vencimiento' => now()->addDays(2),
+            'institucion_id' => $user->institucion_id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')->patchJson(
+            "/api/v1/reservas/{$reservaId}/aprobar",
+            ['dias' => 10]
+        );
+
+        $response->assertOk();
+        $this->assertDatabaseHas('material_ejemplares', [
+            'id' => $ejemplar->id,
+            'estado' => 'prestado',
+        ]);
+        $this->assertDatabaseHas('prestamos', [
+            'socio_id' => $socio->id,
+            'material_id' => $material->id,
+            'ejemplar_id' => $ejemplar->id,
+            'estado' => 'activo',
+        ]);
+        $this->assertDatabaseHas('reservas', [
+            'id' => $reservaId,
+            'estado' => 'aprobada',
+        ]);
+        $this->assertDatabaseHas('materiales', [
+            'id' => $material->id,
+            'disponibilidad_reservada' => 0,
+        ]);
+    }
+
     private function createInstitucion(): Institucion
     {
         return Institucion::create([

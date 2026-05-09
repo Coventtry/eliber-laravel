@@ -101,6 +101,7 @@ class MaterialController extends Controller
         }
 
         DB::transaction(function () use ($datos, $material) {
+            Material::where('id', $material->id)->lockForUpdate();
             $this->materialService->ajustarEjemplares($material, (int) ($datos['disponibilidad'] ?? 0));
             $this->materialService->sincronizarDisponibilidad($material);
             $material->update($datos);
@@ -198,17 +199,22 @@ class MaterialController extends Controller
         return response()->json($ejemplares);
     }
 
-    public function bajaEjemplar(MaterialEjemplar $ejemplar): JsonResponse
+    public function bajaEjemplar(int $ejemplar): JsonResponse
     {
-        $this->authorize('update', $ejemplar->material);
-
-        if ($ejemplar->estado === 'prestado') {
-            return response()->json(['message' => 'No se puede dar de baja un ejemplar prestado.'], 422);
+        $ejemplarModel = MaterialEjemplar::find($ejemplar);
+        if (! $ejemplarModel) {
+            return response()->json(['message' => 'Ejemplar no encontrado.'], 404);
         }
 
-        $ejemplar->update(['estado' => 'baja']);
+        $this->authorize('update', $ejemplarModel->material);
 
-        $material = Material::find($ejemplar->material_id);
+        if (in_array($ejemplarModel->estado, ['prestado', 'reservado'])) {
+            return response()->json(['message' => 'No se puede dar de baja un ejemplar prestado o reservado.'], 422);
+        }
+
+        $ejemplarModel->update(['estado' => 'baja']);
+
+        $material = Material::find($ejemplarModel->material_id);
         if ($material) {
             $this->materialService->sincronizarDisponibilidad($material);
         }

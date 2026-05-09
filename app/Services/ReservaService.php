@@ -61,7 +61,9 @@ class ReservaService
 
         return DB::transaction(function () use ($reserva, $fechaDevolucion) {
             if ($reserva->ejemplar_id) {
-                $reserva->ejemplar->update(['estado' => 'prestado']);
+                MaterialEjemplar::where('id', $reserva->ejemplar_id)
+                    ->lockForUpdate()
+                    ->update(['estado' => 'prestado']);
             }
 
             $prestamo = Prestamo::create([
