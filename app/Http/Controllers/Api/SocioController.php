@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSocioRequest;
+use App\Http\Resources\SocioResource;
 use App\Models\Socio;
 use App\Services\SocioService;
 use Illuminate\Http\JsonResponse;
@@ -59,7 +60,7 @@ class SocioController extends Controller
             ->orderBy('apellido')
             ->paginate(20);
 
-        return response()->json($socios);
+        return SocioResource::collection($socios);
     }
 
     #[OA\Get(
@@ -79,7 +80,7 @@ class SocioController extends Controller
     {
         $socio = Socio::findOrFail($id);
 
-        return response()->json($socio);
+        return new SocioResource($socio);
     }
 
     #[OA\Post(
@@ -117,7 +118,7 @@ class SocioController extends Controller
             'institucion_id' => $request->user()->institucion_id,
         ]);
 
-        return response()->json($socio, 201);
+        return SocioResource::make($socio)->response()->setStatusCode(201);
     }
 
     #[OA\Put(
@@ -157,7 +158,7 @@ class SocioController extends Controller
         $this->authorize('update', $socio);
         $socio->update($request->validated());
 
-        return response()->json($socio);
+        return new SocioResource($socio);
     }
 
     #[OA\Delete(

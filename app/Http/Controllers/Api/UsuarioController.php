@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,14 +63,7 @@ class UsuarioController extends Controller
             ->orderBy('nombre')
             ->paginate(20);
 
-        return response()->json($usuarios->through(fn ($u) => [
-            'id' => $u->id,
-            'nombre' => $u->nombre,
-            'email' => $u->email,
-            'usuario' => $u->usuario,
-            'activo' => $u->activo,
-            'rol' => $u->roles->first()?->name ?? 'sin rol',
-        ]));
+        return UserResource::collection($usuarios);
     }
 
     #[OA\Get(
@@ -91,13 +85,7 @@ class UsuarioController extends Controller
         $user = User::with('roles')->where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         $this->authorize('update', $user);
 
-        return response()->json([
-            'id' => $user->id,
-            'nombre' => $user->nombre,
-            'email' => $user->email,
-            'usuario' => $user->usuario,
-            'activo' => $user->activo,
-            'rol' => $user->roles->first()?->name ?? 'sin rol',
+        return UserResource::make($user)->additional([
             'permisos' => $user->getDirectPermissions()->pluck('name'),
         ]);
     }
@@ -143,12 +131,7 @@ class UsuarioController extends Controller
         ]);
         $user->assignRole($request->rol ?? 'bibliotecario');
 
-        return response()->json([
-            'id' => $user->id,
-            'nombre' => $user->nombre,
-            'usuario' => $user->usuario,
-            'rol' => $request->rol,
-        ], 201);
+        return UserResource::make($user)->response()->setStatusCode(201);
     }
 
     #[OA\Put(
@@ -192,7 +175,7 @@ class UsuarioController extends Controller
         }
         $user->update($data);
 
-        return response()->json(['id' => $user->id, 'nombre' => $user->nombre, 'usuario' => $user->usuario]);
+        return new UserResource($user);
     }
 
     #[OA\Delete(

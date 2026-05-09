@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePrestamoRequest;
+use App\Http\Resources\PrestamoResource;
 use App\Models\Prestamo;
 use App\Services\PrestamoService;
 use Illuminate\Http\JsonResponse;
@@ -59,7 +60,7 @@ class PrestamoController extends Controller
             ->orderBy('fecha_devolucion')
             ->paginate(20);
 
-        return response()->json($prestamos);
+        return PrestamoResource::collection($prestamos);
     }
 
     #[OA\Get(
@@ -79,7 +80,7 @@ class PrestamoController extends Controller
     {
         $prestamo = Prestamo::with(['socio', 'material'])->findOrFail($id);
 
-        return response()->json($prestamo);
+        return new PrestamoResource($prestamo);
     }
 
     #[OA\Post(
@@ -121,7 +122,7 @@ class PrestamoController extends Controller
             return response()->json(['errors' => $e->errors()], 422);
         }
 
-        return response()->json($prestamo, 201);
+        return PrestamoResource::make($prestamo)->response()->setStatusCode(201);
     }
 
     #[OA\Patch(

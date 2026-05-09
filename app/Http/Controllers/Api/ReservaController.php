@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ReservaResource;
 use App\Models\Reserva;
 use App\Services\ReservaService;
 use Illuminate\Http\JsonResponse;
@@ -59,7 +60,7 @@ class ReservaController extends Controller
                 ->paginate(20);
         }
 
-        return response()->json($reservas);
+        return ReservaResource::collection($reservas);
     }
 
     #[OA\Post(
@@ -96,7 +97,7 @@ class ReservaController extends Controller
                 $request->material_id
             );
 
-            return response()->json($reserva, 201);
+            return ReservaResource::make($reserva)->response()->setStatusCode(201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }

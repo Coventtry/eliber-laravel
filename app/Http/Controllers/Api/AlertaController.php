@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AlertaResource;
 use App\Models\Alerta;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,7 +67,7 @@ class AlertaController extends Controller
             ->orderByDesc('fecha_alerta')
             ->paginate(20);
 
-        return response()->json($alertas);
+        return AlertaResource::collection($alertas);
     }
 
     #[OA\Patch(

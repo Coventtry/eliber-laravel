@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NoticiaResource;
 use App\Models\Noticia;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class NoticiaController extends Controller
             ->orderBy('fecha', 'desc')
             ->paginate(10);
 
-        return response()->json($noticias);
+        return NoticiaResource::collection($noticias);
     }
 
     #[OA\Post(
@@ -94,7 +95,7 @@ class NoticiaController extends Controller
             'institucion_id' => $request->user()->institucion_id,
         ]);
 
-        return response()->json($noticia, 201);
+        return NoticiaResource::make($noticia)->response()->setStatusCode(201);
     }
 
     #[OA\Put(
@@ -147,7 +148,7 @@ class NoticiaController extends Controller
 
         $noticia->update($data);
 
-        return response()->json($noticia);
+        return new NoticiaResource($noticia);
     }
 
     #[OA\Delete(

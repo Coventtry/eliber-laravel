@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMaterialRequest;
+use App\Http\Resources\MaterialResource;
 use App\Models\Area;
 use App\Models\Material;
 use App\Services\MaterialService;
@@ -49,7 +50,7 @@ class MaterialController extends Controller
             ->where('disponibilidad', '>', 0)
             ->paginate(20);
 
-        return response()->json($materiales);
+        return MaterialResource::collection($materiales);
     }
 
     #[OA\Get(
@@ -84,7 +85,7 @@ class MaterialController extends Controller
         $material = Material::select('id', 'titulo', 'autor', 'anio_publicacion', 'categoria', 'codigo', 'disponibilidad', 'editorial', 'area_id')
             ->findOrFail($material);
 
-        return response()->json($material);
+        return new MaterialResource($material);
     }
 
     #[OA\Post(
@@ -141,7 +142,7 @@ class MaterialController extends Controller
         $material = Material::create($data);
         $this->materialService->generarQR($material);
 
-        return response()->json($material, 201);
+        return new MaterialResource($material, 201);
     }
 
     #[OA\Put(
@@ -181,7 +182,7 @@ class MaterialController extends Controller
         $this->authorize('update', $material);
         $material->update($request->validated());
 
-        return response()->json($material);
+        return new MaterialResource($material);
     }
 
     #[OA\Delete(

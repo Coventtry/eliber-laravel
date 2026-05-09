@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AreaResource;
 use App\Models\Area;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class AreaController extends Controller
     )]
     public function index(): JsonResponse
     {
-        return response()->json(Area::orderBy('nombre')->paginate(30));
+        return AreaResource::collection(Area::orderBy('nombre')->paginate(30));
     }
 
     #[OA\Get(
@@ -56,7 +57,7 @@ class AreaController extends Controller
     )]
     public function show(int $id): JsonResponse
     {
-        return response()->json(Area::findOrFail($id));
+        return new AreaResource(Area::findOrFail($id));
     }
 
     #[OA\Post(
@@ -93,7 +94,7 @@ class AreaController extends Controller
 
         $area = Area::create($request->only('codigo_dewey', 'nombre', 'Abreviado'));
 
-        return response()->json($area, 201);
+        return AreaResource::make($area)->response()->setStatusCode(201);
     }
 
     #[OA\Put(
@@ -135,7 +136,7 @@ class AreaController extends Controller
 
         $area->update($request->only('codigo_dewey', 'nombre', 'Abreviado'));
 
-        return response()->json($area);
+        return new AreaResource($area);
     }
 
     #[OA\Delete(
