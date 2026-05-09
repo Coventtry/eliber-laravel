@@ -54,6 +54,8 @@ class MigrarEjemplares extends Command
 
             if (! $dryRun) {
                 DB::transaction(function () use ($material, $total) {
+                    Material::where('id', $material->id)->lockForUpdate()->first();
+
                     for ($i = 1; $i <= $total; $i++) {
                         MaterialEjemplar::withoutGlobalScopes()->create([
                             'material_id' => $material->id,
@@ -112,6 +114,8 @@ class MigrarEjemplares extends Command
 
             if (! $dryRun) {
                 DB::transaction(function () use ($prestamo, $ejemplar) {
+                    MaterialEjemplar::where('id', $ejemplar->id)->lockForUpdate()->first();
+
                     $ejemplar->update(['estado' => 'prestado']);
                     $prestamo->update(['ejemplar_id' => $ejemplar->id]);
                 });

@@ -18,7 +18,11 @@ Severidades: 🔴 HIGH · 🟡 MEDIUM · 🟢 LOW
 | MED-7 | Return.vue sin feedback tras acciones | `onSuccess`/`onError` + confirm en extender |
 | MED-8 | `crearPrestamo` sin lock en fila material | `lockForUpdate()` en Material antes de exemplars |
 | MED-9 | API `ejemplaresDisponibles` sin filtro tenant | Validación `institucion_id` en el controller |
-| MED-10 | `MigrarEjemplares` sin lockForUpdate | Pendiente — comando de migración legacy, bajo riesgo |
+| MED-10 | `MigrarEjemplares` sin lockForUpdate | `MigrarEjemplares.php`: lockForUpdate en migrarMateriales y migrarPrestamosActivos |
+| R2-1 | `bajaEjemplar` permitía estado reservado | Resuelto — bloquea ambos estados + test |
+| R2-2 | `ExpirarReservas` no rest. ejemplar | Resuelto — delega a service |
+| R2-3 | `aprobarReserva` sin lock en ejemplar | Resuelto — lockForUpdate agregado |
+| R2-4 | `update` sin lock en fila material | Resuelto — lockForUpdate en controller |
 | LOW-11 | Return.vue extender sin confirmación | `confirm()` antes de enviar |
 | LOW-12 | Scope `ejemplaresDisponibles` muerto | Eliminado del modelo Material |
 | LOW-13 | Create.vue sin preview de exemplares | `<small>` informativo: "Se crearán N exemplar(es)" |
@@ -26,11 +30,3 @@ Severidades: 🔴 HIGH · 🟡 MEDIUM · 🟢 LOW
 | LOW-15 | Modal ejemplares duplicado en Edit.vue | Teleport duplicado eliminado; Index.vue ahora link a editar |
 | LOW-16 | `extenderPrestamo` sin verificar estado ejemplar | Verifica `ejemplar.estado === 'prestado'` |
 | LOW-17 | `marcarAtrasados` sin lock | `DB::transaction` con `lockForUpdate()` |
-
----
-
-## Pendientes
-
-| # | Descripción | Notas |
-|---|-------------|-------|
-| MED-10 | `MigrarEjemplares` sin lockForUpdate | Comando de setup único — bajo riesgo de race condition en producción |

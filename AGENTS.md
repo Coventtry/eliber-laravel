@@ -5,9 +5,10 @@
 ```bash
 composer run dev       # Laravel + Vite (parallel)
 composer run dev:queue # + queue worker
-composer run test      # Clears config, runs tests
+composer run test      # config:clear → tests (SQLite in-memory)
 composer run setup     # Fresh install (deps, .env, migrate, seed, npm)
 php artisan pint       # PHP formatting (Laravel Pint)
+php artisan optimize:clear  # Wipes all caches (config, route, view, etc.)
 ```
 
 **Single test:**
@@ -21,9 +22,11 @@ Inertia.js SPA (Laravel + Vue 3) + REST API under `/api/v1/` (Sanctum auth). One
 
 **Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService`. Controllers delegate to these.
 
-**Key models**: `User`, `Socio` (member), `Material`, `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey), `Institucion` (tenant)
+**Key models**: `User`, `Socio` (member), `Material`, `MaterialEjemplar` (copy-level tracking), `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey), `Institucion` (tenant). `Bibliotecario` model is legacy — do not use for new features.
 
 **Inertia pages**: `resources/js/Pages/` — `Inertia::render('Socios/Index')` maps to `Socios/Index.vue`. PascalCase. Shared layout: `AdminLayout.vue`.
+
+**Spanish route names**: resources use Spanish (`socios`, `materiales`, `prestamos`, `noticias`, `anotaciones`, `usuarios`). Some use explicit parameter mapping, e.g. `->parameters(['materiales' => 'material'])`.
 
 ## Auth
 
