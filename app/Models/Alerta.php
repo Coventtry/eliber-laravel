@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Alerta extends Model
 {
-    public $timestamps = false;
-
     protected $fillable = [
         'institucion_id', 'prestamo_id', 'tipo', 'descripcion', 'fecha_alerta', 'leida',
     ];

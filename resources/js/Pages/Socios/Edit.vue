@@ -125,7 +125,6 @@ function enviar() {
 }
 
 function confirmarBaja() {
-    console.log('confirmarBaja called for socio:', props.socio.id)
     router.patch(route('socios.baja', props.socio.id))
 }
 

@@ -1,219 +1,156 @@
 # e-LibeR — Sistema de Gestión Bibliotecaria
 
-Laravel 12 + Vue 3 + Inertia.js. Gestión de materiales, socios, préstamos y reservas para instituciones educativas pequeñas y medianas.
+Laravel 12 + Vue 3 + Inertia.js SPA + REST API. Gestión de materiales, socios, préstamos y reservas para instituciones educativas.
 
 ---
 
-## Requisitos previos
+## Requisitos
 
-| Herramienta | Versión mínima |
-|-------------|---------------|
-| PHP | 8.2 |
+| Herramienta | Versión |
+|-------------|---------|
+| PHP | 8.2+ |
 | Composer | 2.x |
-| Node.js | 18 LTS |
+| Node.js | 18+ |
 | MySQL / MariaDB | 8.0 / 10.6 |
-| Git | cualquiera |
 
-> **XAMPP** ya incluye PHP, MySQL y Apache. Verificá que estén activas las extensiones `pdo_mysql`, `mbstring`, `openssl`, `fileinfo` y `zip` en `php.ini`.
+Extensiones PHP requeridas: `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `gd`, `zip`, `xml`, `curl`, `json`.
 
 ---
 
-## Instalación en desarrollo
-
-### 1. Clonar el repositorio
+## Instalación (desarrollo)
 
 ```bash
-git clone <url-del-repositorio> eliber-laravel
+git clone <url> eliber-laravel
 cd eliber-laravel
-```
-
-### 2. Crear la base de datos
-
-```sql
-CREATE DATABASE biblioteca CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### 3. Configurar el entorno
-
-> **Importante:** realizá este paso **antes** de ejecutar cualquier comando `php artisan`. Si corrés artisan sin `.env`, Laravel cachea configuración vacía. Si ya ejecutaste algo antes de copiar el `.env`, corré `php artisan config:clear` para limpiar.
-
-```bash
 cp .env.example .env
-```
-
-Editá `.env` con los datos de tu entorno:
-
-```env
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=biblioteca
-DB_USERNAME=root
-DB_PASSWORD=           # tu contraseña de MySQL
-
-# Institución y usuario admin iniciales
-DEFAULT_INSTITUCION_NOMBRE="Mi Escuela"
-DEFAULT_INSTITUCION_SLUG=mi-escuela
-DEFAULT_ADMIN_USUARIO=admin
-DEFAULT_ADMIN_EMAIL=admin@ejemplo.com
-DEFAULT_ADMIN_PASSWORD=CambiarEsta123
-```
-
-### 4. Instalar todo con un solo comando
-
-```bash
+# Editar .env con DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD
 composer run setup
-```
-
-Hace en orden: dependencias PHP → copia `.env` si no existe → genera `APP_KEY` → migra BD con seeders → dependencias Node → compila assets.
-
-### 5. Enlazar el storage público
-
-```bash
 php artisan storage:link
 ```
 
-### 6. Levantar el servidor de desarrollo
+### Servir la aplicación
 
-```bash
-composer run dev
-```
+**Con XAMPP (Windows):** el proyecto va en `C:\xampp\htdocs\eliber-laravel\`, abrir `http://localhost/eliber-laravel/public`.
 
-Levanta en paralelo:
-- **PHP**: `http://localhost:8000`
-- **Vite** (HMR): recarga automática al guardar archivos Vue/JS/CSS
+**Con Artisan serve:** `php artisan serve` abre `http://localhost:8000`.
+
+En ambos casos, en una terminal aparte ejecutar `npm run dev` para Vite (hot reload).
+
+El comando `composer run setup` ejecuta: `composer install` → genera `APP_KEY` → migra BD con seeders → `npm ci` → `npm run build`.
 
 ---
 
 ## Credenciales iniciales
 
-| Campo | Valor |
-|-------|-------|
-| Usuario | `admin` (o el valor de `DEFAULT_ADMIN_USUARIO`) |
-| Contraseña | `password` (o el valor de `DEFAULT_ADMIN_PASSWORD`) |
+| Campo | Valor por defecto |
+|-------|-------------------|
+| Usuario | `admin` |
+| Contraseña | `eLiber#Admin2026` (configurable via `DEFAULT_ADMIN_PASSWORD` en `.env`) |
 | Rol | Administrador |
 
-> Cambiá la contraseña desde **Mi perfil** luego del primer ingreso.
-
 ---
 
-## Datos de prueba (opcional)
-
-Para poblar la BD con socios, materiales y préstamos de ejemplo:
-
-1. Activar en `.env`:
-```env
-SEED_SAMPLE_DATA=true
-```
-
-2. Recrear la base de datos:
-```bash
-php artisan migrate:fresh --seed
-```
-
-> Esto **borra y recrea** toda la base de datos.
-
----
-
-## Comandos de uso frecuente
+## Comandos
 
 ```bash
-# Servidor + queue worker + Vite (para funciones con colas)
-composer run dev:queue
-
-# Ejecutar todos los tests
-composer run test
-
-# Correr un test específico
-php artisan test --filter test_authenticated_bibliotecario_can_create_a_socio
-
-# Formatear código PHP (Laravel Pint)
-php artisan pint
-
-# Limpiar caché de configuración/rutas
+composer run dev          # Servidor + Vite
+composer run dev:queue    # + queue worker
+composer run test         # Tests (SQLite in-memory)
+composer run setup        # Instalación completa
+php artisan test --filter test_name
 php artisan optimize:clear
-
-# Compilar assets para producción
-npm run build
+npm run build             # Assets producción
 ```
 
 ---
 
-## Flujo principal del sistema
+## Arquitectura
+
+**Inertia.js SPA** — Laravel sirve datos vía Inertia, Vue renderiza frontend. Sin API calls desde el frontend (excepto REST API pública).
+
+**REST API** — `/api/v1/` con auth via Laravel Sanctum (tokens). Recursos públicos: materiales, noticias. Protegidos: préstamos, reservas, áreas, alertas, socios, usuarios.
+
+**Multi-tenant** — Cada registro tiene `institucion_id`. Helper `tenantId()` retorna la institución activa. `TenantScope` filtra automáticamente en la mayoría de los modelos (excepto `Configuracion` que usa `get`/`set` estáticos con `institucion_id` explícito).
+
+**Roles** — `admin` (todo), `bibliotecario` (gestión), `alumno` (catálogo + reservas). vía `spatie/laravel-permission`.
+
+**Service layer** — `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService`. Controllers delegan en services.
+
+---
+
+## Flujo del sistema
 
 ```
-1. Alumno se registra en /login (pestaña "Registrarse")
+1. Usuario se loguea (login con campo "usuario", no email)
          ↓
-2. Bibliotecario aprueba en /usuarios → Socio creado automáticamente
+2. Admin/Bibliotecario gestiona socios, materiales, préstamos
          ↓
-3. Bibliotecario completa datos del socio en /socios (apellido, año, división)
+3. Alumno ve catálogo público y hace reservas vía API
          ↓
-4. Bibliotecario registra préstamo desde /prestamos/create (Terminal de Préstamos)
-         o desde el panel del socio en /socios
+4. Bibliotecario aprueba/rechaza reservas → crea préstamo automático
          ↓
-5. Seguimiento, prórrogas y devoluciones desde /prestamos
+5. Alertas de vencimientos próximos en dashboard
 ```
 
 ---
 
-## Roles del sistema
+## Estructura del proyecto
 
-| Rol | Acceso |
-|-----|--------|
-| `admin` | Panel de administración, instituciones, usuarios, configuración, feedback, contenido |
-| `bibliotecario` | Socios, materiales, préstamos, áreas, noticias, alertas |
-| `alumno` | Catálogo público, mis reservas, perfil |
-
-### Aprobación de cuentas
-
-Las cuentas nuevas se crean con `activo = false` y requieren aprobación:
-- **Alumnos** → aprobados por el bibliotecario en `/usuarios`
-- **Bibliotecarios** → aprobados por el admin en `/admin/usuarios`
-
----
-
-## Funcionalidades destacadas
-
-### Gestión de materiales
-- Clasificación Dewey por áreas con código generado automáticamente (`{dewey}-{seq:3}`).
-- Ubicación física: pasillo, tipo (estante/mueble), número y nivel.
-- Código QR por material con datos completos incluyendo tipo de préstamo.
-- Tipos de préstamo: Solo consulta, Copia única, Transitorio.
-
-### Terminal de Préstamos (`/prestamos/create`)
-- Búsqueda predictiva de socio y material con debounce 300ms.
-- Validaciones: socio activo, menos de 3 préstamos activos, sin duplicados, fecha máx. 14 días.
-- Alertas de vencimientos próximos en el dashboard con enlace de WhatsApp.
-
-### Reservas (API REST)
-- Alumnos hacen reservas desde el catálogo público vía API Sanctum.
-- Bibliotecario aprueba/rechaza desde el panel — la aprobación crea el préstamo automáticamente.
-
-### Sistema de Feedback (`/admin/feedback`)
-- Kanban 4 columnas: Backlog / En progreso / Completado / Publicado.
-- Cualquier usuario autenticado puede dejar una nota desde el footer ("Dejar una nota").
-- Rate limiting: 1 nota cada 5 segundos, máximo 3 por día por usuario.
-- Las notas aparecen automáticamente en la columna Backlog con la institución del autor.
-
-### Configuración institucional (`/admin/configuracion`)
-- Logo, colores, nombre y parámetros por institución.
-- El logo se muestra centrado en los dashboards de bibliotecario y alumno.
-- Aplica según la institución seleccionada en el dropdown del panel admin.
-
-### Multi-tenant
-- Cada entidad tiene `institucion_id`. Todos los queries están scopeados.
-- Helper `tenantId()`: retorna `session('admin_institucion_id')` para admin, sino `auth()->user()->institucion_id`.
+```
+app/
+├── Console/Commands/        # db:respaldo, marcar-atrasados, expirar-reservas
+├── Http/
+│   ├── Controllers/         # Web + Api/
+│   ├── Middleware/           # HandleInertiaRequests
+│   └── Requests/            # Form requests
+├── Models/                  # 17 modelos Eloquent (la mayoría con TenantScope)
+├── Policies/                # Spatie authorization
+├── Scopes/                  # TenantScope (filtro automático por institución)
+└── Services/                # PrestamoService, MaterialService, etc.
+├── helpers.php              # tenantId()
+database/migrations/         # ~40 migraciones ordenadas
+resources/js/                # Vue 3 SPA (Pages/, Components/)
+routes/
+├── web.php                  # Rutas SPA (Inertia)
+├── api.php                  # API REST /api/v1/ (Sanctum)
+└── console.php              # Tareas programadas
+```
 
 ---
 
-## Notas para XAMPP en Windows
+## API REST
 
-- Asegurate de que los servicios **Apache** y **MySQL** estén corriendo en el panel de XAMPP.
-- Colocá el proyecto en `C:\xampp\htdocs\eliber-laravel\`.
-- Usá Git Bash o PowerShell para correr comandos de Composer y Artisan.
-- Si `php` no se reconoce en la terminal, agregá `C:\xampp\php` al PATH del sistema.
+Endpoint base: `/api/v1/`
+
+| Recurso | Auth | Descripción |
+|---------|------|-------------|
+| `GET /materiales` | Público | Catálogo (con filtros) |
+| `GET /noticias` | Público | Noticias |
+| `POST /login` | Público | Login (usuario + password) → devuelve token |
+| `GET/POST /areas` | Sanctum | CRUD áreas Dewey |
+| `GET /alertas` | Sanctum | Alertas + marcar leídas |
+| `GET/POST/PUT/DELETE /socios` | Sanctum | CRUD socios + baja/reactivar |
+| `GET/POST /prestamos` | Sanctum | Préstamos + devolver/extender |
+| `GET/POST/DELETE /reservas` | Sanctum | Reservas + aprobar/rechazar |
+| `GET/POST/PUT/DELETE /usuarios` | Sanctum | CRUD usuarios + permisos/toggle activo |
 
 ---
 
 ## Despliegue en producción
 
-Ver la sección **Production Deployment** en `CLAUDE.md` y el archivo `nginx/eliber.conf` como plantilla de vhost Nginx.
+Ver `DEPLOY.md` para instrucciones paso a paso (`.env`, comandos, post-deploy).
+
+---
+
+## Notas para XAMPP (Windows)
+
+- Apache + MySQL deben estar corriendo
+- Colocar proyecto en `C:\xampp\htdocs\eliber-laravel\`
+- Agregar `C:\xampp\php` al PATH si `php` no se reconoce
+- Usar Git Bash o PowerShell
+
+---
+
+## Licencia
+
+Uso institucional interno.

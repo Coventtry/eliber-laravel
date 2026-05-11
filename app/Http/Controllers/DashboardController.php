@@ -29,7 +29,7 @@ class DashboardController extends Controller
                     'id' => $p->id,
                     'socio' => $p->socio->full_name,
                     'material' => $p->material->titulo,
-                    'fecha_devolucion' => $p->fecha_devolucion->format('d/m/Y'),
+                    'fecha_devolucion' => $p->fecha_devolucion?->format('d/m/Y'),
                     'link_whatsapp' => $p->link_whatsapp,
                 ]),
         ]);

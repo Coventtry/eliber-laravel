@@ -95,7 +95,7 @@ class PrestamoService
         ]);
 
         $prestamo->load(['socio', 'material']);
-        $nuevaFecha = $prestamo->fecha_devolucion->format('d/m/Y');
+        $nuevaFecha = $prestamo->fecha_devolucion?->format('d/m/Y') ?? '';
         $this->registrarAlerta(
             $prestamo,
             'renovacion',
@@ -114,7 +114,7 @@ class PrestamoService
 
             foreach ($atrasados as $prestamo) {
                 $prestamo->update(['estado' => 'atrasado']);
-                $fecha = $prestamo->fecha_devolucion->format('d/m/Y');
+                $fecha = $prestamo->fecha_devolucion?->format('d/m/Y') ?? '';
                 $this->registrarAlerta(
                     $prestamo,
                     'vencido',
@@ -133,13 +133,25 @@ class PrestamoService
             ->vencimientoProximo($dias)
             ->get();
 
-        foreach ($proximos as $prestamo) {
-            $fecha = $prestamo->fecha_devolucion->format('d/m/Y');
-            $this->registrarAlerta(
-                $prestamo,
-                'proximo_vencer',
-                "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (vence el {$fecha})"
-            );
+        if ($proximos->isNotEmpty()) {
+            $existingAlertIds = Alerta::withoutGlobalScopes()
+                ->whereIn('prestamo_id', $proximos->pluck('id'))
+                ->where('tipo', 'proximo_vencer')
+                ->where('leida', false)
+                ->pluck('prestamo_id')
+                ->toArray();
+
+            foreach ($proximos as $prestamo) {
+                if (in_array($prestamo->id, $existingAlertIds)) {
+                    continue;
+                }
+                $fecha = $prestamo->fecha_devolucion?->format('d/m/Y') ?? '';
+                $this->registrarAlerta(
+                    $prestamo,
+                    'proximo_vencer',
+                    "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (vence el {$fecha})"
+                );
+            }
         }
 
         return $proximos;

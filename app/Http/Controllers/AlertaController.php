@@ -50,6 +50,8 @@ class AlertaController extends Controller
 
     public function bajaAlerta(Request $request, Alerta $alerta): RedirectResponse
     {
+        abort_if($alerta->institucion_id !== tenantId(), 403);
+
         $request->validate([
             'observaciones' => 'required|string|max:500',
         ]);

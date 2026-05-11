@@ -8,6 +8,7 @@ use App\Models\FooterLink;
 use App\Models\Institucion;
 use App\Services\PrestamoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -52,10 +53,12 @@ class HandleInertiaRequests extends Middleware
                         'estilo' => $institucion->anuncio_estilo ?? 'info',
                     ];
                 }
-                $footerLinks = FooterLink::where('institucion_id', $institucion->id)
-                    ->orderBy('orden')->orderBy('id')
-                    ->get(['id', 'label', 'url'])
-                    ->toArray();
+                $footerLinks = Cache::remember("footer_links_{$institucion->id}", 3600, function () use ($institucion) {
+                    return FooterLink::where('institucion_id', $institucion->id)
+                        ->orderBy('orden')->orderBy('id')
+                        ->get(['id', 'label', 'url'])
+                        ->toArray();
+                });
             }
 
             if ($user->hasRole('admin')) {
