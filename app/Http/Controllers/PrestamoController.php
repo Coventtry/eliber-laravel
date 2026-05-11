@@ -26,7 +26,7 @@ class PrestamoController extends Controller
             ->when($request->estado, fn ($q, $e) => $q->where('estado', $e))
             ->when($request->search, fn ($q, $s) => $q->whereHas('socio', fn ($sq) => $sq->where('nombre', 'like', "%{$s}%")->orWhere('apellido', 'like', "%{$s}%")
             ))
-            ->orderByRaw("FIELD(estado, 'atrasado', 'pendiente', 'activo', 'devuelto')")
+            ->orderByRaw("CASE estado WHEN 'atrasado' THEN 1 WHEN 'pendiente' THEN 2 WHEN 'activo' THEN 3 WHEN 'devuelto' THEN 4 END")
             ->orderBy('fecha_devolucion')
             ->paginate(20)
             ->withQueryString();
@@ -119,7 +119,7 @@ class PrestamoController extends Controller
 
             return response()->json([
                 'message' => "Préstamo extendido {$request->dias} días.",
-                'fecha_devolucion' => $prestamo->fecha_devolucion->format('Y-m-d'),
+                'fecha_devolucion' => $prestamo->fecha_devolucion?->format('Y-m-d'),
             ]);
         }
 

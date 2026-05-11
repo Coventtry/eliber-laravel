@@ -8,16 +8,19 @@ Sistema de Gestión Bibliotecaria para instituciones educativas.
 
 1. [Roles del sistema](#roles-del-sistema)
 2. [Ingreso al sistema](#ingreso-al-sistema)
-3. [Flujo principal de trabajo](#flujo-principal-de-trabajo)
-4. [Gestión de Usuarios](#gestión-de-usuarios)
-5. [Panel de Socios](#panel-de-socios)
-6. [Terminal de Préstamos](#terminal-de-préstamos)
-7. [Gestión de Materiales](#gestión-de-materiales)
-8. [Gestión de Áreas (Dewey)](#gestión-de-áreas-dewey)
-9. [Noticias y Comunicados](#noticias-y-comunicados)
-10. [Alertas y Vencimientos](#alertas-y-vencimientos)
-11. [Panel de Administración](#panel-de-administración)
-12. [Mi Perfil](#mi-perfil)
+3. [Página pública](#página-pública)
+4. [Flujo principal de trabajo](#flujo-principal-de-trabajo)
+5. [Gestión de Usuarios](#gestión-de-usuarios)
+6. [Panel de Socios](#panel-de-socios)
+7. [Terminal de Préstamos](#terminal-de-préstamos)
+8. [Gestión de Materiales](#gestión-de-materiales)
+9. [Gestión de Áreas (Dewey)](#gestión-de-áreas-dewey)
+10. [Categorías Físicas](#categorías-físicas)
+11. [Gestión de Ejemplares](#gestión-de-ejemplares)
+12. [Noticias y Comunicados](#noticias-y-comunicados)
+13. [Alertas y Vencimientos](#alertas-y-vencimientos)
+14. [Panel de Administración](#panel-de-administración)
+15. [Mi Perfil](#mi-perfil)
 
 ---
 
@@ -40,6 +43,27 @@ Sistema de Gestión Bibliotecaria para instituciones educativas.
 ### Registro de nuevos usuarios
 
 Los alumnos y bibliotecarios se pueden registrar desde la pestaña **"Registrarse"** en la pantalla de login. Las cuentas nuevas quedan **en espera de aprobación** — no pueden ingresar hasta que un responsable las active.
+
+### Recuperación de contraseña
+
+En la pantalla de login, el enlace **"¿Olvidaste tu contraseña?"** permite al usuario reestablecer su contraseña. Para eso debe:
+1. Ingresar su **nombre de usuario** (no el email)
+2. Ingresar su **contraseña actual**
+3. Ingresar la **nueva contraseña** (mínimo 8 caracteres)
+
+> Si el usuario no recuerda su contraseña actual, un administrador puede reestablecerla desde la edición del usuario.
+
+---
+
+## Página pública
+
+El sistema tiene una página de inicio pública visible sin necesidad de iniciar sesión:
+
+**Landing (`/`)**: Muestra las últimas noticias publicadas. Es la puerta de entrada al sistema.
+
+**FAQs (`/faqs`)**: Preguntas frecuentes configuradas desde el panel de administración. Solo se muestran las que están marcadas como **activas**.
+
+**Ficha de material (`/materiales/{id}/ficha`)**: Información pública de un material (título, autor, área, clasificación). Útil para compartir por QR o WhatsApp sin requerir autenticación.
 
 ---
 
@@ -205,6 +229,49 @@ Los materiales se asocian a un área al momento de cargarse.
 
 ---
 
+## Categorías Físicas
+
+**Ruta:** `/categorias`
+
+Las categorías físicas complementan la clasificación Dewey y permiten agrupar materiales por tipo de publicación (libro, revista, mapa, DVD, etc.).
+
+Cada categoría tiene:
+- **Nombre**: ej: "Libro", "Revista", "Atlas", "Material Audiovisual"
+- Se asigna al crear o editar un material
+
+---
+
+## Gestión de Ejemplares
+
+Cada material puede tener múltiples **ejemplares** físicos. El sistema los gestiona automáticamente al crear un material (tantos ejemplares como `disponibilidad` se indique) y al ajustar el stock.
+
+### Estados de un ejemplar
+
+| Estado | Significado |
+|--------|-------------|
+| **disponible** | Está en el estante, listo para prestar |
+| **prestado** | Está en manos de un socio |
+| **reservado** | Alguien lo apartó, pero aún no lo retiró |
+| **baja** | Dado de baja (robo, pérdida, deterioro) |
+
+### Dar de baja un ejemplar
+
+Desde el detalle de un material (`/materiales/{id}`):
+1. Hacer clic en **Ver ejemplares**
+2. Localizar el ejemplar con estado **disponible**
+3. Hacer clic en el botón de **baja**
+4. Opcional: ingresar una nota sobre el motivo
+
+> No se puede dar de baja un ejemplar que esté **prestado** o **reservado** — primero debe devolverse.
+
+Cuando se reduce la **disponibilidad** de un material desde la edición, el sistema da de baja automáticamente los ejemplares sobrantes (los últimos de la lista).
+
+### Código de ejemplar
+
+Cada ejemplar tiene un código único con formato `{codigo-material}-E{seq}` (ej: `1300-002-E01`). Se usa para identificar el ejemplar físico en la terminal de préstamos.
+
+---
+
 ## Noticias y Comunicados
 
 **Ruta:** `/noticias`
@@ -252,9 +319,9 @@ Métricas generales: total de socios, materiales, préstamos activos, préstamos
 
 ### Contenido (`/admin/contenido`)
 
-- **FAQs**: preguntas frecuentes que aparecen en la página pública `/faqs`
-- **Footer links**: enlaces del pie de página
-- **Anuncio**: banner informativo que aparece en la barra superior del sistema
+- **FAQs**: preguntas frecuentes que aparecen en la página pública `/faqs`. Cada FAQ puede activarse o desactivarse individualmente con el toggle **Activa**. Las desactivadas no se muestran al público.
+- **Footer links**: enlaces del pie de página visibles en todo el sistema y en la landing pública.
+- **Anuncio**: banner informativo que aparece en la barra superior del sistema. Configurable con texto, estilo (info/warning/danger/success) y toggle de activación.
 
 ### Analítica (`/admin/analitica`)
 

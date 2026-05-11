@@ -80,6 +80,9 @@ class Prestamo extends Model
         if (empty($telefono)) {
             return null;
         }
+        if (! $this->fecha_devolucion) {
+            return null;
+        }
         $mensaje = urlencode("Hola {$this->socio->nombre}, recordamos que el préstamo de *{$this->material->titulo}* vence el {$this->fecha_devolucion->format('d/m/Y')}.");
 
         return "https://wa.me/54{$telefono}?text={$mensaje}";

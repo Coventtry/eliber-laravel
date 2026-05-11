@@ -115,7 +115,7 @@ class SocioController extends Controller
     {
         $prestamos = $socio->prestamos()
             ->with('material:id,titulo,codigo')
-            ->orderByRaw("FIELD(estado, 'atrasado', 'activo', 'pendiente', 'devuelto')")
+            ->orderByRaw("CASE estado WHEN 'atrasado' THEN 1 WHEN 'activo' THEN 2 WHEN 'pendiente' THEN 3 WHEN 'devuelto' THEN 4 END")
             ->orderBy('fecha_devolucion')
             ->get(['id', 'material_id', 'fecha_prestamo', 'fecha_devolucion', 'estado', 'cantidad'])
             ->map(fn ($p) => [

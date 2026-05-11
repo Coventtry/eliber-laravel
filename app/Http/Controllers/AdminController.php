@@ -55,7 +55,7 @@ class AdminController extends Controller
                 'id' => $p->id,
                 'socio' => $p->socio->full_name,
                 'material' => $p->material->titulo,
-                'fecha_devolucion' => $p->fecha_devolucion->format('d/m/Y'),
+                'fecha_devolucion' => $p->fecha_devolucion?->format('d/m/Y'),
             ]);
 
         return Inertia::render('Admin/Dashboard', compact(
@@ -126,7 +126,7 @@ class AdminController extends Controller
             'nombre' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email',
             'usuario' => 'required|string|max:60|unique:users,usuario',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:8',
             'rol' => 'required|in:admin,bibliotecario,alumno',
             'socio_id' => 'nullable|exists:socios,id',
             'picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -159,7 +159,7 @@ class AdminController extends Controller
             'nombre' => 'required|string|max:120',
             'email' => "required|email|unique:users,email,{$user->id}",
             'usuario' => "required|string|max:60|unique:users,usuario,{$user->id}",
-            'password' => 'nullable|string|min:6',
+            'password' => 'nullable|string|min:8',
             'rol' => 'required|in:admin,bibliotecario,alumno',
             'socio_id' => 'nullable|exists:socios,id',
             'picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',

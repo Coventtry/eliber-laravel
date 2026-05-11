@@ -14,8 +14,8 @@ return new class extends Migration
 
         Schema::create('reservas', function (Blueprint $table) {
             $table->id();
-            $table->integer('material_id');
-            $table->integer('socio_id');
+            $table->unsignedInteger('material_id');
+            $table->unsignedInteger('socio_id');
             $table->enum('estado', ['pendiente', 'aprobada', 'rechazada', 'expirada'])->default('pendiente');
             $table->dateTime('fecha_reserva');
             $table->dateTime('fecha_vencimiento')->nullable();
