@@ -6,6 +6,7 @@ use App\Models\Alerta;
 use App\Models\Configuracion;
 use App\Models\FooterLink;
 use App\Models\Institucion;
+use App\Models\Reserva;
 use App\Services\PrestamoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
