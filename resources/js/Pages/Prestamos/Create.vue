@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container" style="max-width: 720px; margin: auto;">
+        <div class="main-container" style="max-width:720px;">
             <h3 class="mb-4"><i class="bi bi-journal-plus mr-2"></i>Terminal de Préstamos</h3>
             <FlashMessage />
 
@@ -17,7 +17,7 @@
                                @input="buscarSocios"
                                :disabled="!!form.socio_id">
                         <div class="input-group-append" v-if="form.socio_id">
-                            <button type="button" class="btn btn-outline-secondary" @click="limpiarSocio">
+                            <button type="button" class="btn btn-outline-secondary" @click="limpiarSocio" aria-label="Cambiar socio">
                                 <i class="bi bi-x-lg"></i> Cambiar
                             </button>
                         </div>
@@ -51,10 +51,10 @@
                                @input="buscarMateriales"
                                :disabled="!!form.material_id">
                         <div class="input-group-append" v-if="form.material_id">
-                            <button type="button" class="btn btn-outline-secondary" @click="limpiarMaterial">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        </div>
+                                <button type="button" class="btn btn-outline-secondary" @click="limpiarMaterial" aria-label="Limpiar material">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
                     </div>
                     <ul v-if="materialesEncontrados.length && !form.material_id" class="list-group mt-1">
                         <button v-for="m in materialesEncontrados" :key="m.id" type="button"
@@ -147,8 +147,12 @@ async function buscarSocios() {
     clearTimeout(timeoutSocio)
     if (terminoBusquedaSocio.value.length < 2) { sociosEncontrados.value = []; return }
     timeoutSocio = setTimeout(async () => {
-        const { data } = await axios.get(route('api.socios.buscar'), { params: { q: terminoBusquedaSocio.value } })
-        sociosEncontrados.value = data
+        try {
+            const { data } = await axios.get(route('api.socios.buscar'), { params: { q: terminoBusquedaSocio.value } })
+            sociosEncontrados.value = data
+        } catch {
+            alert('Error al buscar socios.')
+        }
     }, 300)
 }
 
@@ -172,10 +176,14 @@ async function buscarMateriales() {
     clearTimeout(timeoutMaterial)
     if (terminoBusquedaMaterial.value.length < 2) { materialesEncontrados.value = []; return }
     timeoutMaterial = setTimeout(async () => {
-        const { data } = await axios.get(route('api.materiales.disponibles'), {
-            params: { busqueda: terminoBusquedaMaterial.value },
-        })
-        materialesEncontrados.value = data
+        try {
+            const { data } = await axios.get(route('api.materiales.disponibles'), {
+                params: { busqueda: terminoBusquedaMaterial.value },
+            })
+            materialesEncontrados.value = data
+        } catch {
+            alert('Error al buscar materiales.')
+        }
     }, 300)
 }
 

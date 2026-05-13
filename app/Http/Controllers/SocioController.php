@@ -17,6 +17,7 @@ class SocioController extends Controller
 
     public function index(Request $request): Response
     {
+        $this->authorize('viewAny', Socio::class);
         $socios = Socio::query()
             ->withCount(['prestamos as atrasados_count' => fn($q) => $q->where('estado', 'atrasado')])
             ->when($request->busqueda, fn($q, $s) => $q->where(function ($q) use ($s) {

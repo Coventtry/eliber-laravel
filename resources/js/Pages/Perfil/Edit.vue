@@ -29,7 +29,7 @@
                                  class="perfil-avatar rounded-circle"
                                  alt="foto de perfil">
                             <div v-else class="perfil-avatar rounded-circle bg-light border d-flex align-items-center justify-content-center">
-                                <i class="bi bi-person" style="font-size:2rem;color:#aaa;"></i>
+                                <i class="bi bi-person icon-lg text-muted"></i>
                             </div>
                         </div>
 

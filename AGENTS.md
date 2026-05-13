@@ -3,65 +3,78 @@
 ## Dev Commands
 
 ```bash
-composer run dev       # Laravel + Vite (parallel)
-composer run dev:queue # Add queue worker
-composer run test     # Clears config, runs tests
-composer run setup    # Fresh install (deps, .env, migrate, seed, npm)
-php artisan pint      # PHP formatting
+composer run dev          # php artisan serve + Vite (concurrent)
+composer run dev:queue    # + queue worker
+composer run test         # config:clear → phpunit (SQLite in-memory)
+php artisan pint           # PHP formatting (Laravel Pint)
+php artisan optimize:clear # cache bust when things break
+npm run build              # Vite production build
+# Single test: php artisan test --filter test_name
 ```
 
 ## Architecture
 
-Inertia.js SPA (Laravel routing + auth + DB; Vue 3 UI) **plus** a REST API under `/api/v1/` authenticated with Laravel Sanctum. One project, one `.env`.
+**Inertia SPA** (Laravel 12 + Vue 3) with a **REST API** under `/api/v1/` (Sanctum). One project, one `.env`.
 
-**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService` contain business logic. Controllers delegate to these.
+**Auth provider**: `App\Models\User` (guard `web`). Login uses `usuario` field — `Auth::attempt(['usuario' => ...])`. Roles via `spatie/laravel-permission`: `admin` (all perms), `bibliotecario` (delegated), `alumno`.
 
-**Key models**: `User` (auth), `Socio` (member), `Material` (item), `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey), `Institucion` (tenant)
+**Permissions used in policies**: `gestionar-socios`, `gestionar-materiales`, `gestionar-prestamos`, `gestionar-areas`, `gestionar-noticias`, `gestionar-anotaciones`, `gestionar-usuarios`, `gestionar-multas`, `ver-reportes`
 
-## Auth
+**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService` — controllers delegate business logic. All write operations use `$this->authorize()`.
 
-- Guard: `web` (session), provider: `App\Models\User`
-- Login uses `usuario` field, not `email` — `Auth::attempt(['usuario' => ...])`
-- REST API uses `auth:sanctum` guard
-- Roles/permissions via `spatie/laravel-permission` — roles: `admin`, `bibliotecario`, `alumno`
-- `admin` role has all permissions; `bibliotecario` gets permissions delegated individually
+**Multi-tenancy**: `TenantScope` filters every query by `auth()->user()->institucion_id` via `booted()` in every model. `institucion_id` is never user-supplied — always set from auth in controllers.
 
-## Multi-tenancy
+## Key Models
 
-`TenantScope` (in `app/Scopes/`) filters all queries by `institucion_id` of the authenticated user. Applied via `booted()` in every model. `institucion_id` is never a form field — always set from `auth()->user()->institucion_id` in controllers.
+`User` (auth), `Socio`, `Material`, `Prestamo`, `Reserva`, `Area` (Dewey), `Institucion` (tenant), `Noticia`, `Anotacion`, `Alerta`, `HistorialSocio`, `Configuracion`, `Faq`, `FeedbackCard`
 
-## Authorization
+## Loan Rules (PrestamoService)
 
-Every model has a Policy in `app/Policies/` (auto-discovered). Base `Controller` includes `AuthorizesRequests` trait. All write operations call `$this->authorize()`. Check for 403s when adding new routes — ensure roles/permissions are seeded.
+- Max 3 active loans per socio, no duplicate material active
+- Date range: today to `dias_prestamo` config (default 14 days)
+- Extension: 1–30 days
+- Real stock: `disponibilidad - disponibilidad_reservada`
 
-## Validation
+## Material Codes (MaterialService)
 
-Form request classes in `app/Http/Requests/`: `StoreSocioRequest`, `StoreMaterialRequest`, `StorePrestamoRequest`, `StoreUserRequest`, `UpdateUserRequest`, etc.
+- Code format: `{codigo_dewey}-{seq:3digits}` (e.g. `1300-002`)
+- QR stored as `qrcodes/QR_{id}.png` (or `.svg` fallback)
 
 ## Database & Migrations
 
-- Migrations use `Schema::table()` with `if (Schema::hasColumn(...))` guards — safe on production DB with data
-- Test DB is SQLite in-memory (set in `phpunit.xml`)
-- All main tables in `biblioteca` database
+- Migrations use `Schema::table()` with `Schema::hasColumn()` guards — safe on prod
+- Test DB: SQLite `:memory:` (set in `phpunit.xml`)
+- Seed sample data: set `SEED_SAMPLE_DATA=true` in `.env`, run `php artisan migrate:fresh --seed`
 
 ## Tests
 
-`tests/Feature/SmokeTest.php` covers all main flows. Helper `createBibliotecario()` creates a `User` with admin role + permissions — required for `authorize()` checks to pass.
+- `tests/Feature/SmokeTest.php` covers all main flows
+- Helper `createBibliotecario()` creates a `User` with `admin` role + all permissions
+- Models with TenantScope need `forceCreate()` when creating outside auth context
+- API tests authenticate with `Sanctum`: `actingAs($user, 'sanctum')`
 
 ## Storage
 
 - QR codes: `storage/app/public/qrcodes/`
 - News images: `storage/app/public/noticias/`
-- Run `php artisan storage:link` once after setup
+- Avatars: `storage/app/public/uploads/`
+- Run `php artisan storage:link` after deploy
 
-## Production Deploy
+## Quirks
 
-```bash
-composer install --no-dev --optimize-autoloader
-npm ci && npm run build
-php artisan migrate --force
-php artisan storage:link
-php artisan config:cache && php artisan route:cache && php artisan view:cache
-```
+- **Vite** aliases jQuery as global for Bootstrap 4 compat (see `vite.config.js`)
+- `Alerta::withoutGlobalScopes()` used in `PrestamoService` for alert CRUD
+- Transient `Bibliotecario` model exists (separate `bibliotecarios` table) but is NOT the auth provider — `User` is
+- **Backup**: `php artisan db:respaldo` runs `mysqldump` daily at 03:00, keeps 7 days; files in `storage/app/backups/`
+- Requires `mysqldump` installed on the server for backup to function
 
-Config template: `nginx/eliber.conf`
+## Email Notifications
+
+3 Notification classes in `app/Notifications/` (all implement `ShouldQueue`):
+- `PrestamoVencido` — sent by `PrestamoService::marcarAtrasados()` when a loan is overdue
+- `PrestamoProximoVencer` — sent by `PrestamoService::obtenerVencimientosProximos()` for loans due within 4 days
+- `ReservaAprobada` — sent by `ReservaService::aprobarReserva()` when a reservation is approved
+
+Email is sent to the `User` linked via `User.socio_id` → `Prestamo.socio_id`. If no User is linked (`socio_id` is null), no notification is sent.
+
+Mail config in `.env` uses SMTP (defaults to `log` driver as fallback). For local dev, `MAIL_MAILER=log` writes to `storage/logs/laravel.log`.

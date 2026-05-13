@@ -12,6 +12,7 @@ class AreaController extends Controller
 {
     public function index(): Response
     {
+        $this->authorize('viewAny', Area::class);
         return Inertia::render('Areas/Index', [
             'areas' => Area::orderBy('nombre')->paginate(30),
         ]);

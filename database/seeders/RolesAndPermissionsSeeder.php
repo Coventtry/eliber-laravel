@@ -18,6 +18,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'gestionar-areas',
             'gestionar-noticias',
             'gestionar-anotaciones',
+            'gestionar-multas',
             'ver-reportes',
             'ver-materiales',
             'crear-reservas',
@@ -40,6 +41,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'gestionar-areas',
             'gestionar-noticias',
             'gestionar-anotaciones',
+            'gestionar-multas',
             'ver-reportes',
         ]);
 

@@ -48,8 +48,8 @@
                                         @click="aprobar(p)"
                                     >
                                         <span v-if="aprobando === p.id" class="spinner-border spinner-border-sm mr-1"></span>
-                                        <i v-else class="bi bi-check-lg mr-1"></i>
-                                        Aprobar
+                                        <i v-else class="bi bi-check-lg"></i>
+                                        <span class="d-none d-md-inline ml-1">Aprobar</span>
                                     </button>
                                 </td>
                             </tr>
@@ -58,29 +58,40 @@
                 </div>
             </div>
 
-            <form @submit.prevent="buscar" class="form-inline mb-3">
-                <input v-model="busqueda" type="text" class="form-control mr-2" placeholder="Nombre, email o usuario…">
-                <button type="submit" class="btn btn-outline-success mr-2">Buscar</button>
-                <Link :href="route('usuarios.index')" class="btn btn-outline-secondary">Limpiar</Link>
+            <form @submit.prevent="buscar" class="mb-3">
+                <div class="row g-2">
+                    <div class="col-12 col-sm-6 col-md-5 mb-2">
+                        <label for="filtro-usuarios" class="sr-only">Buscar por nombre, email o usuario</label>
+                        <input id="filtro-usuarios" v-model="busqueda" type="text" class="form-control" placeholder="Nombre, email o usuario…">
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 mb-2 d-flex">
+                        <button type="submit" class="btn btn-outline-success mr-2" :disabled="cargando">
+                            <span v-if="cargando" class="spinner-border spinner-border-sm mr-1"></span>
+                            <i v-else class="bi bi-search mr-1"></i>
+                            Buscar
+                        </button>
+                        <Link :href="route('usuarios.index')" class="btn btn-outline-secondary">Limpiar</Link>
+                    </div>
+                </div>
             </form>
 
             <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Email</th>
-                            <th>Usuario</th>
-                            <th>Socio vinculado</th>
-                            <th>Estado</th>
-                            <th></th>
-                        </tr>
-                    </thead>
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Nombre</th>
+                                <th scope="col" class="d-none d-md-table-cell">Email</th>
+                                <th scope="col" class="d-none d-lg-table-cell">Usuario</th>
+                                <th scope="col">Socio vinculado</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
                     <tbody>
                         <tr v-for="u in usuarios.data" :key="u.id">
                             <td>{{ u.nombre }}</td>
-                            <td>{{ u.email }}</td>
-                            <td><code>{{ u.usuario }}</code></td>
+                            <td class="d-none d-md-table-cell">{{ u.email }}</td>
+                            <td class="d-none d-lg-table-cell"><code>{{ u.usuario }}</code></td>
                             <td>
                                 <span v-if="u.rol === 'alumno'">
                                     <span v-if="u.socio" class="badge badge-info">
@@ -96,7 +107,7 @@
                                 </span>
                             </td>
                             <td class="text-right">
-                                <Link :href="route('usuarios.edit', u.id)" class="btn btn-sm btn-outline-primary">
+                                <Link :href="route('usuarios.edit', u.id)" class="btn btn-sm btn-outline-primary" aria-label="Editar usuario">
                                     <i class="bi bi-pencil"></i>
                                 </Link>
                             </td>
@@ -108,23 +119,7 @@
                 </table>
             </div>
 
-            <nav v-if="usuarios.last_page > 1">
-                <ul class="pagination justify-content-center">
-                    <li v-for="link in usuarios.links" :key="link.label"
-                        :class="['page-item', { active: link.active, disabled: !link.url }]">
-                        <Link v-if="link.url" :href="link.url" class="page-link">
-                            <span v-if="link.label.includes('Anterior') || link.label.includes('Previous')">&laquo;</span>
-                            <span v-else-if="link.label.includes('Siguiente') || link.label.includes('Next')">&raquo;</span>
-                            <span v-else v-html="link.label"></span>
-                        </Link>
-                        <span v-else class="page-link">
-                            <span v-if="link.label.includes('Anterior') || link.label.includes('Previous')">&laquo;</span>
-                            <span v-else-if="link.label.includes('Siguiente') || link.label.includes('Next')">&raquo;</span>
-                            <span v-else v-html="link.label"></span>
-                        </span>
-                    </li>
-                </ul>
-            </nav>
+            <Pagination :links="usuarios.links" />
         </div>
     </div>
 
@@ -137,6 +132,7 @@ import { router } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
+import Pagination from '@/Components/Pagination.vue'
 
 const props = defineProps({
     usuarios:   { type: Object, required: true },
@@ -145,10 +141,16 @@ const props = defineProps({
 })
 
 const busqueda    = ref(props.filters.busqueda ?? '')
-const aprobando = ref(null)
+const aprobando   = ref(null)
+const cargando    = ref(false)
 
 function buscar() {
-    router.get(route('usuarios.index'), { busqueda: busqueda.value }, { preserveState: true, replace: true })
+    cargando.value = true
+    router.get(route('usuarios.index'), { busqueda: busqueda.value }, {
+        preserveState: true,
+        replace: true,
+        onFinish: () => { cargando.value = false },
+    })
 }
 
 function aprobar(usuario) {

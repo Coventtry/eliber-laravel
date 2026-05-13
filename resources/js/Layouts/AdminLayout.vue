@@ -16,10 +16,10 @@
             </Link>
 
             <!-- Right controls -->
-            <div class="d-flex align-items-center" style="gap:.75rem;">
+            <div class="d-flex align-items-center gap-3">
 
                 <!-- Dark mode toggle -->
-                <button class="dm-toggle" @click="toggleDark" :title="darkMode ? 'Modo claro' : 'Modo oscuro'">
+                <button class="dm-toggle" @click="toggleDark" :title="darkMode ? 'Modo claro' : 'Modo oscuro'" :aria-label="darkMode ? 'Activar modo claro' : 'Activar modo oscuro'">
                     <i :class="darkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
                 </button>
 
@@ -33,24 +33,26 @@
                         <div v-else class="nav-avatar-initials">
                             {{ auth.user.nombre?.charAt(0)?.toUpperCase() }}
                         </div>
-                        <div class="d-none d-md-flex flex-column" style="line-height:1.2;">
-                            <span class="nav-user-name">{{ auth.user.nombre }}</span>
-                            <span class="nav-user-role">Administrador</span>
-                        </div>
-                        <i class="bi bi-chevron-down nav-user-role" style="font-size:.6rem;"></i>
+                        <div class="d-none d-md-flex flex-column nav-user-line">
+                             <span class="nav-user-name">{{ auth.user.nombre }}</span>
+                             <span class="nav-user-role">Administrador</span>
+                         </div>
+                         <i class="bi bi-chevron-down nav-user-role icon-sm"></i>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right admin-dropdown mt-2">
                         <div class="px-3 py-2 border-bottom">
                             <div class="font-weight-bold" style="font-size:.82rem;">{{ auth.user.nombre }}</div>
-                            <div style="font-size:.72rem;opacity:.6;">@{{ auth.user.usuario }}</div>
+                            <div class="text-muted small">@{{ auth.user.usuario }}</div>
                         </div>
                         <Link :href="route('perfil.edit')" class="dropdown-item admin-dropdown-item">
                             <i class="bi bi-person-gear"></i>Mi perfil
                         </Link>
                         <div class="dropdown-divider my-1"></div>
                         <form @submit.prevent="logout">
-                            <button type="submit" class="dropdown-item admin-dropdown-item text-danger">
-                                <i class="bi bi-box-arrow-right"></i>Cerrar sesión
+                            <button type="submit" class="dropdown-item admin-dropdown-item text-danger" :disabled="cargando">
+                                <span v-if="cargando" class="spinner-border spinner-border-sm mr-1"></span>
+                                <i v-else class="bi bi-box-arrow-right"></i>
+                                Cerrar sesión
                             </button>
                         </form>
                     </div>
@@ -84,7 +86,7 @@
         </aside>
 
         <!-- Main content -->
-        <main class="admin-content">
+        <main id="main-content" class="admin-content">
             <FlashMessage />
             <slot />
         </main>
@@ -100,6 +102,7 @@ import { initDarkMode, useDarkMode } from '@/Composables/useDarkMode'
 const page        = usePage()
 const auth        = computed(() => page.props.auth)
 const sidebarOpen = ref(false)
+const cargando    = ref(false)
 
 const { darkMode, toggleDark } = useDarkMode()
 
@@ -108,7 +111,12 @@ onMounted(() => {
 })
 
 // ── Auth / nav ────────────────────────────────────────────────────────────────
-function logout() { router.post(route('logout')) }
+function logout() {
+    cargando.value = true
+    router.post(route('logout'), {}, {
+        onStart: () => { cargando.value = true },
+    })
+}
 
 function isActive(item) {
     if (!item.href) return false
@@ -160,26 +168,26 @@ const menuItems = computed(() => [
 }
 
 /* ── Variables: Dark ─────────────────────────────────────────────────────── */
-:global([data-theme="dark"]) .admin-shell {
-    --nav-bg:          #0f172a;
+[data-theme="dark"] .admin-shell {
+    --nav-bg:          var(--dm-bg);
     --nav-border:      rgba(255,255,255,.06);
-    --sidebar-bg:      #1e293b;
-    --sidebar-border:  #334155;
+    --sidebar-bg:      var(--dm-surface);
+    --sidebar-border:  var(--dm-border);
     --sidebar-sep:     #475569;
     --item-color:      #cbd5e1;
-    --item-hover-bg:   #334155;
+    --item-hover-bg:   var(--dm-hover);
     --item-hover-color:#93c5fd;
-    --item-active-bg:  #1e3a5f;
-    --item-active-border:#60a5fa;
+    --item-active-bg:  var(--dm-primary-muted);
+    --item-active-border:var(--dm-primary);
     --item-active-color:#93c5fd;
-    --content-bg:      #0f172a;
-    --card-bg:         #1e293b;
-    --card-border:     #334155;
-    --text-primary:    #f1f5f9;
-    --text-muted:      #94a3b8;
-    --dropdown-bg:     #1e293b;
-    --dropdown-border: #334155;
-    --dropdown-hover:  #334155;
+    --content-bg:      var(--dm-bg);
+    --card-bg:         var(--dm-surface);
+    --card-border:     var(--dm-border);
+    --text-primary:    var(--dm-text);
+    --text-muted:      var(--dm-text-muted);
+    --dropdown-bg:     var(--dm-surface);
+    --dropdown-border: var(--dm-border);
+    --dropdown-hover:  var(--dm-hover);
     --toggle-bg:       rgba(255,255,255,.1);
     --toggle-color:    #fbbf24;
 }

@@ -11,7 +11,8 @@
                 <img src="/img/logo.png" alt="E-liber" height="36">
             </Link>
 
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navMain">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navMain"
+                    aria-controls="navMain" aria-expanded="false" aria-label="Abrir menú de navegación">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -56,6 +57,11 @@
                             <Link :href="route('prestamos.index')" class="dropdown-item">
                                 <i class="bi bi-list-ul mr-1"></i>Listado / Devolución
                             </Link>
+                            <div class="dropdown-divider"></div>
+                            <Link :href="route('prestamos.solicitudes')" class="dropdown-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-envelope-open mr-1"></i>Solicitudes</span>
+                                <span v-if="solicitudesPendientes > 0" class="badge badge-warning ml-2">{{ solicitudesPendientes }}</span>
+                            </Link>
                         </div>
                     </li>
 
@@ -89,9 +95,9 @@
                 <ul class="navbar-nav ml-auto align-items-center">
                     <!-- Dark mode toggle -->
                     <li class="nav-item mr-2">
-                        <button class="dm-toggle" @click="toggleDark" :title="darkMode ? 'Modo claro' : 'Modo oscuro'">
-                            <i :class="darkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
-                        </button>
+<button class="dm-toggle" @click="toggleDark" :title="darkMode ? 'Modo claro' : 'Modo oscuro'" :aria-label="darkMode ? 'Activar modo claro' : 'Activar modo oscuro'">
+                        <i :class="darkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+                    </button>
                     </li>
 
                     <li v-if="vencimientosProximos > 0" class="nav-item mr-2">
@@ -107,18 +113,17 @@
                                 :src="auth.user.picture_url"
                                 alt="perfil"
                                 class="perfil-img mr-2">
-                            <div v-else
-                                class="mr-2"
-                                style="width:36px;height:36px;border-radius:50%;background:var(--eliber-accent,#e8a020);color:#fff;font-weight:700;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid rgba(255,255,255,.3);">
-                                {{ auth.user.nombre?.charAt(0)?.toUpperCase() }}
-                            </div>
-                            <div class="d-none d-md-flex flex-column" style="line-height:1.2;">
-                                <span class="text-white font-weight-bold" style="font-size:.85rem;">{{ auth.user.nombre }}</span>
-                                <span style="font-size:.7rem;color:rgba(255,255,255,.65);">{{ labelRol }}</span>
-                            </div>
+                             <div v-else
+                                 class="nav-avatar-initials mr-2">
+                                 {{ auth.user.nombre?.charAt(0)?.toUpperCase() }}
+                             </div>
+                             <div class="d-none d-md-flex flex-column nav-user-line">
+                                 <span class="nav-user-name">{{ auth.user.nombre }}</span>
+                                 <span class="nav-user-role">{{ labelRol }}</span>
+                             </div>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right" style="border-radius: 10px; border: none; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
-                            <h6 class="dropdown-header" style="color: var(--eliber-primary); font-weight: 600;">{{ auth.user.usuario }}</h6>
+                        <div class="dropdown-menu dropdown-menu-right navbar-dropdown-menu">
+                             <h6 class="dropdown-header font-weight-bold" style="color:var(--eliber-primary);">{{ auth.user.usuario }}</h6>
                             <div class="dropdown-divider"></div>
                             <Link :href="route('perfil.edit')" class="dropdown-item">
                                 <i class="bi bi-person-gear mr-1"></i>Mi perfil
@@ -128,8 +133,10 @@
                             </Link>
                             <div class="dropdown-divider"></div>
                             <form @submit.prevent="logout" method="POST">
-                                <button type="submit" class="dropdown-item text-danger" style="transition: all 0.3s ease;">
-                                    <i class="bi bi-box-arrow-right mr-1"></i>Cerrar sesión
+                                <button type="submit" class="dropdown-item text-danger" :disabled="cargando">
+                                    <span v-if="cargando" class="spinner-border spinner-border-sm mr-1"></span>
+                                    <i v-else class="bi bi-box-arrow-right mr-1"></i>
+                                    Cerrar sesión
                                 </button>
                             </form>
                         </div>
@@ -143,10 +150,11 @@
 
 <script setup>
 import { usePage, router, Link } from '@inertiajs/vue3'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { initDarkMode, useDarkMode } from '@/Composables/useDarkMode'
 
 const page    = usePage()
+const cargando = ref(false)
 const auth    = computed(() => page.props.auth)
 
 const { darkMode, toggleDark } = useDarkMode()
@@ -154,6 +162,7 @@ onMounted(() => initDarkMode(auth.value?.user?.id ?? null))
 const anuncio = computed(() => page.props.anuncio ?? null)
 const vencimientosProximos = computed(() => page.props.vencimientos_proximos ?? 0)
 const alertasNoLeidas = computed(() => page.props.alertas_no_leidas ?? 0)
+const solicitudesPendientes = computed(() => page.props.solicitudes_pendientes ?? 0)
 
 const ROLES = { admin: 'Administrador', bibliotecario: 'Bibliotecario', alumno: 'Alumno' }
 const labelRol = computed(() => {
@@ -167,7 +176,9 @@ function can(permiso) {
 }
 
 function logout() {
-    router.post(route('logout'))
+    router.post(route('logout'), {}, {
+        onStart: () => { cargando.value = true },
+    })
 }
 
 </script>

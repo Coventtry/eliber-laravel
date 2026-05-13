@@ -20,13 +20,13 @@
 
     <!-- Leyenda de prioridades -->
     <div class="card mb-3 border-0 shadow-sm">
-        <div class="card-body py-2 d-flex flex-wrap align-items-center" style="gap:.75rem;">
+        <div class="card-body py-2 d-flex flex-wrap align-items-center gap-3">
             <span class="text-muted small mr-1">Prioridad:</span>
-            <div v-for="(color, key) in settings.alertColors" :key="key" class="d-flex align-items-center" style="gap:.3rem;">
+            <div v-for="(color, key) in settings.alertColors" :key="key" class="d-flex align-items-center gap-1">
                 <div class="rounded-circle" :style="`width:10px;height:10px;background:${color};flex-shrink:0;`"></div>
                 <span class="small text-capitalize">{{ prioridadLabels[key] }}</span>
             </div>
-            <div class="mx-2" style="width:1px;height:16px;background:#dee2e6;"></div>
+            <div class="mx-2 border-left" style="height:16px;"></div>
             <span class="text-muted small mr-1">Roles:</span>
             <span v-for="(cls, rol) in rolColors" :key="rol" :class="['badge', cls, 'small']">{{ rol }}</span>
         </div>
@@ -89,10 +89,10 @@
 
                     <!-- Acciones -->
                     <div class="d-flex justify-content-end mt-2" style="gap:.25rem;">
-                        <button class="btn btn-link btn-sm p-0 text-muted" @click="abrirEditar(card)" title="Editar">
+                        <button class="btn btn-link btn-sm p-0 text-muted" @click="abrirEditar(card)" title="Editar" aria-label="Editar tarjeta">
                             <i class="bi bi-pencil" style="font-size:.8rem;"></i>
                         </button>
-                        <button class="btn btn-link btn-sm p-0 text-danger" @click="confirmarEliminar(card)" title="Eliminar">
+                        <button class="btn btn-link btn-sm p-0 text-danger" @click="confirmarEliminar(card)" title="Eliminar" aria-label="Eliminar tarjeta">
                             <i class="bi bi-trash" style="font-size:.8rem;"></i>
                         </button>
                     </div>
@@ -105,141 +105,104 @@
         </div>
     </div>
 
-    <!-- Modal crear/editar -->
-    <div v-if="mostrarModal" class="modal-backdrop-custom" @click.self="mostrarModal = false">
-        <div class="modal-dialog-custom">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ tarjetaEdicion ? 'Editar tarjeta' : 'Nueva tarjeta' }}</h5>
-                    <button type="button" class="close" @click="mostrarModal = false"><span>&times;</span></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Título <span class="text-danger">*</span></label>
-                        <input v-model="form.titulo" type="text" class="form-control form-control-sm" maxlength="255">
-                        <div v-if="errors.titulo" class="text-danger small">{{ errors.titulo }}</div>
+    <BaseModal :show="mostrarModal" :title="tarjetaEdicion ? 'Editar tarjeta' : 'Nueva tarjeta'" @close="mostrarModal = false">
+        <div class="form-group">
+            <label class="font-weight-bold small">Título <span class="text-danger">*</span></label>
+            <input v-model="form.titulo" type="text" class="form-control form-control-sm" maxlength="255">
+            <div v-if="errors.titulo" class="text-danger small">{{ errors.titulo }}</div>
+        </div>
+        <div class="form-group">
+            <label class="font-weight-bold small">Descripción</label>
+            <textarea v-model="form.descripcion" class="form-control form-control-sm" rows="3" maxlength="2000"></textarea>
+        </div>
+        <div class="form-group">
+            <label class="font-weight-bold small">Prioridad</label>
+            <select v-model="form.prioridad" class="form-control form-control-sm">
+                <option v-for="(label, key) in prioridadLabels" :key="key" :value="key">{{ label }}</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="font-weight-bold small">Tags</label>
+            <div class="d-flex flex-wrap mb-2" style="gap:.35rem;">
+                <button
+                    v-for="tag in settings.availableTags"
+                    :key="tag"
+                    type="button"
+                    class="btn btn-sm"
+                    :class="form.tags.includes(tag) ? 'btn-primary' : 'btn-outline-secondary'"
+                    style="font-size:.72rem;padding:.15rem .5rem;"
+                    @click="toggleTag(tag)"
+                >{{ tag }}</button>
+            </div>
+        </div>
+        <template #footer>
+            <button type="button" class="btn btn-secondary btn-sm" @click="mostrarModal = false">Cancelar</button>
+            <button type="button" class="btn btn-primary btn-sm" :disabled="saving" @click="guardar">
+                <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
+                Guardar
+            </button>
+        </template>
+    </BaseModal>
+
+    <BaseModal :show="mostrarConfiguracion" title="Configuración del Kanban" size="lg" @close="mostrarConfiguracion = false">
+        <div class="form-group">
+            <label class="font-weight-bold small">Días hasta desaparecer en Publicado</label>
+            <div class="d-flex align-items-center" style="gap:.5rem;">
+                <input v-model.number="settingsForm.disappearTime" type="number" min="1" max="365" class="form-control form-control-sm" style="width:80px;">
+                <span class="text-muted small">días</span>
+            </div>
+            <small class="text-muted">Las tarjetas en Publicado desaparecen pasados estos días</small>
+        </div>
+        <div class="form-group">
+            <label class="font-weight-bold small">Colores de prioridad</label>
+            <div class="row">
+                <div v-for="(color, key) in settingsForm.alertColors" :key="key" class="col-6 mb-2">
+                    <label class="small text-capitalize mb-1">{{ prioridadLabels[key] }}</label>
+                    <div class="d-flex align-items-center" style="gap:.4rem;">
+                        <input type="color" v-model="settingsForm.alertColors[key]"
+                            class="border rounded" style="width:36px;height:30px;cursor:pointer;padding:1px;">
+                        <input type="text" v-model="settingsForm.alertColors[key]"
+                            class="form-control form-control-sm font-weight-bold" style="font-family:monospace;width:90px;">
                     </div>
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Descripción</label>
-                        <textarea v-model="form.descripcion" class="form-control form-control-sm" rows="3" maxlength="2000"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Prioridad</label>
-                        <select v-model="form.prioridad" class="form-control form-control-sm">
-                            <option v-for="(label, key) in prioridadLabels" :key="key" :value="key">{{ label }}</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Tags</label>
-                        <div class="d-flex flex-wrap mb-2" style="gap:.35rem;">
-                            <button
-                                v-for="tag in settings.availableTags"
-                                :key="tag"
-                                type="button"
-                                class="btn btn-sm"
-                                :class="form.tags.includes(tag) ? 'btn-primary' : 'btn-outline-secondary'"
-                                style="font-size:.72rem;padding:.15rem .5rem;"
-                                @click="toggleTag(tag)"
-                            >{{ tag }}</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" @click="mostrarModal = false">Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-sm" :disabled="saving" @click="guardar">
-                        <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
-                        Guardar
-                    </button>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Modal configuración -->
-    <div v-if="mostrarConfiguracion" class="modal-backdrop-custom" @click.self="mostrarConfiguracion = false">
-        <div class="modal-dialog-custom">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-gear mr-2"></i>Configuración del Kanban</h5>
-                    <button type="button" class="close" @click="mostrarConfiguracion = false"><span>&times;</span></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Tiempo desaparición -->
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Días hasta desaparecer en Publicado</label>
-                        <div class="d-flex align-items-center" style="gap:.5rem;">
-                            <input v-model.number="settingsForm.disappearTime" type="number" min="1" max="365" class="form-control form-control-sm" style="width:80px;">
-                            <span class="text-muted small">días</span>
-                        </div>
-                        <small class="text-muted">Las tarjetas en Publicado desaparecen pasados estos días</small>
-                    </div>
-
-                    <!-- Colores de prioridad -->
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Colores de prioridad</label>
-                        <div class="row">
-                            <div v-for="(color, key) in settingsForm.alertColors" :key="key" class="col-6 mb-2">
-                                <label class="small text-capitalize mb-1">{{ prioridadLabels[key] }}</label>
-                                <div class="d-flex align-items-center" style="gap:.4rem;">
-                                    <input type="color" v-model="settingsForm.alertColors[key]"
-                                        class="border rounded" style="width:36px;height:30px;cursor:pointer;padding:1px;">
-                                    <input type="text" v-model="settingsForm.alertColors[key]"
-                                        class="form-control form-control-sm font-weight-bold" style="font-family:monospace;width:90px;">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tags disponibles -->
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Tags disponibles</label>
-                        <div class="d-flex flex-wrap mb-2" style="gap:.35rem;">
-                            <span
-                                v-for="tag in settingsForm.availableTags"
-                                :key="tag"
-                                class="badge badge-light border d-flex align-items-center"
-                                style="font-size:.75rem;gap:.3rem;"
-                            >
-                                {{ tag }}
-                                <button type="button" class="btn btn-link btn-sm p-0 text-danger ml-1"
-                                    style="font-size:.7rem;line-height:1;" @click="removeTag(tag)">
+        <div class="form-group">
+            <label class="font-weight-bold small">Tags disponibles</label>
+            <div class="d-flex flex-wrap mb-2" style="gap:.35rem;">
+                <span
+                    v-for="tag in settingsForm.availableTags"
+                    :key="tag"
+                    class="badge badge-light border d-flex align-items-center"
+                    style="font-size:.75rem;gap:.3rem;"
+                >
+                    {{ tag }}
+<button type="button" class="btn btn-link btn-sm p-0 text-danger ml-1"
+                                        style="font-size:.7rem;line-height:1;" @click="removeTag(tag)"
+                                        aria-label="Eliminar tag">
                                     <i class="bi bi-x"></i>
-                                </button>
-                            </span>
-                        </div>
-                        <div class="d-flex" style="gap:.4rem;">
-                            <input v-model="newTag" type="text" class="form-control form-control-sm" placeholder="Nuevo tag..."
-                                @keydown.enter.prevent="addTag" maxlength="50">
-                            <button type="button" class="btn btn-outline-primary btn-sm" @click="addTag">Agregar</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" @click="mostrarConfiguracion = false">Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-sm" @click="guardarConfiguracion">Guardar</button>
-                </div>
+                    </button>
+                </span>
+            </div>
+            <div class="d-flex" style="gap:.4rem;">
+                <input v-model="newTag" type="text" class="form-control form-control-sm" placeholder="Nuevo tag..."
+                    @keydown.enter.prevent="addTag" maxlength="50">
+                <button type="button" class="btn btn-outline-primary btn-sm" @click="addTag">Agregar</button>
             </div>
         </div>
-    </div>
+        <template #footer>
+            <button type="button" class="btn btn-secondary btn-sm" @click="mostrarConfiguracion = false">Cancelar</button>
+            <button type="button" class="btn btn-primary btn-sm" @click="guardarConfiguracion">Guardar</button>
+        </template>
+    </BaseModal>
 
-    <!-- Modal confirmación eliminar -->
-    <div v-if="objetoEliminar" class="modal-backdrop-custom" @click.self="objetoEliminar = null">
-        <div class="modal-dialog-custom" style="max-width:420px;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-danger"><i class="bi bi-trash mr-2"></i>Eliminar tarjeta</h5>
-                    <button type="button" class="close" @click="objetoEliminar = null"><span>&times;</span></button>
-                </div>
-                <div class="modal-body">
-                    <p>¿Eliminás la tarjeta <strong>{{ objetoEliminar.titulo }}</strong>? Esta acción no se puede deshacer.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" @click="objetoEliminar = null">Cancelar</button>
-                    <button type="button" class="btn btn-danger btn-sm" @click="ejecutarEliminar">Eliminar</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <BaseModal :show="!!objetoEliminar" title="Eliminar tarjeta" size="sm" @close="objetoEliminar = null">
+        <p>¿Eliminás la tarjeta <strong>{{ objetoEliminar?.titulo }}</strong>? Esta acción no se puede deshacer.</p>
+        <template #footer>
+            <button type="button" class="btn btn-secondary btn-sm" @click="objetoEliminar = null">Cancelar</button>
+            <button type="button" class="btn btn-danger btn-sm" @click="ejecutarEliminar">Eliminar</button>
+        </template>
+    </BaseModal>
 </template>
 
 <script>
@@ -251,6 +214,7 @@ export default { layout: AdminLayout }
 import { Head, router } from '@inertiajs/vue3'
 import { ref, reactive, computed } from 'vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
+import BaseModal from '@/Components/BaseModal.vue'
 
 const props = defineProps({
     cards: { type: Array, default: () => [] },
@@ -423,19 +387,15 @@ function ejecutarEliminar() {
     padding: 1rem 0;
 }
 
-/* Modales */
-.modal-backdrop-custom {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    z-index: 1050;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
-.modal-dialog-custom {
-    width: 100%;
-    max-width: 560px;
+@media (max-width: 767.98px) {
+    .kanban-board {
+        flex-direction: column;
+        overflow-x: visible;
+        gap: .75rem;
+    }
+    .kanban-column {
+        min-width: unset;
+        width: 100%;
+    }
 }
 </style>

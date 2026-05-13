@@ -27,8 +27,10 @@
                 </select>
             </div>
             <div class="col-auto">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-search mr-1"></i>Buscar
+                <button type="submit" class="btn btn-primary" :disabled="cargando">
+                    <span v-if="cargando" class="spinner-border spinner-border-sm mr-1"></span>
+                    <i v-else class="bi bi-search mr-1"></i>
+                    Buscar
                 </button>
                 <Link v-if="hayFiltros" :href="route('alumno.catalogo')" class="btn btn-outline-secondary ml-1">
                     Limpiar
@@ -115,12 +117,14 @@ const form = ref({
 const hayFiltros = computed(() => form.value.search || form.value.area_id)
 
 const reservando = ref(null)
+const cargando   = ref(false)
 
 function buscar() {
+    cargando.value = true
     router.get(route('alumno.catalogo'), {
         search:  form.value.search  || undefined,
         area_id: form.value.area_id || undefined,
-    }, { preserveState: true, replace: true })
+    }, { preserveState: true, replace: true, onFinish: () => { cargando.value = false } })
 }
 
 function reservar(material) {

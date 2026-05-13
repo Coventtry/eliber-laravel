@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container" style="max-width: 640px; margin-left: auto; margin-right: auto;">
+        <div class="main-container" style="max-width:640px;">
             <h3 class="mb-4">
                 <i class="bi bi-person-gear mr-2"></i>
                 {{ socio.apellido }}, {{ socio.nombre }}
@@ -13,7 +13,7 @@
             </h3>
             <FlashMessage />
 
-            <form @enviar.prevent="enviar">
+            <form @submit.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label>Nombre <span class="text-danger">*</span></label>
@@ -60,7 +60,7 @@
 
                 <div class="d-flex justify-content-between mt-2">
                     <Link :href="route('socios.index')" class="btn btn-outline-secondary">Cancelar</Link>
-                    <button type="enviar" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
+                    <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
                 </div>
             </form>
 
@@ -68,23 +68,27 @@
 
             <!-- Baja / Reactivar -->
             <div class="d-flex justify-content-between align-items-center">
-                <div v-if="socio.activo">
-                    <button class="btn btn-outline-danger" @click="mostrarConfirmBaja = true">
-                        <i class="bi bi-person-dash mr-1"></i>Dar de baja
-                    </button>
-                    <div v-if="mostrarConfirmBaja" class="mt-2 p-3 border rounded">
-                        <p class="mb-2">¿Dar de baja a {{ socio.nombre }} {{ socio.apellido }}?</p>
-                        <button class="btn btn-secondary btn-sm mr-2" @click="mostrarConfirmBaja = false">Cancelar</button>
-                        <button class="btn btn-danger btn-sm" @click="confirmarBaja">Confirmar</button>
-                    </div>
-                </div>
-                <div v-else>
-                    <form @enviar.prevent="reactivar">
-                        <button type="enviar" class="btn btn-outline-success">
-                            <i class="bi bi-person-check mr-1"></i>Reactivar
-                        </button>
-                    </form>
-                </div>
+<div v-if="socio.activo">
+        <button class="btn btn-outline-danger" @click="mostrarConfirmBaja = true" :disabled="bajando">
+            <i class="bi bi-person-dash mr-1"></i>Dar de baja
+        </button>
+        <div v-if="mostrarConfirmBaja" class="mt-2 p-3 border rounded">
+            <p class="mb-2">¿Dar de baja a {{ socio.nombre }} {{ socio.apellido }}?</p>
+            <button class="btn btn-secondary btn-sm mr-2" @click="mostrarConfirmBaja = false" :disabled="bajando">Cancelar</button>
+            <button class="btn btn-danger btn-sm" @click="confirmarBaja" :disabled="bajando">
+                <span v-if="bajando" class="spinner-border spinner-border-sm mr-1"></span>
+                <i v-else class="bi bi-person-dash mr-1"></i>
+                Confirmar
+            </button>
+        </div>
+    </div>
+<div v-else>
+    <form @submit.prevent="reactivar">
+        <button type="submit" class="btn btn-outline-success" :disabled="reactivando">
+            <i class="bi bi-person-check mr-1"></i>Reactivar
+        </button>
+    </form>
+</div>
             </div>
 
             <!-- Historial -->
@@ -119,17 +123,24 @@ const props = defineProps({
 
 const form = useForm({ ...props.socio })
 const mostrarConfirmBaja = ref(false)
+const reactivando = ref(false)
+const bajando = ref(false)
 
 function enviar() {
     form.put(route('socios.update', props.socio.id))
 }
 
 function confirmarBaja() {
-    console.log('confirmarBaja called for socio:', props.socio.id)
-    router.patch(route('socios.baja', props.socio.id))
+    bajando.value = true
+    router.patch(route('socios.baja', props.socio.id), {}, {
+        onFinish: () => { bajando.value = false },
+    })
 }
 
 function reactivar() {
-    router.patch(route('socios.reactivar', props.socio.id))
+    reactivando.value = true
+    router.patch(route('socios.reactivar', props.socio.id), {}, {
+        onFinish: () => { reactivando.value = false },
+    })
 }
 </script>

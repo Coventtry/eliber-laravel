@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container text-center" style="max-width: 420px; margin: auto;">
+        <div class="main-container text-center" style="max-width:420px;">
             <h4 class="mb-1">{{ material.titulo }}</h4>
             <code class="d-block mb-3">{{ material.codigo }}</code>
 

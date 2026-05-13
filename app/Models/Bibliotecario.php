@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @deprecated The auth provider is User (not this model).
+ *             Kept for legacy migration references. Do NOT use for new code.
+ */
 class Bibliotecario extends Authenticatable
 {
     use Notifiable, HasRoles;

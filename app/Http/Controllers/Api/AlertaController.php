@@ -61,6 +61,9 @@ class AlertaController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
+        if (!$request->user('sanctum')->hasPermissionTo('gestionar-prestamos', 'web')) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
         $alertas = Alerta::when($request->tipo, fn($q, $t) => $q->where('tipo', $t))
             ->when($request->has('leida') && $request->leida !== '', fn($q) => $q->where('leida', $request->leida))
             ->orderByDesc('fecha_alerta')
@@ -82,9 +85,11 @@ class AlertaController extends Controller
             new OA\Response(response: 404, description: 'No encontrada'),
         ]
     )]
-    public function marcarLeida(int $id): JsonResponse
+    public function marcarLeida(Request $request, Alerta $alerta): JsonResponse
     {
-        $alerta = Alerta::findOrFail($id);
+        if (!$request->user('sanctum')->hasPermissionTo('gestionar-prestamos', 'web')) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
         $alerta->update(['leida' => true]);
 
         return response()->json(['message' => 'Alerta marcada como leída']);
@@ -99,8 +104,11 @@ class AlertaController extends Controller
             new OA\Response(response: 200, description: 'Todas las alertas marcadas como leídas'),
         ]
     )]
-    public function marcarTodasLeidas(): JsonResponse
+    public function marcarTodasLeidas(Request $request): JsonResponse
     {
+        if (!$request->user('sanctum')->hasPermissionTo('gestionar-prestamos', 'web')) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
         $count = Alerta::noLeidas()->update(['leida' => true]);
 
         return response()->json(['message' => 'Alertas marcadas como leídas', 'total' => $count]);

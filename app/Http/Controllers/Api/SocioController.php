@@ -151,9 +151,8 @@ class SocioController extends Controller
             new OA\Response(response: 404, description: 'No encontrado'),
         ]
     )]
-    public function update(StoreSocioRequest $request, int $id): JsonResponse
+    public function update(StoreSocioRequest $request, Socio $socio): JsonResponse
     {
-        $socio = Socio::findOrFail($id);
         $this->authorize('update', $socio);
         $socio->update($request->validated());
 

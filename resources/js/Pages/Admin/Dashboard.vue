@@ -32,7 +32,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
                         <span class="font-weight-bold">Reservas pendientes</span>
-                        <Link :href="route('prestamos.index')" class="btn btn-sm btn-outline-primary">Ver todas</Link>
+                        <Link :href="route('prestamos.solicitudes')" class="btn btn-sm btn-outline-primary">Ver todas</Link>
                     </div>
                     <div class="card-body p-0">
                         <div v-if="reservas_pendientes.length === 0" class="p-3 text-muted small">

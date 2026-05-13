@@ -2,20 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\Area;
-use App\Models\Institucion;
 use App\Models\Material;
 use App\Models\Socio;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use Tests\Support\TestHelpers;
 use Tests\TestCase;
 
 class SmokeTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, TestHelpers;
 
     public function test_bibliotecario_can_log_in_with_usuario_and_password(): void
     {
@@ -319,6 +316,106 @@ class SmokeTest extends TestCase
         ]);
     }
 
+    public function test_authenticated_bibliotecario_can_see_solicitudes_page(): void
+    {
+        $user = $this->createBibliotecario();
+
+        $response = $this->actingAs($user)->get('/prestamos/solicitudes');
+
+        $response->assertOk();
+    }
+
+    public function test_authenticated_bibliotecario_can_approve_solicitud(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Solicitud',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2021,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-007',
+            'disponibilidad' => 2,
+            'disponibilidad_reservada' => 1,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-7',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $reservaId = \DB::table('reservas')->insertGetId([
+            'material_id'    => $material->id,
+            'socio_id'       => $socio->id,
+            'estado'         => 'pendiente',
+            'fecha_reserva'  => now(),
+            'fecha_vencimiento' => now()->addDays(2),
+            'institucion_id' => $user->institucion_id,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        $response = $this->actingAs($user)->patch("/prestamos/solicitudes/{$reservaId}/aprobar");
+
+        $response->assertRedirect(route('prestamos.solicitudes'));
+        $this->assertDatabaseHas('reservas', [
+            'id' => $reservaId,
+            'estado' => 'aprobada',
+        ]);
+        $this->assertDatabaseHas('prestamos', [
+            'socio_id' => $socio->id,
+            'material_id' => $material->id,
+            'estado' => 'activo',
+            'institucion_id' => $user->institucion_id,
+        ]);
+    }
+
+    public function test_authenticated_bibliotecario_can_reject_solicitud(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Rechazar Solicitud',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2021,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-008',
+            'disponibilidad' => 2,
+            'disponibilidad_reservada' => 1,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-8',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $reservaId = \DB::table('reservas')->insertGetId([
+            'material_id'    => $material->id,
+            'socio_id'       => $socio->id,
+            'estado'         => 'pendiente',
+            'fecha_reserva'  => now(),
+            'fecha_vencimiento' => now()->addDays(2),
+            'institucion_id' => $user->institucion_id,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        $response = $this->actingAs($user)->patch("/prestamos/solicitudes/{$reservaId}/rechazar", [
+            'motivo' => 'Material reservado para otro socio',
+        ]);
+
+        $response->assertRedirect(route('prestamos.solicitudes'));
+        $this->assertDatabaseHas('reservas', [
+            'id' => $reservaId,
+            'estado' => 'rechazada',
+        ]);
+        $this->assertDatabaseHas('materiales', [
+            'id' => $material->id,
+            'disponibilidad' => 2,
+            'disponibilidad_reservada' => 0,
+        ]);
+    }
+
     public function test_authenticated_bibliotecario_can_devolver_a_prestamo(): void
     {
         $user = $this->createBibliotecario();
@@ -402,6 +499,50 @@ class SmokeTest extends TestCase
         $this->assertSame(now()->addDays(8)->toDateString(), substr($fechaDevolucion, 0, 10));
     }
 
+    public function test_authenticated_bibliotecario_can_manage_multas(): void
+    {
+        $user = $this->createBibliotecario();
+        $socio = $this->createSocio($user->institucion_id);
+
+        $response = $this->actingAs($user)->post('/multas', [
+            'socio_id' => $socio->id,
+            'monto' => 500.00,
+            'motivo' => 'Devolución tardía',
+        ]);
+
+        $response->assertRedirect(route('multas.index'));
+        $this->assertDatabaseHas('multas', [
+            'socio_id' => $socio->id,
+            'monto' => 500.00,
+            'motivo' => 'Devolución tardía',
+            'pagada' => false,
+        ]);
+
+        $multaId = \DB::table('multas')->where('socio_id', $socio->id)->value('id');
+
+        $response = $this->actingAs($user)->patch("/multas/{$multaId}/pagar");
+        $response->assertRedirect(route('multas.index'));
+        $this->assertDatabaseHas('multas', ['id' => $multaId, 'pagada' => true]);
+    }
+
+    public function test_authenticated_bibliotecario_can_export_multas_csv(): void
+    {
+        $user = $this->createBibliotecario();
+
+        $response = $this->actingAs($user)->get('/exportar/multas/csv');
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=utf-8');
+    }
+
+    public function test_authenticated_bibliotecario_can_export_multas_pdf(): void
+    {
+        $user = $this->createBibliotecario();
+
+        $response = $this->actingAs($user)->get('/exportar/multas/pdf');
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+    }
+
     public function test_authenticated_user_can_view_and_update_perfil(): void
     {
         $user = $this->createBibliotecario();
@@ -426,6 +567,7 @@ class SmokeTest extends TestCase
         $this->actingAs($alumno)->get('/alumno/dashboard')->assertOk();
         $this->actingAs($alumno)->get('/alumno/catalogo')->assertOk();
         $this->actingAs($alumno)->get('/alumno/mis-reservas')->assertOk();
+        $this->actingAs($alumno)->get('/alumno/mis-prestamos')->assertOk();
     }
 
     public function test_non_alumno_cannot_access_alumno_pages(): void
@@ -443,83 +585,6 @@ class SmokeTest extends TestCase
         $this->actingAs($alumno)->get('/admin/dashboard')->assertStatus(403);
     }
 
-    private function createInstitucion(): Institucion
-    {
-        return Institucion::create([
-            'nombre' => 'Institucion Test',
-            'slug' => 'institucion-test',
-            'estado' => 'activa',
-        ]);
-    }
 
-    private function createBibliotecario(): User
-    {
-        $institucion = $this->createInstitucion();
 
-        $user = User::create([
-            'name'           => 'Bibliotecario Test',
-            'nombre'         => 'Bibliotecario Test',
-            'email'          => 'bibliotecario@test.com',
-            'usuario'        => 'bibliotecario-test',
-            'password'       => 'secret123',
-            'picture'        => '',
-            'institucion_id' => $institucion->id,
-            'activo'         => true,
-        ]);
-
-        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        foreach (['gestionar-socios','gestionar-materiales','gestionar-prestamos','gestionar-areas','gestionar-noticias','gestionar-anotaciones','gestionar-usuarios','ver-reportes'] as $p) {
-            Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
-        }
-        $adminRole->givePermissionTo(Permission::all());
-        $user->assignRole($adminRole);
-
-        return $user;
-    }
-
-    private function createArea(int $institucionId): Area
-    {
-        return Area::forceCreate([
-            'codigo_dewey' => '200',
-            'nombre' => 'Matematica',
-            'Abreviado' => 'MAT',
-            'institucion_id' => $institucionId,
-        ]);
-    }
-
-    private function createSocio(int $institucionId): Socio
-    {
-        return Socio::forceCreate([
-            'nombre' => 'Martin',
-            'apellido' => 'Perez',
-            'telefono' => '2454987654',
-            'direccion' => 'Calle 456',
-            'email' => 'martin.perez@test.com',
-            'anio' => 6,
-            'division' => 1,
-            'activo' => 1,
-            'institucion_id' => $institucionId,
-        ]);
-    }
-
-    private function createAlumno(): User
-    {
-        $institucion = $this->createInstitucion();
-
-        $user = User::create([
-            'name'           => 'Alumno Test',
-            'nombre'         => 'Alumno Test',
-            'email'          => 'alumno@test.com',
-            'usuario'        => 'alumno-test',
-            'password'       => 'secret123',
-            'picture'        => '',
-            'institucion_id' => $institucion->id,
-            'activo'         => true,
-        ]);
-
-        $role = Role::firstOrCreate(['name' => 'alumno', 'guard_name' => 'web']);
-        $user->assignRole($role);
-
-        return $user;
-    }
 }

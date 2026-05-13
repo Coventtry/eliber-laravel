@@ -2,7 +2,7 @@
     <Head title="Editar noticia" />
     <AppNavbar />
     <div class="container page-content">
-        <div class="main-container" style="max-width: 600px; margin: auto;">
+        <div class="main-container" style="max-width:600px;">
             <h3 class="mb-4"><i class="bi bi-newspaper mr-2"></i>Editar noticia</h3>
             <FlashMessage />
             <form @submit.prevent="enviar" enctype="multipart/form-data">

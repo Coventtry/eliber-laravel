@@ -8,6 +8,7 @@ use App\Services\ReservaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 
 class ReservaController extends Controller
@@ -85,6 +86,10 @@ class ReservaController extends Controller
     )]
     public function store(Request $request): JsonResponse
     {
+        $user = $request->user('sanctum');
+        if (!$user->hasPermissionTo('gestionar-prestamos', 'web') && !$user->socio_id) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
         $request->validate([
             'material_id' => 'required|exists:materiales,id',
             'socio_id' => 'required|exists:socios,id',
@@ -97,8 +102,8 @@ class ReservaController extends Controller
             );
 
             return response()->json($reserva, 201);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
     }
 
@@ -128,8 +133,8 @@ class ReservaController extends Controller
         try {
             $this->reservaService->cancelarReserva($reserva);
             return response()->json(['message' => 'Reserva cancelada']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
     }
 
@@ -160,6 +165,9 @@ class ReservaController extends Controller
     )]
     public function aprobar(Request $request, int $reserva): JsonResponse
     {
+        if (!$request->user('sanctum')->hasPermissionTo('gestionar-prestamos', 'web')) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
         $reserva = Reserva::with('material')->findOrFail($reserva);
 
         $request->validate([
@@ -174,8 +182,8 @@ class ReservaController extends Controller
                 'message' => 'Reserva aprobada y prestamo creado',
                 'prestamo_id' => $prestamo->id,
             ]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
     }
 
@@ -199,6 +207,9 @@ class ReservaController extends Controller
     )]
     public function rechazar(Request $request, int $reserva): JsonResponse
     {
+        if (!$request->user('sanctum')->hasPermissionTo('gestionar-prestamos', 'web')) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
         $reserva = Reserva::findOrFail($reserva);
 
         $request->validate([
@@ -211,8 +222,8 @@ class ReservaController extends Controller
                 $request->motivo
             );
             return response()->json(['message' => 'Reserva rechazada']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
     }
 }

@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasColumn('anotaciones', 'anotacion')) {
+            return;
+        }
         Schema::table('anotaciones', function (Blueprint $table) {
             $table->text('anotacion')->change();
         });

@@ -13,6 +13,15 @@
     <div class="container page-content">
         <FlashMessage />
 
+        <!-- Solicitudes pendientes -->
+        <div v-if="solicitudesPendientes > 0" class="alert alert-info mt-3">
+            <Link :href="route('prestamos.solicitudes')" class="text-decoration-none">
+                <i class="bi bi-envelope-open mr-2"></i>
+                <strong>{{ solicitudesPendientes }}</strong> solicitud{{ solicitudesPendientes > 1 ? 'es' : '' }} de reserva pendiente{{ solicitudesPendientes > 1 ? 's' : '' }} de aprobación
+                <i class="bi bi-arrow-right ml-2"></i>
+            </Link>
+        </div>
+
         <!-- Alertas de vencimientos -->
         <div v-if="vencimientosProximos.length" class="alert alert-warning mt-3">
             <h5 class="alert-heading">
@@ -35,19 +44,19 @@
         <div class="row mt-4">
             <div class="col-md-4 mb-3">
                 <Link :href="route('prestamos.create')" class="btn btn-success btn-block py-3">
-                    <i class="bi bi-journal-plus d-block" style="font-size:1.8rem;"></i>
+                    <i class="bi bi-journal-plus d-block icon-2xl"></i>
                     Nuevo préstamo
                 </Link>
             </div>
             <div class="col-md-4 mb-3">
                 <Link :href="route('socios.create')" class="btn btn-outline-success btn-block py-3">
-                    <i class="bi bi-person-plus d-block" style="font-size:1.8rem;"></i>
+                    <i class="bi bi-person-plus d-block icon-2xl"></i>
                     Nuevo socio
                 </Link>
             </div>
             <div class="col-md-4 mb-3">
                 <Link :href="route('materiales.create')" class="btn btn-outline-success btn-block py-3">
-                    <i class="bi bi-book-plus d-block" style="font-size:1.8rem;"></i>
+                    <i class="bi bi-book-plus d-block icon-2xl"></i>
                     Nuevo material
                 </Link>
             </div>
@@ -58,6 +67,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { usePage, Link } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
@@ -65,4 +76,7 @@ import FlashMessage from '@/Components/FlashMessage.vue'
 defineProps({
     vencimientosProximos: { type: Array, default: () => [] },
 })
+
+const page = usePage()
+const solicitudesPendientes = computed(() => page.props.solicitudes_pendientes ?? 0)
 </script>

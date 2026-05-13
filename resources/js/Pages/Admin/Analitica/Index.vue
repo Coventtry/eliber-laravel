@@ -18,8 +18,8 @@
                         <i :class="['bi', card.icon]" :style="`color:${card.color};font-size:1.1rem;`"></i>
                     </div>
                     <div>
-                        <div class="font-weight-bold" style="font-size:1.25rem;line-height:1.1;">{{ card.value }}</div>
-                        <div class="text-muted" style="font-size:.75rem;">{{ card.label }}</div>
+                        <div class="font-weight-bold stat-value">{{ card.value }}</div>
+                        <div class="text-muted small">{{ card.label }}</div>
                     </div>
                 </div>
             </div>
@@ -33,7 +33,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="font-weight-bold mb-3">Préstamos por mes (últimos 6 meses)</h6>
-                    <div style="position:relative;height:260px;">
+                    <div class="chart-container">
                         <Bar v-if="barData" :data="barData" :options="barOptions" />
                     </div>
                 </div>
@@ -46,17 +46,17 @@
                 <div class="card-body d-flex flex-column">
                     <h6 class="font-weight-bold mb-3">Socios: activos vs dados de baja</h6>
                     <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="min-height:220px;">
-                        <div style="position:relative;width:100%;max-width:240px;">
+                        <div class="chart-donut-wrapper">
                             <Doughnut v-if="doughnutData" :data="doughnutData" :options="doughnutOptions" />
                         </div>
                     </div>
-                    <div class="d-flex justify-content-center mt-2" style="gap:1.2rem;">
-                        <div class="d-flex align-items-center" style="gap:.35rem;">
-                            <div style="width:12px;height:12px;border-radius:3px;background:#1a3a5c;"></div>
+                    <div class="d-flex justify-content-center mt-2 gap-5">
+                        <div class="d-flex align-items-center gap-1">
+                            <div class="legend-dot" style="background:#1a3a5c;"></div>
                             <span class="small text-muted">Activos ({{ sociosActivos }})</span>
                         </div>
-                        <div class="d-flex align-items-center" style="gap:.35rem;">
-                            <div style="width:12px;height:12px;border-radius:3px;background:#dee2e6;"></div>
+                        <div class="d-flex align-items-center gap-1">
+                            <div class="legend-dot" style="background:#dee2e6;"></div>
                             <span class="small text-muted">Dados de baja ({{ sociosBaja }})</span>
                         </div>
                     </div>
@@ -71,7 +71,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="font-weight-bold mb-3">Materiales por área</h6>
-                    <div v-if="porArea.length" style="position:relative;height:260px;">
+                    <div v-if="porArea.length" class="chart-container">
                         <Bar :data="areaData" :options="areaOptions" />
                     </div>
                     <div v-else class="text-center text-muted py-5">Sin datos</div>
@@ -90,22 +90,21 @@
                             :key="idx"
                             class="d-flex align-items-center mb-3"
                         >
-                            <span class="font-weight-bold mr-2 flex-shrink-0"
-                                  style="width:22px;height:22px;background:var(--eliber-primary,#1a3a5c);color:#fff;border-radius:50%;font-size:.72rem;display:flex;align-items:center;justify-content:center;">
+                            <span class="font-weight-bold mr-2 rank-badge">
                                 {{ idx + 1 }}
                             </span>
                             <div class="flex-grow-1 mr-2 overflow-hidden">
-                                <div class="font-weight-bold text-truncate" style="font-size:.82rem;">{{ mat.titulo }}</div>
-                                <div class="text-muted" style="font-size:.72rem;">{{ mat.autor }}</div>
+                                <div class="font-weight-bold text-truncate top-title">{{ mat.titulo }}</div>
+                                <div class="text-muted top-autor">{{ mat.autor }}</div>
                             </div>
                             <div class="flex-shrink-0">
-                                <span class="badge badge-primary" style="font-size:.75rem;">
+                                <span class="badge badge-primary fs-sm">
                                     {{ mat.total_prestamos }} préstamo{{ mat.total_prestamos !== 1 ? 's' : '' }}
                                 </span>
                             </div>
                         </div>
                         <!-- Barra de progreso relativa -->
-                        <div v-for="(mat, idx) in topMateriales" :key="'bar-'+idx" class="mb-1" style="display:none;">
+                        <div v-for="(mat, idx) in topMateriales" :key="'bar-'+idx" class="mb-1 d-none">
                         </div>
                     </div>
                     <div v-else class="text-center text-muted py-5">Sin datos de préstamos</div>
@@ -251,3 +250,42 @@ const areaOptions = computed(() => ({
     },
 }))
 </script>
+
+<style scoped>
+.chart-container {
+    position: relative;
+    height: 260px;
+}
+.stat-value {
+    font-size: 1.25rem;
+    line-height: 1.1;
+}
+.chart-donut-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 240px;
+}
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+.rank-badge {
+    width: 22px;
+    height: 22px;
+    background: var(--eliber-primary);
+    color: #fff;
+    border-radius: 50%;
+    font-size: .72rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.top-title {
+    font-size: .82rem;
+}
+.top-autor {
+    font-size: .72rem;
+}
+</style>

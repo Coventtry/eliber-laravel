@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Alerta;
 use App\Models\Configuracion;
 use App\Models\FooterLink;
+use App\Models\Reserva;
 use App\Services\PrestamoService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -22,6 +23,7 @@ class HandleInertiaRequests extends Middleware
     {
         $vencimientos    = 0;
         $alertasNoLeidas = 0;
+        $solicitudesPendientes = 0;
         $anuncio         = null;
         $footerLinks     = [];
         $user = $request->user();
@@ -30,6 +32,7 @@ class HandleInertiaRequests extends Middleware
             $diasAlerta   = (int) Configuracion::get($user->institucion_id, 'dias_alerta_previa', 4);
             $vencimientos = app(PrestamoService::class)->obtenerVencimientosProximos($diasAlerta)->count();
             $alertasNoLeidas = Alerta::noLeidas()->count();
+            $solicitudesPendientes = Reserva::where('estado', 'pendiente')->count();
 
             $institucion = $user->institucion;
             if ($institucion) {
@@ -66,6 +69,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'vencimientos_proximos'  => $vencimientos,
             'alertas_no_leidas'      => $alertasNoLeidas,
+            'solicitudes_pendientes' => $solicitudesPendientes,
             'anuncio'                => $anuncio,
             'footer_links'           => $footerLinks,
         ]);

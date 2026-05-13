@@ -14,28 +14,28 @@
     </header>
 
     <div class="container page-content py-5">
-        <h2 class="mb-4 text-center" style="color: var(--eliber-primary);">Novedades</h2>
+        <h2 class="mb-4 text-center text-eliber">Novedades</h2>
         <div v-if="noticias && noticias.length" class="row">
-            <div v-for="(noticia, index) in noticias" :key="noticia.id" class="col-md-6 col-lg-4 mb-4">
+            <div v-for="(noticia, index) in noticias" :key="noticia.id" class="col-12 col-sm-6 col-lg-4 mb-4">
                 <div class="card card-noticia h-100" :style="{ animationDelay: (index * 0.1) + 's' }">
                     <div v-if="noticia.imagen_url" class="card-img-top">
                         <img :src="noticia.imagen_url" :alt="noticia.titulo" class="img-fluid">
                     </div>
-                    <div v-else class="card-img-top d-flex align-items-center justify-content-center" style="background: var(--eliber-crema);">
-                        <i class="bi bi-newspaper" style="font-size: 3rem; color: var(--eliber-primary); opacity: 0.3;"></i>
+                    <div v-else class="card-img-top d-flex align-items-center justify-content-center bg-crema">
+                        <i class="bi bi-newspaper" style="font-size:3rem;color:var(--eliber-primary);opacity:.3;"></i>
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">{{ noticia.titulo }}</h5>
                         <p class="card-text text-muted small">{{ noticia.descripcion }}</p>
                     </div>
-                    <div class="card-footer text-muted" style="background: var(--eliber-crema);">
+                    <div class="card-footer text-muted bg-crema">
                         <small><i class="bi bi-calendar3 me-1"></i>{{ formatearFecha(noticia.fecha) }}</small>
                     </div>
                 </div>
             </div>
         </div>
         <div v-else class="text-center text-muted py-5">
-            <i class="bi bi-journal-text" style="font-size: 3rem; opacity: 0.3;"></i>
+            <i class="bi bi-journal-text" style="font-size:3rem;opacity:.3;"></i>
             <p class="mt-3">No hay novedades disponibles.</p>
         </div>
     </div>

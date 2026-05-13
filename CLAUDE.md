@@ -67,6 +67,36 @@ All web routes are in `routes/web.php`. The REST API is in `routes/api.php` unde
 - Public: `GET /api/v1/materiales`, `GET /api/v1/materiales/{id}`, `GET /api/v1/noticias`
 - Sanctum-auth: `GET/POST /api/v1/reservas`, `DELETE /api/v1/reservas/{id}`, `PATCH /api/v1/reservas/{id}/aprobar`, `PATCH /api/v1/reservas/{id}/rechazar`
 
+### Authentication & Authorization
+
+The auth user model is `App\Models\User` (not `Bibliotecario` — that model is legacy/deprecated). Login uses the `usuario` field (not `email`). Users have an `activo` boolean; inactive accounts are rejected at login.
+
+Post-login redirect is role-based: `admin` → `admin.dashboard`, `alumno` → `alumno.dashboard`, others → `dashboard`.
+
+**Roles (Spatie Permissions)** — defined in `RolesAndPermissionsSeeder`:
+- `admin` — all 9 permissions
+- `bibliotecario` — all except `ver-reportes`
+- `alumno` — `ver-materiales`, `crear-reservas`, `ver-reservas`
+
+**User model extras**: optional `socio_id` FK (links a user account to a Socio record), plus `wallpaper`, `apellido`, `anio`, `division` fields (for student accounts).
+
+All protected web routes use `auth` middleware; the REST API uses `auth:sanctum`. Sanctum token expiry is 1440 min (24h). Set `SANCTUM_STATEFUL_DOMAINS` in production for cookie-based auth.
+
+### Multi-Tenancy
+
+`TenantScope` is applied via `booted()` on scoped models. If `auth()->user()->institucion_id` is null, the scope returns `whereRaw('1 = 0')` — a hard safety block. Policies also enforce `isSameInstitution()` checks as a second layer. The `User` model itself is not tenant-scoped.
+
+When adding new models or queries, always register `TenantScope` in `booted()` and include `institucion_id` in `fillable`.
+
+### Inertia Shared Data
+
+`HandleInertiaRequests` passes to every page:
+- `auth.user` — id, nombre, usuario, picture_url
+- `auth.permisos`, `auth.roles`, `auth.es_admin`
+- `vencimientos_proximos` (configurable days, default 4), `alertas_no_leidas`, `solicitudes_pendientes`
+- `anuncio` (active institution announcement with style), `footer_links`
+- Navigation menu filtered by permission
+
 ### Core Models & Relationships
 
 **Socio** (Member) — `prestamos()`, `historial()`; scopes: `activos()`, `buscarEmail()`; `full_name` attr; fields: nombre, apellido, telefono, direccion, email, anio, division, activo, institucion_id
@@ -81,7 +111,7 @@ All web routes are in `routes/web.php`. The REST API is in `routes/api.php` unde
 
 **Institucion** — `socios()`, `materiales()`, `prestamos()`; uses SoftDeletes; fields: nombre, slug, estado
 
-**Supporting**: Bibliotecario (auth user), HistorialSocio (member action log), Noticia, Anotacion, Notificacion, UbicacionFisica, PrestamoDetalle
+**Supporting**: HistorialSocio (member action log), Noticia, Anotacion, Notificacion, UbicacionFisica, PrestamoDetalle
 
 ### Service Layer
 
@@ -103,17 +133,21 @@ All web routes are in `routes/web.php`. The REST API is in `routes/api.php` unde
 - `aprobarReserva(Reserva, dias)` — creates Prestamo, decrements both `disponibilidad_reservada` and `disponibilidad`
 - `rechazarReserva(Reserva)`, `cancelarReserva(Reserva)`, `expirarReservasVencidas()`
 
-### Authentication
+### Notifications
 
-`Bibliotecario` model is the auth user. Login uses the `usuario` field (not `email`) — the login form posts `usuario` + `password`. All protected routes require `auth` middleware; the REST API uses `auth:sanctum`.
+Three queued notifications (`ShouldQueue`): `PrestamoVencido`, `PrestamoProximoVencer`, `ReservaAprobada`. They target the `User` linked via `Prestamo → socio_id → User.socio_id`. If a Socio has no linked User, no notification is sent (silent).
+
+### Vue Frontend
+
+No Pinia/Vuex — Inertia props are the primary state mechanism. Bootstrap 4.6.2 + jQuery are required; Vite aliases jQuery as a global for Bootstrap compatibility.
+
+**Dark mode**: `useDarkMode.js` is a singleton composable (module-level ref, not a store). Call `initDarkMode(userId)` once when the authenticated user is available. Persists to `eliber-dark-mode-{userId}` in localStorage; falls back to `prefers-color-scheme`. Applies `data-theme` on `documentElement`.
+
+Components live in `resources/js/Pages/` (Inertia pages, PascalCase) and `resources/js/Components/` (shared). Two navbar variants: `AppNavbar.vue` (admin/bibliotecario) and `AppNavbarAlumno.vue` (alumno).
 
 ### Form Requests
 
 `StoreSocioRequest`, `StoreMaterialRequest`, `StorePrestamoRequest` — update these when changing model requirements.
-
-### Vue Components
-
-Components live in `resources/js/Pages/` (version-controlled). Inertia render paths like `Inertia::render('Socios/Index')` map to `resources/js/Pages/Socios/Index.vue`. PascalCase convention throughout.
 
 ### Storage
 
@@ -127,6 +161,14 @@ Always run `php artisan storage:link` after deployment.
 
 Migrations use `Schema::table()` (not `Schema::create()`), preserving existing data. Tests use SQLite in-memory (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`) with `RefreshDatabase`.
 
-### Multi-Tenancy
+### Tests
 
-Every model and query is scoped to `institucion_id`. When adding new models or queries, always include this scope. The `Institucion` model is the root tenant; `Bibliotecario` belongs to one institution and all their data must be isolated per institution.
+`tests/Feature/SmokeTest.php` covers 33+ flows. Test helpers (`TestHelpers` trait): `createBibliotecario()`, `createArea()`, `createSocio()`, `createAlumno()`, `createInstitucion()`. Use `forceCreate()` for models with TenantScope to bypass auth context during setup. Permissions must be created per-guard in test helpers (not auto-synced between web and sanctum guards).
+
+### Key ENV Variables
+
+Beyond standard Laravel vars:
+- `DEFAULT_INSTITUCION_NOMBRE/SLUG/ESTADO`, `DEFAULT_ADMIN_NAME/USUARIO/EMAIL/PASSWORD` — used by setup seeder
+- `SANCTUM_STATEFUL_DOMAINS` — required in production for cookie-based Sanctum auth
+- `SEED_SAMPLE_DATA=false` — controls sample data seeding
+- `L5_SWAGGER_GENERATE_ALWAYS` — API docs auto-generation

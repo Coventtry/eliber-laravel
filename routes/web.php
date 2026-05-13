@@ -12,9 +12,11 @@ use App\Http\Controllers\AnotacionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\AlumnoController;
+use App\Http\Controllers\MultaController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\ContenidoController;
@@ -36,7 +38,6 @@ Route::get('/faqs', function () {
 // Auth
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login')->middleware('guest');
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('guest');
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 Route::post('/register', [RegisterController::class, 'store'])->name('register')->middleware('guest');
 
 // Password reset (público)
@@ -45,6 +46,7 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name(
 
 // Protected routes
 Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('socios', SocioController::class);
@@ -56,6 +58,9 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('areas', AreaController::class);
 
+    Route::get('prestamos/solicitudes', [PrestamoController::class, 'solicitudes'])->name('prestamos.solicitudes');
+    Route::patch('prestamos/solicitudes/{reserva}/aprobar', [PrestamoController::class, 'aprobarSolicitud'])->name('prestamos.solicitudes.aprobar');
+    Route::patch('prestamos/solicitudes/{reserva}/rechazar', [PrestamoController::class, 'rechazarSolicitud'])->name('prestamos.solicitudes.rechazar');
     Route::resource('prestamos', PrestamoController::class)->only(['index', 'create', 'store']);
     Route::patch('prestamos/{prestamo}/devolver', [PrestamoController::class, 'devolver'])->name('prestamos.devolver');
     Route::patch('prestamos/{prestamo}/extender', [PrestamoController::class, 'extender'])->name('prestamos.extender');
@@ -76,6 +81,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('alertas/todas-leidas', [AlertaController::class, 'marcarTodasLeidas'])->name('alertas.todas-leidas');
     Route::patch('alertas/{alerta}/leida', [AlertaController::class, 'marcarLeida'])->name('alertas.leida');
     Route::post('alertas/{alerta}/baja-material', [AlertaController::class, 'bajaAlerta'])->name('alertas.baja-material');
+
+    // Multas
+    Route::get('multas', [MultaController::class, 'index'])->name('multas.index');
+    Route::get('multas/crear', [MultaController::class, 'create'])->name('multas.create');
+    Route::post('multas', [MultaController::class, 'store'])->name('multas.store');
+    Route::patch('multas/{multa}/pagar', [MultaController::class, 'pagar'])->name('multas.pagar');
+    Route::patch('multas/{multa}/perdonar', [MultaController::class, 'perdonar'])->name('multas.perdonar');
 
     // Admin
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
@@ -119,10 +131,23 @@ Route::middleware('auth')->group(function () {
     // Vistas alumno
     Route::middleware('role:alumno')->prefix('alumno')->name('alumno.')->group(function () {
         Route::get('dashboard', [AlumnoController::class, 'dashboard'])->name('dashboard');
+        Route::get('mis-prestamos', [AlumnoController::class, 'misPrestamos'])->name('prestamos');
         Route::get('mis-reservas', [AlumnoController::class, 'misReservas'])->name('reservas');
         Route::get('catalogo', [AlumnoController::class, 'catalogo'])->name('catalogo');
         Route::post('reservas', [AlumnoController::class, 'reservar'])->name('reservas.store');
         Route::delete('reservas/{reserva}', [AlumnoController::class, 'cancelarReserva'])->name('reservas.cancel');
+    });
+
+    // Exportaciones
+    Route::prefix('exportar')->name('exportar.')->group(function () {
+        Route::get('socios/csv', [ExportController::class, 'sociosCsv'])->name('socios.csv');
+        Route::get('socios/pdf', [ExportController::class, 'sociosPdf'])->name('socios.pdf');
+        Route::get('materiales/csv', [ExportController::class, 'materialesCsv'])->name('materiales.csv');
+        Route::get('materiales/pdf', [ExportController::class, 'materialesPdf'])->name('materiales.pdf');
+        Route::get('prestamos/csv', [ExportController::class, 'prestamosCsv'])->name('prestamos.csv');
+        Route::get('prestamos/pdf', [ExportController::class, 'prestamosPdf'])->name('prestamos.pdf');
+        Route::get('multas/csv', [ExportController::class, 'multasCsv'])->name('multas.csv');
+        Route::get('multas/pdf', [ExportController::class, 'multasPdf'])->name('multas.pdf');
     });
 
     // AJAX endpoints

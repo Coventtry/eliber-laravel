@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container" style="max-width: 760px; margin: auto;">
+        <div class="main-container" style="max-width:760px;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="mb-0"><i class="bi bi-pencil-square mr-2"></i>Editar material</h3>
                 <Link v-if="qrUrl" :href="route('materiales.qr', material.id)" class="btn btn-outline-secondary btn-sm">
@@ -12,7 +12,7 @@
             </div>
             <FlashMessage />
 
-            <form @enviar.prevent="enviar">
+            <form @submit.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-8">
                         <label>Título <span class="text-danger">*</span></label>
@@ -64,7 +64,7 @@
                         <Link :href="route('materiales.index')" class="btn btn-outline-secondary mr-2">Cancelar</Link>
                         <button type="button" class="btn btn-outline-danger" @click="eliminar">Eliminar</button>
                     </div>
-                    <button type="enviar" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
+                    <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
                 </div>
             </form>
         </div>

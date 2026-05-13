@@ -19,6 +19,7 @@
     @inertiaHead
 </head>
 <body>
+    <a href="#main-content" class="sr-only sr-only-focusable">Saltar al contenido principal</a>
     @inertia
 </body>
 </html>

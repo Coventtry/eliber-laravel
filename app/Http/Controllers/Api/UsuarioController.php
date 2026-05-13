@@ -87,9 +87,9 @@ class UsuarioController extends Controller
             new OA\Response(response: 404, description: 'No encontrado'),
         ]
     )]
-    public function show(int $id): JsonResponse
+    public function show(User $user): JsonResponse
     {
-        $user = User::with('roles')->where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
+        $user->load('roles');
         $this->authorize('update', $user);
 
         return response()->json([
@@ -181,9 +181,8 @@ class UsuarioController extends Controller
             new OA\Response(response: 404, description: 'No encontrado'),
         ]
     )]
-    public function update(UpdateUserRequest $request, int $id): JsonResponse
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        $user = User::where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         $this->authorize('update', $user);
 
         $data = $request->only('nombre', 'email', 'usuario');
@@ -211,9 +210,8 @@ class UsuarioController extends Controller
             new OA\Response(response: 404, description: 'No encontrado'),
         ]
     )]
-    public function destroy(int $id): JsonResponse
+    public function destroy(User $user): JsonResponse
     {
-        $user = User::where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         $this->authorize('delete', $user);
         abort_if($user->id === auth()->id(), 403, 'No podés eliminarte a vos mismo.');
         $user->delete();
@@ -251,10 +249,9 @@ class UsuarioController extends Controller
             new OA\Response(response: 404, description: 'No encontrado'),
         ]
     )]
-    public function updatePermisos(Request $request, int $id): JsonResponse
+    public function updatePermisos(Request $request, User $user): JsonResponse
     {
         abort_if(!auth()->user()->hasRole('admin'), 403);
-        $user = User::where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         abort_if($user->hasRole('admin'), 403, 'No se pueden editar los permisos de un administrador.');
 
         $request->validate([
@@ -282,10 +279,9 @@ class UsuarioController extends Controller
             new OA\Response(response: 404, description: 'No encontrado'),
         ]
     )]
-    public function toggleActivo(int $id): JsonResponse
+    public function toggleActivo(User $user): JsonResponse
     {
         abort_if(!auth()->user()->hasRole('admin'), 403);
-        $user = User::where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         abort_if($user->id === auth()->id(), 403, 'No podés desactivarte a vos mismo.');
 
         $user->update(['activo' => !$user->activo]);

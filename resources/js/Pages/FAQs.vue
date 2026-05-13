@@ -18,21 +18,20 @@
                     <div
                         v-for="faq in faqs"
                         :key="faq.id"
-                        class="card shadow-sm mb-3"
-                        style="border-radius:12px;"
+                        class="card shadow-sm mb-3 rounded-lg"
                     >
                         <div class="card-body">
-                            <h5 class="mb-2" style="color:var(--eliber-primary);font-size:1rem;">{{ faq.pregunta }}</h5>
-                            <p class="mb-0 text-muted" style="font-size:.9rem;">{{ faq.respuesta }}</p>
+                            <h6 class="mb-2 text-eliber">{{ faq.pregunta }}</h6>
+                            <p class="mb-0 text-muted fs-lg">{{ faq.respuesta }}</p>
                         </div>
                     </div>
                 </template>
 
                 <!-- Contenido estático de fallback -->
                 <template v-else>
-                <div class="card shadow-sm mb-4" style="border-radius: 12px;">
+                <div class="card shadow-sm mb-4 rounded-lg">
                     <div class="card-body">
-                        <h4 class="mb-3" style="color: var(--eliber-primary);">Requisitos Previos</h4>
+                        <h4 class="mb-3 text-eliber">Requisitos Previos</h4>
                         <p>Asegúrate de tener lo siguiente instalado en tu computadora:</p>
                         <ul>
                             <li>PHP 8.1+</li>
@@ -43,9 +42,9 @@
                     </div>
                 </div>
 
-                <div class="card shadow-sm mb-4" style="border-radius: 12px;">
+                <div class="card shadow-sm mb-4 rounded-lg">
                     <div class="card-body">
-                        <h4 class="mb-3" style="color: var(--eliber-primary);">Pasos para Instalar</h4>
+                        <h4 class="mb-3 text-eliber">Pasos para Instalar</h4>
                         <ol>
                             <li class="mb-2"><strong>Descargar el Repositorio</strong><br>Clona o descarga el proyecto desde GitHub</li>
                             <li class="mb-2"><strong>Instalar Dependencias</strong><br>Ejecuta <code>composer install</code> y <code>npm install</code></li>
@@ -58,9 +57,9 @@
                     </div>
                 </div>
 
-                <div class="card shadow-sm mb-4" style="border-radius: 12px;">
+                <div class="card shadow-sm mb-4 rounded-lg">
                     <div class="card-body">
-                        <h4 class="mb-3" style="color: var(--eliber-primary);">¿Cómo obtener ayuda?</h4>
+                        <h4 class="mb-3 text-eliber">¿Cómo obtener ayuda?</h4>
                         <p>Si tienes más preguntas, puedes:</p>
                         <ul>
                             <li>Abrir un issue en GitHub</li>

@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Scopes\TenantScope;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Prestamo extends Model
 {
+    use HasFactory;
+
     protected $table = 'prestamos';
     public $timestamps = false;
 

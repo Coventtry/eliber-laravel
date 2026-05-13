@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\Alerta;
 use App\Models\Material;
 use App\Models\Reserva;
 use App\Models\Prestamo;
+use App\Models\User;
+use App\Notifications\ReservaAprobada;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ReservaService
 {
@@ -15,7 +19,7 @@ class ReservaService
         $stockReal = $material->disponibilidad - $material->disponibilidad_reservada;
 
         if ($stockReal <= 0) {
-            throw new \Exception('Material no disponible');
+            throw ValidationException::withMessages(['material_id' => 'Material no disponible']);
         }
 
         $yaReservado = Reserva::where('material_id', $materialId)
@@ -24,7 +28,7 @@ class ReservaService
             ->exists();
 
         if ($yaReservado) {
-            throw new \Exception('Ya tienes una reserva activa para este material');
+            throw ValidationException::withMessages(['material_id' => 'Ya tienes una reserva activa para este material']);
         }
 
         return DB::transaction(function () use ($material, $socioId) {
@@ -39,6 +43,17 @@ class ReservaService
 
             $material->increment('disponibilidad_reservada');
 
+            $reserva->load('socio');
+
+            Alerta::create([
+                'institucion_id' => $reserva->institucion_id,
+                'prestamo_id'    => null,
+                'tipo'           => 'solicitud_reserva',
+                'descripcion'    => "{$reserva->socio->full_name} solicitó: {$material->titulo}",
+                'fecha_alerta'   => now(),
+                'leida'          => false,
+            ]);
+
             return $reserva;
         });
     }
@@ -46,19 +61,19 @@ class ReservaService
     public function aprobarReserva(Reserva $reserva, int $dias = 14): Prestamo
     {
         if ($reserva->estado !== 'pendiente') {
-            throw new \Exception('Solo reservas pendientes pueden ser aprobadas');
+            throw ValidationException::withMessages(['estado' => 'Solo reservas pendientes pueden ser aprobadas']);
         }
 
         $material = $reserva->material;
         $disponible = $material->disponibilidad - $material->disponibilidad_reservada;
 
         if ($disponible < 1) {
-            throw new \Exception('Material ya no disponible');
+            throw ValidationException::withMessages(['material_id' => 'Material ya no disponible']);
         }
 
         $fechaDevolucion = now()->addDays($dias);
 
-        return DB::transaction(function () use ($reserva, $fechaDevolucion) {
+        $prestamo = DB::transaction(function () use ($reserva, $fechaDevolucion) {
             $prestamo = Prestamo::create([
                 'socio_id' => $reserva->socio_id,
                 'material_id' => $reserva->material_id,
@@ -80,12 +95,19 @@ class ReservaService
 
             return $prestamo;
         });
+
+        $user = User::where('socio_id', $reserva->socio_id)->first();
+        if ($user) {
+            $user->notify(new ReservaAprobada($reserva));
+        }
+
+        return $prestamo;
     }
 
     public function rechazarReserva(Reserva $reserva, string $motivo = null): void
     {
         if (!in_array($reserva->estado, ['pendiente', 'aprobada'])) {
-            throw new \Exception('La reserva no puede ser rechazada');
+            throw ValidationException::withMessages(['estado' => 'La reserva no puede ser rechazada']);
         }
 
         DB::transaction(function () use ($reserva) {

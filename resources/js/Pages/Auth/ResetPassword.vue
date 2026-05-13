@@ -7,9 +7,9 @@
                 <h2><i class="bi bi-key mr-2"></i>Restablecer contraseña</h2>
             </div>
 
-            <div v-if="$page.props.flash?.success" class="alert alert-success">
+            <div v-if="page.props.flash?.success" class="alert alert-success">
                 <i class="bi bi-check-circle mr-1"></i>
-                {{ $page.props.flash.success }}
+                {{ page.props.flash.success }}
             </div>
 
             <form @submit.prevent="submit" class="auth-form">

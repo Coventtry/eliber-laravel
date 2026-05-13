@@ -13,6 +13,7 @@ class AlertaController extends Controller
 {
     public function index(Request $request): Response
     {
+        $this->authorize('viewAny', Alerta::class);
         $alertas = Alerta::with('prestamo')
             ->when($request->tipo, fn($q, $t) => $q->where('tipo', $t))
             ->when($request->has('leida') && $request->leida !== '', fn($q) => $q->where('leida', $request->leida))
@@ -36,18 +37,21 @@ class AlertaController extends Controller
 
     public function marcarLeida(Alerta $alerta): RedirectResponse
     {
+        $this->authorize('update', Alerta::class);
         $alerta->update(['leida' => true]);
         return back()->with('success', 'Alerta marcada como leída.');
     }
 
     public function marcarTodasLeidas(): RedirectResponse
     {
+        $this->authorize('update', Alerta::class);
         Alerta::noLeidas()->update(['leida' => true]);
         return back()->with('success', 'Todas las alertas marcadas como leídas.');
     }
 
     public function bajaAlerta(Request $request, Alerta $alerta): RedirectResponse
     {
+        $this->authorize('baja', Alerta::class);
         $request->validate([
             'observaciones' => 'required|string|max:500',
         ]);

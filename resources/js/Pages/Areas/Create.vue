@@ -2,7 +2,7 @@
     <Head title="Nueva área" />
     <AppNavbar />
     <div class="container page-content">
-        <div class="main-container" style="max-width: 560px; margin: auto;">
+        <div class="main-container" style="max-width:560px;">
             <h3 class="mb-4"><i class="bi bi-tag-fill mr-2"></i>Nueva área</h3>
             <FlashMessage />
             <form @submit.prevent="submit">

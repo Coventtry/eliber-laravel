@@ -15,16 +15,25 @@
             <div class="col-md-4 mb-4">
                 <Link :href="route('alumno.catalogo')" class="card shadow-sm h-100 text-decoration-none text-dark">
                     <div class="card-body text-center py-4">
-                        <i class="bi bi-book" style="font-size:2.5rem; color:var(--eliber-primary);"></i>
+                        <i class="bi bi-book icon-xl text-eliber"></i>
                         <h6 class="mt-2 mb-0">Catálogo de materiales</h6>
                         <small class="text-muted">Consultá el material disponible</small>
                     </div>
                 </Link>
             </div>
             <div class="col-md-4 mb-4">
+                <Link :href="route('alumno.prestamos')" class="card shadow-sm h-100 text-decoration-none text-dark">
+                    <div class="card-body text-center py-4">
+                        <i class="bi bi-journal-text icon-xl text-eliber"></i>
+                        <h6 class="mt-2 mb-0">Mis préstamos</h6>
+                        <small class="text-muted">Consultá tus préstamos activos e historial</small>
+                    </div>
+                </Link>
+            </div>
+            <div class="col-md-4 mb-4">
                 <Link :href="route('alumno.reservas')" class="card shadow-sm h-100 text-decoration-none text-dark">
                     <div class="card-body text-center py-4">
-                        <i class="bi bi-bookmark-check" style="font-size:2.5rem; color:var(--eliber-primary);"></i>
+                        <i class="bi bi-bookmark-check icon-xl text-eliber"></i>
                         <h6 class="mt-2 mb-0">Mis reservas</h6>
                         <small class="text-muted">Revisá el estado de tus solicitudes</small>
                     </div>
@@ -33,7 +42,7 @@
             <div class="col-md-4 mb-4">
                 <Link :href="route('perfil.edit')" class="card shadow-sm h-100 text-decoration-none text-dark">
                     <div class="card-body text-center py-4">
-                        <i class="bi bi-person-gear" style="font-size:2.5rem; color:var(--eliber-primary);"></i>
+                        <i class="bi bi-person-gear icon-xl text-eliber"></i>
                         <h6 class="mt-2 mb-0">Mi perfil</h6>
                         <small class="text-muted">Actualizá tu correo y foto</small>
                     </div>
@@ -76,8 +85,8 @@
         </div>
 
         <div v-else class="card border-warning shadow-sm mb-3">
-            <div class="card-body d-flex align-items-start" style="gap:1rem;">
-                <i class="bi bi-exclamation-triangle-fill text-warning mt-1" style="font-size:1.5rem;flex-shrink:0;"></i>
+            <div class="card-body d-flex align-items-start gap-4">
+                <i class="bi bi-exclamation-triangle-fill text-warning mt-1 icon-lg flex-shrink-0"></i>
                 <div>
                     <strong>Cuenta sin socio vinculado</strong>
                     <p class="mb-2 text-muted small">

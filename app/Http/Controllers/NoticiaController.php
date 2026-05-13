@@ -13,6 +13,7 @@ class NoticiaController extends Controller
 {
     public function index(): Response
     {
+        $this->authorize('viewAny', Noticia::class);
         return Inertia::render('Noticias/Index', [
             'noticias' => Noticia::orderByDesc('id')->paginate(12)->through(fn($n) => [
                 'id'          => $n->id,

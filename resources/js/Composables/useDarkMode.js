@@ -14,9 +14,13 @@ function applyTheme(dark) {
  */
 export function initDarkMode(userId = null) {
     storageKey  = userId ? `eliber-dark-mode-${userId}` : 'eliber-dark-mode'
-    const saved = localStorage.getItem(storageKey) === 'true'
-    darkMode.value = saved
-    applyTheme(saved)
+    const stored = localStorage.getItem(storageKey)
+    if (stored !== null) {
+        darkMode.value = stored === 'true'
+    } else {
+        darkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    applyTheme(darkMode.value)
 }
 
 export function useDarkMode() {

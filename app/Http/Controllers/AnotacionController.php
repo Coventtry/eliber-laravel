@@ -12,6 +12,7 @@ class AnotacionController extends Controller
 {
     public function index(): Response
     {
+        $this->authorize('viewAny', Anotacion::class);
         return Inertia::render('Anotaciones/Index', [
             'anotaciones' => Anotacion::orderByDesc('fecha')->paginate(20)->through(fn($a) => [
                 'id'        => $a->id,

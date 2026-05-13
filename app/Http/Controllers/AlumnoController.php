@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Area;
 use App\Models\Material;
+use App\Models\Prestamo;
 use App\Models\Reserva;
 use App\Services\ReservaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,6 +37,48 @@ class AlumnoController extends Controller
         return Inertia::render('Alumno/Dashboard', [
             'reservas_recientes' => $reservas,
             'tiene_socio'        => (bool) $socioId,
+        ]);
+    }
+
+    public function misPrestamos(): Response
+    {
+        $user    = auth()->user();
+        $socioId = $user->socio_id;
+
+        $activos = $socioId
+            ? Prestamo::with('material')
+                ->where('socio_id', $socioId)
+                ->whereIn('estado', ['activo', 'atrasado'])
+                ->orderByDesc('fecha_devolucion')
+                ->get()
+                ->map(fn($p) => [
+                    'id'           => $p->id,
+                    'material'     => $p->material->titulo,
+                    'estado'       => $p->estado,
+                    'fecha_inicio' => $p->fecha_prestamo->format('d/m/Y'),
+                    'fecha_venc'   => $p->fecha_devolucion->format('d/m/Y'),
+                ])
+            : collect();
+
+        $historial = $socioId
+            ? Prestamo::with('material')
+                ->where('socio_id', $socioId)
+                ->whereIn('estado', ['devuelto'])
+                ->orderByDesc('fecha_devolucion')
+                ->paginate(15)
+                ->through(fn($p) => [
+                    'id'           => $p->id,
+                    'material'     => $p->material->titulo,
+                    'estado'       => $p->estado,
+                    'fecha_inicio' => $p->fecha_prestamo->format('d/m/Y'),
+                    'fecha_venc'   => $p->fecha_devolucion->format('d/m/Y'),
+                ])
+            : collect();
+
+        return Inertia::render('Alumno/MisPrestamos', [
+            'activos'    => $activos,
+            'historial'  => $historial,
+            'tiene_socio' => (bool) $socioId,
         ]);
     }
 
@@ -113,8 +157,9 @@ class AlumnoController extends Controller
         try {
             $service->crearReserva($user->socio_id, $request->material_id);
             return back()->with('success', 'Reserva realizada correctamente.');
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?? 'Error de validación';
+            return back()->with('error', $message);
         }
     }
 

@@ -17,6 +17,7 @@ class MaterialController extends Controller
 
     public function index(Request $request): Response
     {
+        $this->authorize('viewAny', Material::class);
         $materiales = Material::with('area')
             ->when($request->search, fn($q, $s) =>
                 $q->where('titulo', 'like', "%{$s}%")->orWhere('autor', 'like', "%{$s}%")
@@ -42,6 +43,7 @@ class MaterialController extends Controller
 
     public function store(StoreMaterialRequest $request): RedirectResponse
     {
+        $this->authorize('create', Material::class);
         $datos    = $request->validated();
         $area    = Area::findOrFail($datos['area_id']);
         $datos['codigo'] = $this->materialService->generarCodigo($area);

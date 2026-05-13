@@ -2,14 +2,23 @@
 
 namespace App\Models;
 
+use App\Scopes\TenantScope;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Configuracion extends Model
 {
+    use HasFactory;
+
     protected $table = 'configuraciones';
 
     protected $fillable = ['institucion_id', 'clave', 'valor'];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TenantScope);
+    }
 
     public function institucion(): BelongsTo
     {

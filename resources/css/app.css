@@ -1,4 +1,4 @@
-/* Bootstrap 5 desde npm — no más CDN */
+/* Bootstrap 4 desde npm — no más CDN */
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -37,6 +37,72 @@ html, body {
     flex: 1;
     position: relative;
     z-index: 1;
+}
+
+.form-container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ============================================================
+   Gap utilities
+   ============================================================ */
+.gap-1 { gap: .25rem; }
+.gap-2 { gap: .5rem; }
+.gap-3 { gap: .75rem; }
+.gap-4 { gap: 1rem; }
+.gap-5 { gap: 1.5rem; }
+
+/* ============================================================
+   Avatar initials (replaces inline style in navbars)
+   ============================================================ */
+.nav-avatar-initials {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--eliber-accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: .9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,.3);
+}
+
+/* ============================================================
+   Navbar profile text
+   ============================================================ */
+.nav-user-line { line-height: 1.2; }
+.nav-user-name  { font-size: .85rem; color: #fff; font-weight: 700; }
+.nav-user-role  { font-size: .7rem; color: rgba(255,255,255,.65); }
+
+/* ============================================================
+   Input group primary style (Login page)
+   ============================================================ */
+.input-group-text-primary {
+    background: var(--eliber-crema);
+    border-color: var(--eliber-primary) !important;
+}
+
+/* ============================================================
+   Icon size utilities
+   ============================================================ */
+.icon-xl { font-size: 2.5rem; }
+.icon-lg { font-size: 1.5rem; }
+.icon-md { font-size: 1.1rem; }
+.icon-sm { font-size: .8rem; }
+
+/* ============================================================
+   Tech badges (Acerca page)
+   ============================================================ */
+.badge-tech {
+    font-size: .85rem;
+    padding: .35rem .85rem;
+    font-weight: 500;
+    letter-spacing: .02em;
 }
 
 /* ============================================================
@@ -237,7 +303,7 @@ html, body {
     width: 100%;
     display: flex;
     justify-content: center;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 1.25rem;
     margin-bottom: 1.25rem;
 }
@@ -469,7 +535,6 @@ select.form-control {
 
 .table tbody tr:hover {
     background-color: var(--eliber-crema);
-    transform: scale(1.01);
 }
 
 .table tbody td {
@@ -497,6 +562,9 @@ select.form-control {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     padding: 1.5rem;
     margin-top: 1.5rem;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
 }
 
 /* ============================================================
@@ -701,6 +769,69 @@ select.form-control {
 [data-theme="dark"] .kanban-empty   { color: var(--dm-text-muted); }
 [data-theme="dark"] .kanban-over    { background: var(--dm-primary-muted) !important; }
 
+/* ============================================================
+   Navbar dropdown menu
+   ============================================================ */
+.navbar-dropdown-menu {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 8px 25px rgba(0,0,0,.15);
+}
+
+/* ============================================================
+   Modal backdrop
+   ============================================================ */
+.modal-backdrop-custom {
+    background: rgba(0,0,0,.5);
+}
+
+/* ============================================================
+   Background utility
+   ============================================================ */
+.bg-crema { background: var(--eliber-crema); }
+
+/* ── Navbar dropdown dark ───────────────────────────────────── */
+[data-theme="dark"] .navbar-dropdown-menu {
+    background-color: var(--dm-surface) !important;
+    border-color: var(--dm-border) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4) !important;
+}
+
+/* ============================================================
+   Text color utility
+   ============================================================ */
+.text-eliber { color: var(--eliber-primary); }
+
+/* ============================================================
+   Border radius utilities
+   ============================================================ */
+.rounded-lg { border-radius: 12px; }
+.rounded-xl { border-radius: 20px; }
+
+/* ============================================================
+   Font size utilities
+   ============================================================ */
+.fs-xs  { font-size: .65rem; }
+.fs-sm  { font-size: .75rem; }
+.fs-md  { font-size: .85rem; }
+.fs-lg  { font-size: .95rem; }
+.icon-2xl { font-size: 1.8rem; }
+
+/* ============================================================
+   Line height utilities
+   ============================================================ */
+.lh-tight { line-height: 1.2; }
+.lh-sm    { line-height: 1.35; }
+
+/* ── bg-crema dark ──────────────────────────────────────────── */
+[data-theme="dark"] .bg-crema {
+    background: var(--dm-surface) !important;
+}
+
+/* ── nav-user dark ──────────────────────────────────────────── */
+[data-theme="dark"] .nav-user-name { color: var(--dm-text); }
+[data-theme="dark"] .nav-user-role { color: var(--dm-text-muted); }
+
 /* ── Dark mode toggle (botón compartido) ─────────────────────── */
 .dm-toggle {
     display: flex;
@@ -718,3 +849,51 @@ select.form-control {
     flex-shrink: 0;
 }
 .dm-toggle:hover { background: rgba(255,255,255,.22); transform: scale(1.05); }
+
+/* ─── Focus indicators ─── */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.page-link:focus-visible,
+.form-control:focus-visible {
+    outline: 3px solid var(--eliber-primary, #2d5a27);
+    outline-offset: 2px;
+}
+
+/* ─── Color contrast fixes ─── */
+.badge-warning {
+    background-color: #e6a800 !important;
+    color: #1a1a1a !important;
+}
+.badge-info {
+    background-color: #138496 !important;
+}
+.text-muted {
+    color: #5a6a7a !important;
+}
+
+/* ─── Responsive ─── */
+
+@media (max-width: 575.98px) {
+    .hero-section { padding: 2.5rem 0 !important; }
+    .hero-section h1 { font-size: 1.75rem; }
+    .hero-section .lead { font-size: 1rem; }
+
+    .stat-value { font-size: 1.25rem; }
+    .stat-icon { width: 40px; height: 40px; font-size: 1.1rem; }
+
+    .main-container { padding: 1rem 0.75rem !important; }
+    .page-content { padding-top: 0.75rem !important; }
+
+    .modal-dialog { margin: 0.5rem; }
+}
+
+@media (max-width: 767.98px) {
+    table .btn-sm { padding: .2rem .35rem; font-size: .7rem; }
+    .table td, .table th { padding: .4rem .3rem; }
+    .card-header { padding: .5rem .75rem; }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    table .btn-sm { font-size: .72rem; }
+}

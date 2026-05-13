@@ -33,12 +33,12 @@
                 </div>
                 <div class="col-md-4 footer-section text-center text-md-right">
                     <div class="tech-icons-wrapper">
-                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" alt="HTML5" width="32" height="32">
-                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" alt="CSS3" width="32" height="32">
-                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bootstrap/bootstrap-original.svg" alt="Bootstrap" width="32" height="32">
-                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/php/php-original.svg" alt="PHP" width="32" height="32">
-                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vuejs/vuejs-original.svg" alt="Vue.js" width="32" height="32">
-                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/laravel/laravel-original.svg" alt="Laravel" width="32" height="32">
+                        <img src="/img/devicon/html5.svg" alt="HTML5" width="32" height="32">
+                        <img src="/img/devicon/css3.svg" alt="CSS3" width="32" height="32">
+                        <img src="/img/devicon/bootstrap.svg" alt="Bootstrap" width="32" height="32">
+                        <img src="/img/devicon/php.svg" alt="PHP" width="32" height="32">
+                        <img src="/img/devicon/vuejs.svg" alt="Vue.js" width="32" height="32">
+                        <img src="/img/devicon/laravel.svg" alt="Laravel" width="32" height="32">
                     </div>
                     <div class="social-icons">
                         <a href="https://github.com/Coventtry" target="_blank" aria-label="GitHub">
@@ -54,14 +54,14 @@
     </footer>
 
     <!-- Modal: Nueva nota -->
-    <div v-if="modalNota" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.45);" @click.self="cerrarNota">
+    <div v-if="modalNota" class="modal d-block modal-backdrop-custom" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modal-nota-title" @click.self="cerrarNota">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header py-2">
-                    <h6 class="modal-title mb-0">
+                    <h6 class="modal-title mb-0" id="modal-nota-title">
                         <i class="bi bi-pencil-square mr-2"></i>Nueva nota / sugerencia
                     </h6>
-                    <button type="button" class="close" @click="cerrarNota"><span>&times;</span></button>
+                    <button type="button" class="close" @click="cerrarNota" aria-label="Cerrar"><span>&times;</span></button>
                 </div>
                 <form @submit.prevent="guardarNota">
                     <div class="modal-body pb-2">
@@ -123,3 +123,9 @@ function guardarNota() {
     )
 }
 </script>
+
+<style scoped>
+.modal-backdrop-custom {
+    background: rgba(0,0,0,.45);
+}
+</style>

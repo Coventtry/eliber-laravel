@@ -2,10 +2,10 @@
     <Head :title="tab === 'login' ? 'Iniciar sesión' : 'Crear cuenta'" />
 
     <div class="d-flex align-items-center justify-content-center min-vh-100 login-container">
-        <div class="card login-card shadow-lg" style="width: 100%; max-width: 440px;">
+        <div class="card login-card shadow-lg">
 
             <!-- Pestañas -->
-            <div class="card-header p-0 border-0" style="background: transparent;">
+            <div class="card-header p-0 border-0 bg-transparent">
                 <ul class="nav nav-tabs nav-fill" style="border-bottom: 2px solid var(--eliber-primary);">
                     <li class="nav-item">
                         <button
@@ -49,8 +49,8 @@
                     <div class="form-group">
                         <label for="usuario" class="fw-semibold">Usuario</label>
                         <div class="input-group">
-                            <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
-                                <i class="bi bi-person-fill" style="color: var(--eliber-primary);"></i>
+                            <span class="input-group-text input-group-text-primary">
+                                <i class="bi bi-person-fill input-group-icon"></i>
                             </span>
                             <input
                                 id="usuario"
@@ -70,7 +70,7 @@
                         <label for="password" class="fw-semibold">Contraseña</label>
                         <div class="input-group">
                             <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
-                                <i class="bi bi-lock-fill" style="color: var(--eliber-primary);"></i>
+                                <i class="bi bi-lock-fill input-group-icon"></i>
                             </span>
                             <input
                                 id="password"
@@ -82,7 +82,7 @@
                                 placeholder="Ingresa tu contraseña"
                             >
                             <div class="input-group-append">
-                                <button type="button" class="btn btn-outline-secondary" @click="verPassword = !verPassword" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary" @click="verPassword = !verPassword" tabindex="-1" :aria-label="verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
                                     <i :class="verPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                                 </button>
                             </div>
@@ -158,8 +158,8 @@
                     <div class="form-group">
                         <label for="reg-email" class="fw-semibold">Correo electrónico</label>
                         <div class="input-group">
-                            <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
-                                <i class="bi bi-envelope-fill" style="color: var(--eliber-primary);"></i>
+                            <span class="input-group-text input-group-text-primary">
+                                <i class="bi bi-envelope-fill input-group-icon"></i>
                             </span>
                             <input
                                 id="reg-email"
@@ -177,8 +177,8 @@
                     <div class="form-group">
                         <label for="reg-usuario" class="fw-semibold">Nombre de usuario</label>
                         <div class="input-group">
-                            <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
-                                <i class="bi bi-at" style="color: var(--eliber-primary);"></i>
+                            <span class="input-group-text input-group-text-primary">
+                                <i class="bi bi-at input-group-icon"></i>
                             </span>
                             <input
                                 id="reg-usuario"
@@ -199,19 +199,17 @@
                             <div
                                 class="rol-option flex-fill text-center py-2 px-3 rounded border"
                                 :class="regForm.rol === 'alumno' ? 'rol-selected' : ''"
-                                style="cursor: pointer;"
-                                @click="regForm.rol = 'alumno'"
+                                 @click="regForm.rol = 'alumno'"
                             >
-                                <i class="bi bi-mortarboard-fill d-block fs-4 mb-1" style="color: var(--eliber-primary);"></i>
+                                <i class="bi bi-mortarboard-fill d-block fs-4 mb-1 input-group-icon"></i>
                                 <span class="fw-semibold small">Alumno</span>
                             </div>
                             <div
                                 class="rol-option flex-fill text-center py-2 px-3 rounded border"
                                 :class="regForm.rol === 'bibliotecario' ? 'rol-selected' : ''"
-                                style="cursor: pointer;"
-                                @click="regForm.rol = 'bibliotecario'"
+                                 @click="regForm.rol = 'bibliotecario'"
                             >
-                                <i class="bi bi-book-fill d-block fs-4 mb-1" style="color: var(--eliber-primary);"></i>
+                                <i class="bi bi-book-fill d-block fs-4 mb-1 input-group-icon"></i>
                                 <span class="fw-semibold small">Bibliotecario</span>
                             </div>
                         </div>
@@ -221,8 +219,8 @@
                     <div class="form-group">
                         <label for="reg-institucion" class="fw-semibold">Institución</label>
                         <div class="input-group">
-                            <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
-                                <i class="bi bi-building" style="color: var(--eliber-primary);"></i>
+                            <span class="input-group-text input-group-text-primary">
+                                <i class="bi bi-building input-group-icon"></i>
                             </span>
                             <select
                                 id="reg-institucion"
@@ -242,8 +240,8 @@
                     <div class="form-group">
                         <label for="reg-password" class="fw-semibold">Contraseña</label>
                         <div class="input-group">
-                            <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
-                                <i class="bi bi-lock-fill" style="color: var(--eliber-primary);"></i>
+                            <span class="input-group-text input-group-text-primary">
+                                <i class="bi bi-lock-fill input-group-icon"></i>
                             </span>
                             <input
                                 id="reg-password"
@@ -255,7 +253,7 @@
                                 autocomplete="new-password"
                             >
                             <div class="input-group-append">
-                                <button type="button" class="btn btn-outline-secondary" @click="verRegPassword = !verRegPassword" tabindex="-1">
+                                <button type="button" class="btn btn-outline-secondary" @click="verRegPassword = !verRegPassword" tabindex="-1" :aria-label="verRegPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
                                     <i :class="verRegPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                                 </button>
                             </div>
@@ -266,8 +264,8 @@
                     <div class="form-group">
                         <label for="reg-password-confirm" class="fw-semibold">Confirmar contraseña</label>
                         <div class="input-group">
-                            <span class="input-group-text" style="background: var(--eliber-crema); border-color: var(--eliber-primary);">
-                                <i class="bi bi-lock-fill" style="color: var(--eliber-primary);"></i>
+                            <span class="input-group-text input-group-text-primary">
+                                <i class="bi bi-lock-fill input-group-icon"></i>
                             </span>
                             <input
                                 id="reg-password-confirm"
@@ -287,9 +285,9 @@
                     </button>
                 </form>
 
-                <div class="text-center mt-4 pt-3" style="border-top: 1px solid rgba(45,90,39,0.1);">
+                <div class="text-center mt-4 pt-3 border-top" style="border-color:rgba(45,90,39,.1);">
                     <small v-if="tab === 'login'">
-                        <Link :href="route('password.reset')" style="color: var(--eliber-secondary);">
+                        <Link :href="route('password.reset')" class="forgot-link">
                             ¿Olvidaste tu contraseña?
                         </Link>
                     </small>
@@ -379,6 +377,7 @@ function enviarRegistro() {
 .rol-option {
     border-color: #dee2e6 !important;
     transition: all 0.15s;
+    cursor: pointer;
 }
 .rol-option:hover {
     border-color: var(--eliber-primary) !important;
@@ -388,5 +387,18 @@ function enviarRegistro() {
     border-color: var(--eliber-primary) !important;
     background: var(--eliber-crema);
     box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.2);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 440px;
+}
+
+.input-group-icon {
+    color: var(--eliber-primary);
+}
+
+.forgot-link {
+    color: var(--eliber-secondary);
 }
 </style>

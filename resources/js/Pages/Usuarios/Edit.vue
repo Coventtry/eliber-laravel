@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container" style="max-width: 680px; margin: 0 auto;">
+        <div class="main-container" style="max-width:680px;">
             <div class="d-flex align-items-center mb-4">
                 <h3 class="mb-0 mr-3">
                     <i class="bi bi-person-gear mr-2"></i>{{ usuario.nombre }}
@@ -178,8 +178,9 @@
                     <p class="text-muted small mb-2">
                         {{ usuario.activo ? 'El usuario puede iniciar sesión.' : 'El usuario no puede iniciar sesión.' }}
                     </p>
-                    <button @click="toggleActivo" class="btn"
+                    <button @click="toggleActivo" class="btn" :disabled="toggling"
                             :class="usuario.activo ? 'btn-outline-danger' : 'btn-outline-success'">
+                        <span v-if="toggling" class="spinner-border spinner-border-sm mr-1"></span>
                         {{ usuario.activo ? 'Desactivar usuario' : 'Activar usuario' }}
                     </button>
                 </div>
@@ -224,6 +225,7 @@ const esYo                   = ref(props.es_yo)
 const permisosSeleccionados  = ref([...props.permisos_usuario])
 const savingPermisos         = ref(false)
 const aprobando              = ref(false)
+const toggling               = ref(false)
 
 const ROLES = { admin: 'Administrador', bibliotecario: 'Bibliotecario', alumno: 'Alumno' }
 const labelRol = computed(() => ROLES[props.usuario.rol] ?? props.usuario.rol ?? '')
@@ -248,7 +250,10 @@ function guardarPermisos() {
 }
 
 function toggleActivo() {
-    router.patch(route('usuarios.toggle-activo', props.usuario.id))
+    toggling.value = true
+    router.patch(route('usuarios.toggle-activo', props.usuario.id), {}, {
+        onFinish: () => { toggling.value = false },
+    })
 }
 
 function darDeAlta() {

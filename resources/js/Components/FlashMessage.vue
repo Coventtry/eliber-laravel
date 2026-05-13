@@ -10,6 +10,6 @@ import { computed } from 'vue'
 
 const page = usePage()
 
-const message = computed(() => page.props.flash?.success || page.props.flash?.error || null)
-const type = computed(() => page.props.flash?.success ? 'success' : 'danger')
+const message = computed(() => page.props.flash?.success || page.props.flash?.error || page.props.flash?.info || null)
+const type = computed(() => page.props.flash?.success ? 'success' : page.props.flash?.error ? 'danger' : 'info')
 </script>

@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container" style="max-width: 600px; margin: 0 auto;">
+        <div class="main-container" style="max-width:600px;">
             <h3 class="mb-4"><i class="bi bi-person-plus mr-2"></i>Nuevo usuario</h3>
             <FlashMessage />
 

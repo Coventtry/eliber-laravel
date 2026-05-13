@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container" style="max-width: 600px; margin: auto;">
+        <div class="main-container" style="max-width:600px;">
             <h3 class="mb-4"><i class="bi bi-arrow-return-left mr-2"></i>Devolución de préstamo</h3>
             <FlashMessage />
 
@@ -36,8 +36,10 @@
                 <form @submit.prevent="extender" class="d-flex align-items-center">
                     <input v-model.number="dias" type="number" min="1" max="30"
                            class="form-control form-control-sm mr-2" style="width: 80px;" placeholder="Días">
-                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-calendar-plus mr-1"></i>Extender
+                    <button type="submit" class="btn btn-outline-primary btn-sm" :disabled="cargando">
+                        <span v-if="cargando" class="spinner-border spinner-border-sm mr-1"></span>
+                        <i v-else class="bi bi-calendar-plus mr-1"></i>
+                        Extender
                     </button>
                 </form>
             </div>
@@ -61,7 +63,8 @@ import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
 
 const props = defineProps({ prestamo: { type: Object, required: true } })
-const dias  = ref(7)
+const dias      = ref(7)
+const cargando  = ref(false)
 
 const estadoClass = computed(() =>
     ({ activo: 'info', pendiente: 'warning', atrasado: 'danger', devuelto: 'success' }[props.prestamo.estado] ?? 'secondary')
@@ -72,6 +75,9 @@ function devolver() {
 }
 
 function extender() {
-    router.patch(route('prestamos.extender', props.prestamo.id), { dias: dias.value })
+    cargando.value = true
+    router.patch(route('prestamos.extender', props.prestamo.id), { dias: dias.value }, {
+        onFinish: () => { cargando.value = false },
+    })
 }
 </script>

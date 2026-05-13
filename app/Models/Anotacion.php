@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Scopes\TenantScope;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Anotacion extends Model
 {
+    use HasFactory;
     use SoftDeletes;
 
     protected $table = 'anotaciones';

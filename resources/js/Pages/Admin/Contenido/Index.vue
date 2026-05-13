@@ -53,11 +53,11 @@
                             </p>
                             <p class="text-muted mb-0 small">{{ faq.respuesta }}</p>
                         </div>
-                        <div class="d-flex" style="gap:.4rem;flex-shrink:0;">
-                            <button class="btn btn-sm btn-outline-secondary" @click="openEditFaq(faq)">
+                        <div class="d-flex gap-2 flex-shrink-0">
+                            <button class="btn btn-sm btn-outline-secondary" @click="openEditFaq(faq)" aria-label="Editar pregunta">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" @click="deleteFaq(faq)">
+                            <button class="btn btn-sm btn-outline-danger" @click="deleteFaq(faq)" aria-label="Eliminar pregunta">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -90,7 +90,7 @@
 
                 <div class="form-group">
                     <label class="font-weight-bold small">Estilo</label>
-                    <div class="d-flex" style="gap:.5rem;flex-wrap:wrap;">
+                    <div class="d-flex gap-2 flex-wrap">
                         <button
                             v-for="estilo in estilos"
                             :key="estilo.key"
@@ -135,12 +135,12 @@
                         <span class="text-muted small ml-2">{{ link.url }}</span>
                     </div>
                     <div class="d-flex" style="gap:.4rem;">
-                        <button class="btn btn-sm btn-outline-secondary" @click="openEditLink(link)">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" @click="deleteLink(link)">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" @click="openEditLink(link)" aria-label="Editar enlace">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" @click="deleteLink(link)" aria-label="Eliminar enlace">
+                                <i class="bi bi-trash"></i>
+                            </button>
                     </div>
                 </div>
                 <div v-if="!footerLinks.length" class="list-group-item text-center text-muted py-4">
@@ -150,77 +150,55 @@
         </div>
     </div>
 
-    <!-- Modal FAQ -->
-    <div v-if="faqModal.show" class="modal-backdrop-custom" @click.self="faqModal.show = false">
-        <div class="modal-dialog-custom" style="max-width:580px;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ faqModal.faq ? 'Editar pregunta' : 'Nueva pregunta' }}</h5>
-                    <button type="button" class="close" @click="faqModal.show = false"><span>&times;</span></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Pregunta <span class="text-danger">*</span></label>
-                        <input v-model="faqForm.pregunta" type="text" class="form-control form-control-sm" maxlength="255">
-                    </div>
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Respuesta <span class="text-danger">*</span></label>
-                        <textarea v-model="faqForm.respuesta" class="form-control form-control-sm" rows="4" maxlength="3000"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Orden</label>
-                        <input v-model.number="faqForm.orden" type="number" min="0" class="form-control form-control-sm" style="width:80px;">
-                    </div>
-                    <div v-if="faqModal.faq" class="form-group mb-0">
-                        <div class="custom-control custom-switch">
-                            <input v-model="faqForm.activa" type="checkbox" class="custom-control-input" id="faqActiva">
-                            <label class="custom-control-label" for="faqActiva">Activa (visible en /faqs)</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary btn-sm" @click="faqModal.show = false">Cancelar</button>
-                    <button class="btn btn-primary btn-sm" :disabled="faqModal.saving" @click="guardarFaq">
-                        <span v-if="faqModal.saving" class="spinner-border spinner-border-sm mr-1"></span>
-                        Guardar
-                    </button>
-                </div>
+    <BaseModal :show="faqModal.show" :title="faqModal.faq ? 'Editar pregunta' : 'Nueva pregunta'" @close="faqModal.show = false">
+        <div class="form-group">
+            <label class="font-weight-bold small">Pregunta <span class="text-danger">*</span></label>
+            <input v-model="faqForm.pregunta" type="text" class="form-control form-control-sm" maxlength="255">
+        </div>
+        <div class="form-group">
+            <label class="font-weight-bold small">Respuesta <span class="text-danger">*</span></label>
+            <textarea v-model="faqForm.respuesta" class="form-control form-control-sm" rows="4" maxlength="3000"></textarea>
+        </div>
+        <div class="form-group">
+            <label class="font-weight-bold small">Orden</label>
+            <input v-model.number="faqForm.orden" type="number" min="0" class="form-control form-control-sm" style="width:80px;">
+        </div>
+        <div v-if="faqModal.faq" class="form-group mb-0">
+            <div class="custom-control custom-switch">
+                <input v-model="faqForm.activa" type="checkbox" class="custom-control-input" id="faqActiva">
+                <label class="custom-control-label" for="faqActiva">Activa (visible en /faqs)</label>
             </div>
         </div>
-    </div>
+        <template #footer>
+            <button class="btn btn-secondary btn-sm" @click="faqModal.show = false">Cancelar</button>
+            <button class="btn btn-primary btn-sm" :disabled="faqModal.saving" @click="guardarFaq">
+                <span v-if="faqModal.saving" class="spinner-border spinner-border-sm mr-1"></span>
+                Guardar
+            </button>
+        </template>
+    </BaseModal>
 
-    <!-- Modal Footer link -->
-    <div v-if="linkModal.show" class="modal-backdrop-custom" @click.self="linkModal.show = false">
-        <div class="modal-dialog-custom" style="max-width:480px;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ linkModal.link ? 'Editar enlace' : 'Nuevo enlace' }}</h5>
-                    <button type="button" class="close" @click="linkModal.show = false"><span>&times;</span></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="font-weight-bold small">Texto <span class="text-danger">*</span></label>
-                        <input v-model="linkForm.label" type="text" class="form-control form-control-sm" maxlength="100">
-                    </div>
-                    <div class="form-group">
-                        <label class="font-weight-bold small">URL <span class="text-danger">*</span></label>
-                        <input v-model="linkForm.url" type="text" class="form-control form-control-sm" maxlength="500" placeholder="/politica-privacidad">
-                    </div>
-                    <div class="form-group mb-0">
-                        <label class="font-weight-bold small">Orden</label>
-                        <input v-model.number="linkForm.orden" type="number" min="0" class="form-control form-control-sm" style="width:80px;">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary btn-sm" @click="linkModal.show = false">Cancelar</button>
-                    <button class="btn btn-primary btn-sm" :disabled="linkModal.saving" @click="guardarLink">
-                        <span v-if="linkModal.saving" class="spinner-border spinner-border-sm mr-1"></span>
-                        Guardar
-                    </button>
-                </div>
-            </div>
+    <BaseModal :show="linkModal.show" :title="linkModal.link ? 'Editar enlace' : 'Nuevo enlace'" @close="linkModal.show = false">
+        <div class="form-group">
+            <label class="font-weight-bold small">Texto <span class="text-danger">*</span></label>
+            <input v-model="linkForm.label" type="text" class="form-control form-control-sm" maxlength="100">
         </div>
-    </div>
+        <div class="form-group">
+            <label class="font-weight-bold small">URL <span class="text-danger">*</span></label>
+            <input v-model="linkForm.url" type="text" class="form-control form-control-sm" maxlength="500" placeholder="/politica-privacidad">
+        </div>
+        <div class="form-group mb-0">
+            <label class="font-weight-bold small">Orden</label>
+            <input v-model.number="linkForm.orden" type="number" min="0" class="form-control form-control-sm" style="width:80px;">
+        </div>
+        <template #footer>
+            <button class="btn btn-secondary btn-sm" @click="linkModal.show = false">Cancelar</button>
+            <button class="btn btn-primary btn-sm" :disabled="linkModal.saving" @click="guardarLink">
+                <span v-if="linkModal.saving" class="spinner-border spinner-border-sm mr-1"></span>
+                Guardar
+            </button>
+        </template>
+    </BaseModal>
 </template>
 
 <script>
@@ -232,6 +210,7 @@ export default { layout: AdminLayout }
 import { Head, router } from '@inertiajs/vue3'
 import { ref, reactive } from 'vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
+import BaseModal from '@/Components/BaseModal.vue'
 
 const props = defineProps({
     faqs:        { type: Array, default: () => [] },
@@ -320,19 +299,4 @@ function deleteLink(link) {
 }
 </script>
 
-<style scoped>
-.modal-backdrop-custom {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    z-index: 1050;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
-.modal-dialog-custom {
-    width: 100%;
-    max-width: 560px;
-}
-</style>
+

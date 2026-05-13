@@ -2,7 +2,7 @@
     <Head title="Nueva nota" />
     <AppNavbar />
     <div class="container page-content">
-        <div class="main-container" style="max-width: 560px; margin: auto;">
+        <div class="main-container" style="max-width:560px;">
             <h3 class="mb-4"><i class="bi bi-journal-plus mr-2"></i>Nueva nota</h3>
             <form @submit.prevent="submit">
                 <div class="form-group">

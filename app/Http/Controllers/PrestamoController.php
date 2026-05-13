@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePrestamoRequest;
 use App\Models\Area;
 use App\Models\Prestamo;
+use App\Models\Reserva;
 use App\Models\Socio;
 use App\Services\PrestamoService;
+use App\Services\ReservaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +22,7 @@ class PrestamoController extends Controller
 
     public function index(Request $request): Response
     {
+        $this->authorize('viewAny', Prestamo::class);
         $this->prestamoService->marcarAtrasados();
 
         $prestamos = Prestamo::with(['socio', 'material.area'])
@@ -117,5 +120,62 @@ class PrestamoController extends Controller
         }
 
         return redirect()->route('prestamos.index')->with('success', "Préstamo extendido {$request->dias} días.");
+    }
+
+    public function solicitudes(): Response
+    {
+        $this->authorize('viewAny', Prestamo::class);
+
+        $solicitudes = Reserva::with('socio', 'material')
+            ->where('estado', 'pendiente')
+            ->orderByDesc('fecha_reserva')
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn($r) => [
+                'id'       => $r->id,
+                'socio'    => $r->socio->full_name,
+                'material' => $r->material->titulo,
+                'fecha'    => $r->fecha_reserva->format('d/m/Y H:i'),
+            ]);
+
+        return Inertia::render('Prestamos/Solicitudes', [
+            'solicitudes' => $solicitudes,
+        ]);
+    }
+
+    public function aprobarSolicitud(Reserva $reserva, ReservaService $reservaService): RedirectResponse
+    {
+        $this->authorize('create', Prestamo::class);
+
+        if ($reserva->estado !== 'pendiente') {
+            return back()->with('error', 'La solicitud ya fue procesada.');
+        }
+
+        try {
+            $reservaService->aprobarReserva($reserva);
+            return redirect()->route('prestamos.solicitudes')->with('success', 'Solicitud aprobada. Préstamo creado.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function rechazarSolicitud(Request $request, Reserva $reserva, ReservaService $reservaService): RedirectResponse
+    {
+        $this->authorize('create', Prestamo::class);
+
+        $request->validate([
+            'motivo' => 'nullable|string|max:500',
+        ]);
+
+        if ($reserva->estado !== 'pendiente') {
+            return back()->with('error', 'La solicitud ya fue procesada.');
+        }
+
+        try {
+            $reservaService->rechazarReserva($reserva, $request->motivo);
+            return redirect()->route('prestamos.solicitudes')->with('success', 'Solicitud rechazada.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

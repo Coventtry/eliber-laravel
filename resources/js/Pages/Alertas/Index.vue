@@ -8,24 +8,29 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0">Registro de alertas</h4>
             <form v-if="alertas.data.length" @submit.prevent="marcarTodas">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-check2-all mr-1"></i> Marcar todas como leídas
-                </button>
+<button type="submit" class="btn btn-sm btn-outline-secondary" :disabled="cargando">
+                            <span v-if="cargando" class="spinner-border spinner-border-sm mr-1"></span>
+                            <i v-else class="bi bi-check2-all mr-1"></i>
+                            Marcar todas como leídas
+                        </button>
             </form>
         </div>
 
         <!-- Filtros -->
         <div class="row mb-3">
             <div class="col-md-4">
-                <select class="form-control form-control-sm" v-model="filtroTipo" @change="aplicarFiltros">
+                <label for="filtro-tipo-alerta" class="sr-only">Filtrar por tipo de alerta</label>
+                <select id="filtro-tipo-alerta" class="form-control form-control-sm" v-model="filtroTipo" @change="aplicarFiltros">
                     <option value="">Todos los tipos</option>
                     <option value="proximo_vencer">Próximo a vencer</option>
                     <option value="vencido">Vencido</option>
                     <option value="renovacion">Renovación</option>
+                    <option value="solicitud_reserva">Solicitud de reserva</option>
                 </select>
             </div>
             <div class="col-md-4">
-                <select class="form-control form-control-sm" v-model="filtroLeida" @change="aplicarFiltros">
+                <label for="filtro-leida-alerta" class="sr-only">Filtrar por estado de lectura</label>
+                <select id="filtro-leida-alerta" class="form-control form-control-sm" v-model="filtroLeida" @change="aplicarFiltros">
                     <option value="">Todas</option>
                     <option value="0">No leídas</option>
                     <option value="1">Leídas</option>
@@ -42,11 +47,11 @@
                 <table class="table table-hover mb-0">
                     <thead class="thead-light">
                         <tr>
-                            <th>Tipo</th>
-                            <th>Descripción</th>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                            <th></th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Descripción</th>
+                            <th scope="col" class="d-none d-md-table-cell">Fecha</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -58,7 +63,7 @@
                                 </span>
                             </td>
                             <td>{{ alerta.descripcion }}</td>
-                            <td class="text-nowrap">{{ alerta.fecha_alerta }}</td>
+                            <td class="d-none d-md-table-cell text-nowrap">{{ alerta.fecha_alerta }}</td>
                             <td>
                                 <span v-if="alerta.leida" class="text-muted small">Leída</span>
                                 <span v-else class="badge badge-secondary">Nueva</span>
@@ -68,7 +73,8 @@
                                 <button v-if="!alerta.leida"
                                     @click="marcarLeida(alerta.id)"
                                     class="btn btn-sm btn-outline-success mr-1"
-                                    title="Marcar como leída">
+                                    title="Marcar como leída"
+                                    aria-label="Marcar como leída">
                                     <i class="bi bi-check"></i>
                                 </button>
 
@@ -84,8 +90,10 @@
                                 <button v-if="!alerta.leida && alerta.tipo !== 'renovacion'"
                                     @click="abrirBaja(alerta)"
                                     class="btn btn-sm btn-outline-danger"
-                                    title="Dar de baja el material">
-                                    <i class="bi bi-box-arrow-down"></i> Baja
+                                    title="Dar de baja el material"
+                                    :disabled="modalBaja">
+                                    <i class="bi bi-box-arrow-down"></i>
+                                    <span class="d-none d-md-inline ml-1">Baja</span>
                                 </button>
                             </td>
                         </tr>
@@ -111,15 +119,15 @@
     </div>
 
     <!-- Modal dar de baja -->
-    <div v-if="modalBaja" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5);">
+    <div v-if="modalBaja" class="modal d-block modal-backdrop-custom" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modal-baja-title">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title text-danger">
+                    <h5 class="modal-title text-danger" id="modal-baja-title">
                         <i class="bi bi-exclamation-triangle-fill mr-2"></i>
                         Dar de baja material
                     </h5>
-                    <button type="button" class="close" @click="cerrarModal">
+                    <button type="button" class="close" @click="cerrarModal" aria-label="Cerrar">
                         <span>&times;</span>
                     </button>
                 </div>
@@ -188,6 +196,7 @@ const props = defineProps({
 
 const filtroTipo  = ref(props.filters.tipo ?? '')
 const filtroLeida = ref(props.filters.leida ?? '')
+const cargando    = ref(false)
 
 // Modal
 const modalBaja    = ref(false)
@@ -207,7 +216,10 @@ function marcarLeida(id) {
 }
 
 function marcarTodas() {
-    router.patch(route('alertas.todas-leidas'))
+    cargando.value = true
+    router.patch(route('alertas.todas-leidas'), {}, {
+        onFinish: () => { cargando.value = false },
+    })
 }
 
 function abrirBaja(alerta) {
@@ -237,6 +249,7 @@ function badgeClass(tipo) {
         'badge-warning': tipo === 'proximo_vencer',
         'badge-danger':  tipo === 'vencido',
         'badge-info':    tipo === 'renovacion',
+        'badge-primary': tipo === 'solicitud_reserva',
     }
 }
 
@@ -245,7 +258,14 @@ function labelTipo(tipo) {
         proximo_vencer: 'Próximo a vencer',
         vencido:        'Vencido',
         renovacion:     'Renovación',
+        solicitud_reserva: 'Solicitud de reserva',
     }
     return labels[tipo] ?? tipo
 }
 </script>
+
+<style scoped>
+.modal-backdrop-custom {
+    background: rgba(0,0,0,.5);
+}
+</style>

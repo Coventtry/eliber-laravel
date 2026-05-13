@@ -21,10 +21,10 @@
                             <td>{{ a.nombre }}</td>
                             <td>{{ a.Abreviado }}</td>
                             <td class="text-right">
-                                <Link :href="route('areas.edit', a.id)" class="btn btn-sm btn-outline-primary mr-1">
+                                <Link :href="route('areas.edit', a.id)" class="btn btn-sm btn-outline-primary mr-1" aria-label="Editar área">
                                     <i class="bi bi-pencil"></i>
                                 </Link>
-                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(a)">
+                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(a)" aria-label="Eliminar área">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>

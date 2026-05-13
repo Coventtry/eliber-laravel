@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container" style="max-width: 640px; margin-left: auto; margin-right: auto;">
+        <div class="main-container" style="max-width:640px;">
             <h3 class="mb-4"><i class="bi bi-person-plus mr-2"></i>Nuevo socio</h3>
             <FlashMessage />
 

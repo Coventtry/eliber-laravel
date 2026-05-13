@@ -3,11 +3,11 @@
     <AppNavbar />
 
     <div class="container page-content">
-        <div class="main-container" style="max-width: 760px; margin: auto;">
+        <div class="main-container" style="max-width:760px;">
             <h3 class="mb-4"><i class="bi bi-book-plus mr-2"></i>Nuevo material</h3>
             <FlashMessage />
 
-            <form @enviar.prevent="enviar">
+            <form @submit.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-8">
                         <label>Título <span class="text-danger">*</span></label>
@@ -94,7 +94,7 @@
 
                 <div class="d-flex justify-content-between">
                     <Link :href="route('materiales.index')" class="btn btn-outline-secondary">Cancelar</Link>
-                    <button type="enviar" class="btn btn-success" :disabled="form.processing">Guardar</button>
+                    <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar</button>
                 </div>
             </form>
         </div>
@@ -124,9 +124,13 @@ const previsualizacionClasificacion = ref('')
 
 async function actualizarCodigo() {
     if (!form.area_id) return
-    const { data } = await axios.get(route('api.materiales.ultimo-codigo'), { params: { area_id: form.area_id } })
-    codigoGenerado.value = data.codigo
-    actualizarClasificacion()
+    try {
+        const { data } = await axios.get(route('api.materiales.ultimo-codigo'), { params: { area_id: form.area_id } })
+        codigoGenerado.value = data.codigo
+        actualizarClasificacion()
+    } catch {
+        alert('No se pudo generar el código.')
+    }
 }
 
 function actualizarClasificacion() {

@@ -13,10 +13,10 @@
             <FlashMessage />
 
             <div class="row">
-                <div v-for="n in noticias.data" :key="n.id" class="col-md-4 mb-4">
+                <div v-for="n in noticias.data" :key="n.id" class="col-12 col-sm-6 col-md-4 mb-4">
                     <div class="card card-noticia h-100">
                         <img v-if="n.imagen_url" :src="n.imagen_url" class="card-img-top"
-                             style="height: 180px; object-fit: cover;" alt="">
+                             style="height:180px;object-fit:cover;" alt="">
                         <div class="card-body">
                             <h5 class="card-title">{{ n.titulo }}</h5>
                             <p class="card-text text-muted small">{{ n.descripcion }}</p>
@@ -24,10 +24,10 @@
                         <div class="card-footer d-flex justify-content-between align-items-center">
                             <small class="text-muted">{{ n.fecha }}</small>
                             <div>
-                                <Link :href="route('noticias.edit', n.id)" class="btn btn-sm btn-outline-primary mr-1">
+                                <Link :href="route('noticias.edit', n.id)" class="btn btn-sm btn-outline-primary mr-1" aria-label="Editar noticia">
                                     <i class="bi bi-pencil"></i>
                                 </Link>
-                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(n)">
+                                <button class="btn btn-sm btn-outline-danger" @click="eliminar(n)" aria-label="Eliminar noticia">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>

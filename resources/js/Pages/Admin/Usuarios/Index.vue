@@ -48,8 +48,8 @@
                                     @click="aprobar(p)"
                                 >
                                     <span v-if="aprobando === p.id" class="spinner-border spinner-border-sm mr-1"></span>
-                                    <i v-else class="bi bi-check-lg mr-1"></i>
-                                    Aprobar
+                                    <i v-else class="bi bi-check-lg"></i>
+                                    <span class="d-none d-md-inline ml-1">Aprobar</span>
                                 </button>
                             </td>
                         </tr>
@@ -63,7 +63,9 @@
             <div class="card-body py-2">
                 <div class="row g-2 align-items-center">
                     <div class="col-md-5">
+                        <label for="admin-filtro-usuarios" class="sr-only">Buscar por nombre, email o usuario</label>
                         <input
+                            id="admin-filtro-usuarios"
                             v-model="filtros.search"
                             type="text"
                             class="form-control form-control-sm"
@@ -95,11 +97,11 @@
                 <table class="table table-hover mb-0">
                     <thead class="thead-light">
                         <tr>
-                            <th>Usuario</th>
-                            <th>Email</th>
-                            <th>Rol</th>
-                            <th>Estado</th>
-                            <th class="text-right">Acciones</th>
+                            <th scope="col">Usuario</th>
+                            <th scope="col" class="d-none d-md-table-cell">Email</th>
+                            <th scope="col">Rol</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col" class="text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -109,16 +111,16 @@
                                     <img v-if="u.picture_url" :src="u.picture_url"
                                         class="rounded-circle mr-2" width="32" height="32"
                                         style="object-fit:cover;">
-                                    <div v-else class="avatar-placeholder mr-2" :style="avatarStyle(u.nombre)">
+                                    <div v-else class="avatar-placeholder mr-2" :style="{ background: avatarColor(u.nombre), color: '#fff' }">
                                         {{ u.nombre.charAt(0).toUpperCase() }}
                                     </div>
                                     <div>
-                                        <div class="font-weight-bold" style="font-size:.9rem;">{{ u.nombre }}</div>
-                                        <div class="text-muted" style="font-size:.75rem;">@{{ u.usuario }}</div>
+                                        <div class="font-weight-bold" style="font-size:.85rem;">{{ u.nombre }}</div>
+                                        <div class="text-muted small">@{{ u.usuario }}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="align-middle small">{{ u.email }}</td>
+                            <td class="align-middle small d-none d-md-table-cell">{{ u.email }}</td>
                             <td class="align-middle">
                                 <span class="badge" :class="badgeRol(u.rol)">{{ labelRol(u.rol) }}</span>
                             </td>
@@ -128,14 +130,15 @@
                                 </span>
                             </td>
                             <td class="align-middle text-right text-nowrap">
-                                <button class="btn btn-sm btn-outline-primary mr-1" @click="abrirModal(u)" title="Editar">
+                                <button class="btn btn-sm btn-outline-primary mr-1" @click="abrirModal(u)" title="Editar" aria-label="Editar usuario">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-secondary mr-1"
-                                    @click="toggleActivo(u)" :title="u.activo ? 'Desactivar' : 'Activar'">
+                                    @click="toggleActivo(u)" :title="u.activo ? 'Desactivar' : 'Activar'"
+                                    :aria-label="u.activo ? 'Desactivar usuario' : 'Activar usuario'">
                                     <i :class="['bi', u.activo ? 'bi-toggle-on text-success' : 'bi-toggle-off']"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" @click="confirmarEliminar(u)" title="Eliminar">
+                                <button class="btn btn-sm btn-outline-danger" @click="confirmarEliminar(u)" title="Eliminar" aria-label="Eliminar usuario">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>
@@ -163,13 +166,14 @@
     </div>
 
     <!-- ─── Modal crear / editar ─── -->
-    <div v-if="modal.open" class="modal d-block" tabindex="-1"
-        style="background:rgba(0,0,0,.5);" @click.self="cerrarModal">
+    <div v-if="modal.open" class="modal d-block modal-backdrop-custom" tabindex="-1"
+        role="dialog" aria-modal="true" aria-labelledby="modal-usuario-title"
+        @click.self="cerrarModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">{{ modal.usuario ? 'Editar usuario' : 'Nuevo usuario' }}</h5>
-                    <button type="button" class="close" @click="cerrarModal"><span>&times;</span></button>
+                    <h5 class="modal-title" id="modal-usuario-title">{{ modal.usuario ? 'Editar usuario' : 'Nuevo usuario' }}</h5>
+                    <button type="button" class="close" @click="cerrarModal" aria-label="Cerrar"><span>&times;</span></button>
                 </div>
 
                 <form @submit.prevent="guardar" enctype="multipart/form-data">
@@ -182,7 +186,7 @@
                                         :src="preview || form.picture_url"
                                         class="rounded-circle border"
                                         style="width:90px;height:90px;object-fit:cover;">
-                                    <div v-else class="avatar-placeholder-lg" :style="avatarStyle(form.nombre || '?')">
+                                    <div v-else class="avatar-placeholder-lg" :style="{ background: avatarColor(form.nombre || '?'), color: '#fff' }">
                                         {{ (form.nombre || '?').charAt(0).toUpperCase() }}
                                     </div>
                                 </div>
@@ -198,36 +202,36 @@
                             <div class="col-md-9">
                                 <div class="row">
                                     <div class="col-md-6 form-group">
-                                        <label class="font-weight-bold small">Nombre completo <span class="text-danger">*</span></label>
-                                        <input v-model="form.nombre" type="text" class="form-control form-control-sm" required>
+                                        <label for="form-nombre" class="font-weight-bold small">Nombre completo <span class="text-danger">*</span></label>
+                                        <input id="form-nombre" v-model="form.nombre" type="text" class="form-control form-control-sm" required>
                                     </div>
                                     <div class="col-md-6 form-group">
-                                        <label class="font-weight-bold small">Usuario <span class="text-danger">*</span></label>
-                                        <input v-model="form.usuario" type="text" class="form-control form-control-sm" required>
+                                        <label for="form-usuario" class="font-weight-bold small">Usuario <span class="text-danger">*</span></label>
+                                        <input id="form-usuario" v-model="form.usuario" type="text" class="form-control form-control-sm" required>
                                     </div>
                                     <div class="col-md-6 form-group">
-                                        <label class="font-weight-bold small">Email <span class="text-danger">*</span></label>
-                                        <input v-model="form.email" type="email" class="form-control form-control-sm" required>
+                                        <label for="form-email" class="font-weight-bold small">Email <span class="text-danger">*</span></label>
+                                        <input id="form-email" v-model="form.email" type="email" class="form-control form-control-sm" required>
                                     </div>
                                     <div class="col-md-6 form-group">
-                                        <label class="font-weight-bold small">
+                                        <label for="form-password" class="font-weight-bold small">
                                             Contraseña
                                             <span v-if="!modal.usuario" class="text-danger">*</span>
                                             <span v-else class="text-muted font-weight-normal">(dejar vacío para no cambiar)</span>
                                         </label>
-                                        <input v-model="form.password" type="password" class="form-control form-control-sm"
+                                        <input id="form-password" v-model="form.password" type="password" class="form-control form-control-sm"
                                             :required="!modal.usuario" autocomplete="new-password">
                                     </div>
                                     <div class="col-md-6 form-group">
-                                        <label class="font-weight-bold small">Rol <span class="text-danger">*</span></label>
-                                        <select v-model="form.rol" class="form-control form-control-sm" required>
+                                        <label for="form-rol" class="font-weight-bold small">Rol <span class="text-danger">*</span></label>
+                                        <select id="form-rol" v-model="form.rol" class="form-control form-control-sm" required>
                                             <option v-for="r in roles" :key="r" :value="r">{{ labelRol(r) }}</option>
                                         </select>
                                     </div>
                                     <!-- socio_id solo para alumno -->
                                     <div v-if="form.rol === 'alumno'" class="col-md-6 form-group">
-                                        <label class="font-weight-bold small">Vincular socio</label>
-                                        <select v-model="form.socio_id" class="form-control form-control-sm">
+                                        <label for="form-socio" class="font-weight-bold small">Vincular socio</label>
+                                        <select id="form-socio" v-model="form.socio_id" class="form-control form-control-sm">
                                             <option :value="null">— Sin vincular —</option>
                                             <option v-for="s in socios" :key="s.id" :value="s.id">{{ s.nombre }}</option>
                                         </select>
@@ -250,7 +254,7 @@
     </div>
 
     <!-- Modal confirmar eliminar -->
-    <div v-if="usuarioAEliminar" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5);">
+    <div v-if="usuarioAEliminar" class="modal d-block modal-backdrop-custom" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="modal-eliminar-title">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content">
                 <div class="modal-body text-center py-4">
@@ -260,7 +264,11 @@
                 </div>
                 <div class="modal-footer justify-content-center py-2">
                     <button class="btn btn-sm btn-secondary" @click="usuarioAEliminar = null">Cancelar</button>
-                    <button class="btn btn-sm btn-danger" @click="eliminar">Eliminar</button>
+                    <button class="btn btn-sm btn-danger" @click="eliminar" :disabled="eliminando">
+                            <span v-if="eliminando" class="spinner-border spinner-border-sm mr-1"></span>
+                            <i v-else class="bi bi-trash mr-1"></i>
+                            Eliminar
+                        </button>
                 </div>
             </div>
         </div>
@@ -324,6 +332,7 @@ const preview  = ref(null)
 const fotoFile = ref(null)
 const guardando = ref(false)
 const usuarioAEliminar = ref(null)
+const eliminando = ref(false)
 
 function abrirModal(u = null) {
     modal.usuario = u
@@ -387,16 +396,18 @@ function confirmarEliminar(u) {
 }
 
 function eliminar() {
+    eliminando.value = true
     router.delete(route('admin.usuarios.destroy', usuarioAEliminar.value.id), {
-        onSuccess: () => { usuarioAEliminar.value = null },
+        onSuccess: () => { usuarioAEliminar.value = null; eliminando.value = false },
+        onError:   () => { eliminando.value = false },
     })
 }
 
 // ─── Helpers ───
 const AVATAR_COLORS = ['#4f46e5','#0891b2','#16a34a','#dc2626','#d97706','#7c3aed']
-function avatarStyle(nombre) {
-    const idx = nombre.charCodeAt(0) % AVATAR_COLORS.length
-    return `background:${AVATAR_COLORS[idx]};color:#fff;`
+function avatarColor(nombre) {
+    const idx = (nombre?.charCodeAt(0) || 0) % AVATAR_COLORS.length
+    return AVATAR_COLORS[idx]
 }
 
 function labelRol(r) {
@@ -416,6 +427,9 @@ function badgeRol(r) {
     align-items: center; justify-content: center;
     font-size: .8rem; font-weight: 700;
     flex-shrink: 0;
+}
+.modal-backdrop-custom {
+    background: rgba(0,0,0,.5);
 }
 .avatar-placeholder-lg {
     width: 90px; height: 90px;

@@ -7,11 +7,18 @@ use App\Models\Configuracion;
 use App\Models\Material;
 use App\Models\Prestamo;
 use App\Models\Socio;
+use App\Models\User;
+use App\Notifications\PrestamoVencido;
+use App\Notifications\PrestamoProximoVencer;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class PrestamoService
 {
+    public function __construct(private MultaService $multaService) {}
+
     public function crearPrestamo(int $socioId, int $materialId, int $cantidad, string $fechaDevolucion): Prestamo
     {
         $socio    = Socio::findOrFail($socioId);
@@ -38,6 +45,8 @@ class PrestamoService
 
     public function devolverPrestamo(Prestamo $prestamo): void
     {
+        $prestamo->load('material');
+
         DB::transaction(function () use ($prestamo) {
             $prestamo->material->increment('disponibilidad', $prestamo->cantidad);
             $prestamo->update(['estado' => 'devuelto']);
@@ -52,21 +61,19 @@ class PrestamoService
 
     public function extenderPrestamo(Prestamo $prestamo, int $dias): void
     {
-        if ($dias < 1 || $dias > 30) {
-            throw ValidationException::withMessages(['dias' => 'Los días de extensión deben estar entre 1 y 30.']);
-        }
+        DB::transaction(function () use ($prestamo, $dias) {
+            $prestamo->update([
+                'fecha_devolucion' => $prestamo->fecha_devolucion->addDays($dias)->toDateString(),
+            ]);
 
-        $prestamo->update([
-            'fecha_devolucion' => $prestamo->fecha_devolucion->addDays($dias)->toDateString(),
-        ]);
-
-        $prestamo->load(['socio', 'material']);
-        $nuevaFecha = $prestamo->fecha_devolucion->format('d/m/Y');
-        $this->registrarAlerta(
-            $prestamo,
-            'renovacion',
-            "Renovación +{$dias} días — {$prestamo->material->titulo} (nuevo vencimiento: {$nuevaFecha})"
-        );
+            $prestamo->load(['socio', 'material']);
+            $nuevaFecha = $prestamo->fecha_devolucion->format('d/m/Y');
+            $this->registrarAlerta(
+                $prestamo,
+                'renovacion',
+                "Renovación +{$dias} días — {$prestamo->material->titulo} (nuevo vencimiento: {$nuevaFecha})"
+            );
+        });
     }
 
     public function marcarAtrasados(): int
@@ -85,6 +92,12 @@ class PrestamoService
                 "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (venció el {$fecha})",
                 true
             );
+            $this->multaService->generarMultaPorVencimiento($prestamo);
+
+            $user = User::where('socio_id', $prestamo->socio_id)->first();
+            if ($user) {
+                $user->notify(new PrestamoVencido($prestamo));
+            }
         }
 
         return count($atrasados);
@@ -103,6 +116,11 @@ class PrestamoService
                 'proximo_vencer',
                 "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (vence el {$fecha})"
             );
+
+            $user = User::where('socio_id', $prestamo->socio_id)->first();
+            if ($user) {
+                $user->notify(new PrestamoProximoVencer($prestamo));
+            }
         }
 
         return $proximos;
@@ -110,10 +128,6 @@ class PrestamoService
 
     private function registrarAlerta(Prestamo $prestamo, string $tipo, string $descripcion, bool $upsert = false): void
     {
-        if (!auth()->check()) {
-            return;
-        }
-
         $institucionId = $prestamo->institucion_id;
 
         if ($tipo === 'renovacion') {
@@ -163,16 +177,31 @@ class PrestamoService
 
     private function validarCreacion(Socio $socio, Material $material, int $cantidad, string $fechaDevolucion): void
     {
+        $this->validarSocioActivo($socio);
+        $this->validarStockDisponible($material, $cantidad);
+        $this->validarLimiteActivos($socio);
+        $this->validarNoDuplicado($socio, $material);
+        $this->validarFechaDevolucion($socio, $fechaDevolucion);
+    }
+
+    private function validarSocioActivo(Socio $socio): void
+    {
         if (!$socio->activo) {
             throw ValidationException::withMessages(['socio_id' => 'El socio está dado de baja.']);
         }
+    }
 
+    private function validarStockDisponible(Material $material, int $cantidad): void
+    {
         $disponibleReal = $material->disponibilidad - ($material->disponibilidad_reservada ?? 0);
 
         if ($disponibleReal < $cantidad) {
             throw ValidationException::withMessages(['material_id' => "Disponibilidad insuficiente. Disponibles: {$disponibleReal}."]);
         }
+    }
 
+    private function validarLimiteActivos(Socio $socio): void
+    {
         $activos = Prestamo::where('socio_id', $socio->id)
             ->whereIn('estado', ['activo', 'pendiente', 'atrasado'])
             ->count();
@@ -180,7 +209,10 @@ class PrestamoService
         if ($activos >= 3) {
             throw ValidationException::withMessages(['socio_id' => 'El socio ya tiene 3 préstamos activos.']);
         }
+    }
 
+    private function validarNoDuplicado(Socio $socio, Material $material): void
+    {
         $duplicado = Prestamo::where('socio_id', $socio->id)
             ->where('material_id', $material->id)
             ->whereIn('estado', ['activo', 'pendiente', 'atrasado'])
@@ -189,7 +221,10 @@ class PrestamoService
         if ($duplicado) {
             throw ValidationException::withMessages(['material_id' => 'El socio ya tiene un préstamo activo de este material.']);
         }
+    }
 
+    private function validarFechaDevolucion(Socio $socio, string $fechaDevolucion): void
+    {
         $diasPrestamo = (int) Configuracion::get($socio->institucion_id, 'dias_prestamo', 14);
         $hoy          = now()->startOfDay();
         $limite       = now()->addDays($diasPrestamo)->startOfDay();

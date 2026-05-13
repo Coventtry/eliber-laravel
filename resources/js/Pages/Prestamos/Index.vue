@@ -26,20 +26,20 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Socio</th>
-                            <th>Material</th>
-                            <th>Préstamo</th>
-                            <th>Devolución</th>
-                            <th>Estado</th>
-                            <th></th>
+                            <th scope="col">Socio</th>
+                            <th scope="col">Material</th>
+                            <th scope="col" class="d-none d-md-table-cell">Préstamo</th>
+                            <th scope="col" class="d-none d-md-table-cell">Devolución</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="p in prestamos.data" :key="p.id">
                             <td>{{ p.socio?.apellido }}, {{ p.socio?.nombre }}</td>
                             <td>{{ p.material?.titulo }}</td>
-                            <td>{{ formatearFecha(p.fecha_prestamo) }}</td>
-                            <td :class="{ 'text-danger font-weight-bold': p.estado === 'atrasado' }">
+                            <td class="d-none d-md-table-cell">{{ formatearFecha(p.fecha_prestamo) }}</td>
+                            <td :class="[{ 'text-danger font-weight-bold': p.estado === 'atrasado' }, 'd-none d-md-table-cell']">
                                 {{ formatearFecha(p.fecha_devolucion) }}
                             </td>
                             <td>
@@ -48,12 +48,13 @@
                             <td class="text-right">
                                 <template v-if="p.estado !== 'devuelto'">
                                     <Link :href="route('prestamos.devolucion', p.id)"
-                                          class="btn btn-sm btn-outline-success mr-1">
+                                          class="btn btn-sm btn-outline-success mr-1"
+                                          aria-label="Registrar devolución">
                                         <i class="bi bi-arrow-return-left"></i>
                                     </Link>
                                 </template>
-                                <a v-if="p.material?.socio?.telefono" :href="enlaceWhatsapp(p)" target="_blank"
-                                   class="btn btn-sm btn-outline-success">
+                                <a v-if="p.socio?.telefono" :href="enlaceWhatsapp(p)" target="_blank"
+                                   class="btn btn-sm btn-outline-success" aria-label="Enviar WhatsApp al socio">
                                     <i class="bi bi-whatsapp"></i>
                                 </a>
                             </td>
@@ -65,23 +66,7 @@
                 </table>
             </div>
 
-            <nav v-if="prestamos.last_page > 1">
-                <ul class="pagination justify-content-center">
-                    <li v-for="link in prestamos.links" :key="link.label"
-                        :class="['page-item', { active: link.active, disabled: !link.url }]">
-                        <Link v-if="link.url" :href="link.url" class="page-link">
-                            <span v-if="link.label.includes('Anterior') || link.label.includes('Previous')">&laquo;</span>
-                            <span v-else-if="link.label.includes('Siguiente') || link.label.includes('Next')">&raquo;</span>
-                            <span v-else v-html="link.label"></span>
-                        </Link>
-                        <span v-else class="page-link">
-                            <span v-if="link.label.includes('Anterior') || link.label.includes('Previous')">&laquo;</span>
-                            <span v-else-if="link.label.includes('Siguiente') || link.label.includes('Next')">&raquo;</span>
-                            <span v-else v-html="link.label"></span>
-                        </span>
-                    </li>
-                </ul>
-            </nav>
+            <Pagination :links="prestamos.links" />
         </div>
     </div>
 
@@ -94,6 +79,7 @@ import { usePage } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
+import Pagination from '@/Components/Pagination.vue'
 
 const props = defineProps({
     prestamos: { type: Object, required: true },
