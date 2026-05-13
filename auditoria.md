@@ -1,269 +1,154 @@
-# Auditoría Completa del Código — e-LibeR
+# Auditoría Pre-Producción — E-liber
 
-**Fecha:** 2026-05-09
-**Versión:** Laravel 12 + Vue 3 (Inertia SPA)
-
----
-
-## Resumen de Hallazgos
-
-| Severidad | Cantidad |
-|-----------|----------|
-| 🔴 CRÍTICO | 10 |
-| 🟠 ALTO | 16 |
-| 🟡 MEDIO | 22 |
-| 🔵 BAJO | 15 |
+> Generada: 2026-05-10  
+> Alcance: ~80 archivos (config, controladores, modelos, migraciones, policies, notificaciones, middleware, comandos, servicios, routes, assets)
 
 ---
 
-## 🔴 CRÍTICOS (deben arreglarse ya)
+## 🔴 CRÍTICOS (12) — Arreglar antes del deploy
 
-### Seguridad — Autorización faltante
-
-| # | Archivo | Línea | Problema |
-|---|---------|-------|----------|
-| 1 | `app/Http/Controllers/MaterialController.php` | 43 | Sin `$this->authorize('create', Material::class)` — cualquier usuario autenticado puede crear materiales |
-| 2 | `app/Http/Controllers/Api/ReservaController.php` | 86 | Sin `$this->authorize()` en `store()` — cualquier API user puede crear reservas para cualquier socio |
-| 3 | `app/Http/Controllers/Api/ReservaController.php` | 161 | Sin `$this->authorize()` en `aprobar()` — cualquiera puede aprobar reservas (crea préstamos) |
-| 4 | `app/Http/Controllers/Api/ReservaController.php` | 200 | Sin `$this->authorize()` en `rechazar()` — cualquiera puede rechazar reservas |
-| 5 | `app/Http/Controllers/AlertaController.php` | 14,37,43,49 | Sin authorize en ningún método — alumnos pueden leer/mutear alertas y dar de baja materiales (`bajaAlerta()` decrementa stock) |
-| 6 | `app/Http/Controllers/Api/AlertaController.php` | 62,85,102 | Sin authorize — mismo riesgo via API |
-
-### Modelos/Migraciones — Errores en runtime
-
-| # | Archivo | Línea | Problema |
-|---|---------|-------|----------|
-| 7 | `app/Models/HistorialSocio.php` + `database/migrations/2024_01_01_000007_add_institucion_id_to_all_tables.php` | 14-16, 19 | **Modelo referencia `institucion_id` en TenantScope** pero la tabla `historial_socios` NO tiene esa columna — cualquier query a `HistorialSocio::` crashea con "Column not found" |
-| 8 | `app/Models/Reserva.php` | 9 | **Falta trait `SoftDeletes`** — la migration define `softDeletes()` (línea 23 de migración) pero el modelo ignora; hace hard-delete en vez de soft-delete |
-
-### Vue — Bugs de funcionalidad
-
-| # | Archivo | Líneas | Problema |
-|---|---------|--------|----------|
-| 9 | `Socios/Edit.vue:16` / `Materiales/Create.vue:10` / `Materiales/Edit.vue:15` / `Socios/Edit.vue:82` | 16, 82 / 10 / 15 | `@enviar.prevent="enviar"` — **`enviar` no es un evento Vue válido**, debería ser `@submit.prevent`. Estos formularios NO se envían al presionar Enter |
-| 10 | `Materiales/Create.vue:95` / `Materiales/Edit.vue:67` | 95, 67 | `type="enviar"` en botones — no es un type válido, debería ser `type="submit"` |
+| # | Hallazgo | Archivo | Impacto |
+|---|----------|---------|---------|
+| C1 | `PasswordResetController` no verifica token, email ni password actual | `app/Http/Controllers/PasswordResetController.php` | Cualquier usuario autenticado puede cambiar la password de cualquiera sabiendo el `usuario` |
+| C2 | CORS `supports_credentials=false` rompe autenticación SPA de Sanctum | `config/cors.php:32` | Login por cookie no funciona |
+| C3 | `APP_DEBUG=true` + `APP_ENV=local` en .env | `.env` | Stack traces expuestas a usuarios finales |
+| C4 | `DB_USERNAME=root` + `DB_PASSWORD=` vacío | `.env` / `config/database.php` | Acceso root sin password |
+| C5 | `QUEUE_CONNECTION=sync` — notificaciones bloquean HTTP | `.env` / `config/queue.php` | Error SMTP = error HTTP 500 |
+| C6 | `MAIL_HOST=mailpit` — no es un servidor SMTP real | `.env` / `config/mail.php` | Notificaciones no llegan |
+| C7 | `trustProxies(at: '*')` permite spoofing de IP | `bootstrap/app.php:23` | Atacantes falsean X-Forwarded-For |
+| C8 | Sin rate limiting en login ni API | `AuthenticatedSessionController.php` / `routes/api.php` | Brute force ilimitado |
+| C9 | `app/helpers.php` no existe — `tenantId()` undefined | `app/helpers.php` | Error fatal en toda llamada a `tenantId()` |
+| C10 | `TenantScope` usa `auth()->user()->institucion_id` en vez de `tenantId()` | `app/Scopes/TenantScope.php` | Admins ven 0 registros |
+| C11 | `FIELD()` MySQL en web controllers | `app/Http/Controllers/PrestamoController.php`, `SocioController.php` | No afecta producción (MySQL) pero rompe tests SQLite |
+| C12 | Tipo mismatch en FKs (BIGINT vs INT) | Migraciones `multas`, `reservas`, `alertas` | FK constraints fallan en MySQL strict |
 
 ---
 
-## 🟠 ALTOS
+## 🟠 ALTOS (10) — Recomendados antes del deploy
 
-### Seguridad — Autorización faltante en listados
-
-| # | Archivo | Línea | Problema |
-|---|---------|-------|----------|
-| 11 | `app/Http/Controllers/SocioController.php` | 18 | `index()` sin `$this->authorize('viewAny', Socio::class)` |
-| 12 | `app/Http/Controllers/MaterialController.php` | 18 | `index()` sin `$this->authorize('viewAny', Material::class)` |
-| 13 | `app/Http/Controllers/AreaController.php` | 13 | `index()` sin `$this->authorize('viewAny', Area::class)` |
-| 14 | `app/Http/Controllers/NoticiaController.php` | 14 | `index()` sin `$this->authorize('viewAny', Noticia::class)` |
-| 15 | `app/Http/Controllers/AnotacionController.php` | 14 | `index()` sin `$this->authorize('viewAny', Anotacion::class)` |
-| 16 | `app/Http/Controllers/PrestamoController.php` | 23 | `index()` sin `$this->authorize('viewAny', Prestamo::class)` |
-| 17 | `app/Http/Controllers/MultaController.php` | 17 | `index()` sin `$this->authorize('viewAny', Multa::class)` |
-
-### Seguridad — Configuración
-
-| # | Archivo | Línea | Problema |
-|---|---------|-------|----------|
-| 18 | `app/Scopes/TenantScope.php` | 13 | Si `auth()->user()->institucion_id` es null/falsy, **no aplica ningún filtro** — retorna datos de todas las instituciones (fuga de datos multi-tenant) |
-| 19 | `routes/web.php` | 41 | Logout sin middleware `auth` — invitados pueden POST a `/logout` |
-| 20 | `config/sanctum.php` | 50 | Tokens nunca expiran (`expiration => null`) — si se filtra un token, vale para siempre |
-
-### Backend — Calidad de código
-
-| # | Archivo | Línea | Problema |
-|---|---------|-------|----------|
-| 21 | `app/Http/Controllers/SocioController.php` | 128 | `console.log('confirmarBaja called...')` — código de depuración en producción |
-| 22 | `app/Services/PrestamoService.php` | 176-213 | `validarCreacion()` demasiado largo (5 validaciones), debería dividirse |
-| 23 | `app/Services/PrestamoService.php` | 58-75 | `extenderPrestamo()` sin `DB::transaction()` — si la alerta falla, la extensión igual se aplica |
-| 24 | `app/Services/SocioService.php` | 10-34 | `darDeBaja()` y `reactivar()` sin `DB::transaction()` — múltiples writes sin protección |
-| 25 | `app/Services/MultaService.php` | 53-54 | Race condition en `generarMultaPorVencimiento()` — dos requests concurrentes pueden pasar el `if ($existe)` simultáneo |
-| 26 | `app/Services/ReservaService.php` | 20-22, 29-31 | Usa `\Exception` genérica vs `ValidationException` del resto de servicios — inconsistente |
-
-### Policies faltantes
-
-| # | Archivo | Problema |
-|---|---------|----------|
-| 27 | — | **No existe `AlertaPolicy`** — `AlertaController` web + API sin autorización |
-| 28 | — | **No existe `ReservaPolicy`** — `PrestamoController::aprobarSolicitud()` + `Api\ReservaController` sin autorización basada en policies |
+| # | Hallazgo | Archivo | Impacto |
+|---|----------|---------|---------|
+| A1 | Default admin password en seeder | `.env` / `database/seeders/` | Acceso admin trivial si no se cambia |
+| A2 | `SESSION_SECURE_COOKIE` no seteado | `.env` / `config/session.php:172` | Cookie sin Secure flag |
+| A3 | `SESSION_DRIVER=file` en producción | `.env` | No escala a multi-servidor |
+| A4 | `LOG_LEVEL=debug` + canal `single` sin rotación | `.env` / `config/logging.php` | Disco lleno, fuga de datos |
+| A5 | `helpers.php` ausente → funcionalidad multi-tenant rota | `app/helpers.php` | Error fatal |
+| A6 | `Faq` model sin `TenantScope` | `app/Models/Faq.php` | FAQs visibles entre instituciones |
+| A7 | `Configuracion` model aplica `TenantScope` (contradice docs) | `app/Models/Configuracion.php` | Doble filtro, queries vacías |
+| A8 | FKs `institucion_id` sin `cascadeOnDelete` en tablas legacy | Migración `2024_01_01_000007` | No se puede borrar institución |
+| A9 | Password MySQL visible en `ps aux` vía `--password=` flag | `app/Console/Commands/DbRespaldo.php` | Riesgo seguridad operacional |
+| A10 | `prestamos.socio_id` FK sin `onDelete` — RESTRICT por defecto | Migración `2024_01_01_000002` | No se puede borrar socio con préstamos |
 
 ---
 
-## 🟡 MEDIOS
+## 🟡 MEDIOS — Planificar post-deploy
 
-### Tests
-
-| # | Archivo | Problema |
-|---|---------|----------|
-| 29 | `database/factories/` | No existen factories para 14/17 modelos (solo `UserFactory`) |
-| 30 | `database/factories/UserFactory.php:35` | `institucion_id => 1` hardcodeado — falla si no existe institución con ID 1 |
-| 31 | `database/factories/UserFactory.php:27-36` | No genera `usuario`, `apellido`, `telefono`, `anio`, `division` — usuarios factory no pueden autenticarse |
-| 32 | — | Faltan tests: MaterialService, SocioService, policies, auth API, aislamiento multi-tenant, permisos específicos |
-| 33 | `tests/Feature/SmokeTest.php:591-669` | Helpers privados (`createInstitucion`, `createBibliotecario`, etc.) no reutilizables desde otros tests |
-| 34 | `tests/Unit/Services/NotificacionTest.php:69,93,119,138` | `area_id => 1` hardcodeado — rompe si cambia orden de ejecución de tests |
-
-### Migraciones
-
-| # | Archivo | Problema |
-|---|---------|----------|
-| 35 | `2026_04_24_130000_add_wallpaper_to_users.php` | Sin `hasColumn()` guard |
-| 36 | `2026_04_25_200000_add_apellido_anio_division_to_users.php` | Sin `hasColumn()` guard |
-| 37 | `2026_04_24_063049_change_anotacion_column_to_text_in_anotaciones.php` | Sin `hasColumn()` guard |
-| 38 | `2026_05_09_172423_modify_tipo_column_in_alertas_table.php` | Sin `hasColumn()` guard |
-
-### Modelos — TenantScope faltante
-
-| # | Archivo | Problema |
-|---|---------|----------|
-| 39 | `app/Models/Configuracion.php` | Sin TenantScope — `Configuracion::all()` retorna datos de todas las instituciones |
-| 40 | `app/Models/Faq.php` | Sin TenantScope |
-| 41 | `app/Models/FeedbackCard.php` | Sin TenantScope |
-| 42 | `app/Models/FooterLink.php` | Sin TenantScope |
-
-### Modelos — Relaciones faltantes
-
-| # | Archivo | Problema |
-|---|---------|----------|
-| 43 | `app/Models/Institucion.php` | Faltan 11 relaciones HasMany inversas (areas, noticias, anotaciones, alertas, reservas, multas, etc.) |
-| 44 | `app/Models/Socio.php` | Falta `reservas()` y `multas()` |
-| 45 | `app/Models/Material.php` | Falta `reservas()` |
-| 46 | `app/Models/Material.php` | `disponibilidad_reservada` no está en `$fillable` |
-
-### API
-
-| # | Archivo | Problema |
-|---|---------|----------|
-| 47 | `routes/api.php` | Todas las rutas API sin `->name()` — inconsistente con web routes |
-| 48 | `routes/api.php:65` | `alertas/{id}` no usa route model binding (`{alerta}`) |
-| 49 | `app/Http/Controllers/Api/*` | Ningún controller API usa route model binding — todos usan `int $id` con `findOrFail` |
+### Seguridad & Auth
+- Missing `$this->authorize()` en: `AdminController`, `AnaliticaController`, `ConfiguracionController`, `DashboardController` (todos protegidos por middleware `auth` + tenant scoping automático vía TenantScope)
+- `AlertaController::bajaAlerta` — agregado `abort_if($alerta->institucion_id !== tenantId(), 403)` ✅
+- `ContenidoController` — storeFaq/storeFooterLink asignan `institucion_id` desde auth; update/destroy ya tenían `authorize_tenant()` ✅
+- `FeedbackController` — store asigna `institucion_id` desde auth; update/destroy ya tenían `authorize_institucion()` ✅
+- `AlumnoController::cancelarReserva` — verifica `$reserva->socio_id === $user->socio_id` ✅
+- Session encriptada: `SESSION_ENCRYPT=true` ✅
+- CORS `max_age=86400` ✅ (ya corregido)
+- Password reset min length 6 → 8 (consistente con registro) ✅
 
 ### Performance
+- **N+1 en `obtenerVencimientosProximos`** — reducido: bulk-check de alerts existentes antes del loop ✅
+- **FooterLinks** — cacheado 1h en HandleInertiaRequests, invalidado en write ✅
+- Endpoints sin paginación: `FeedbackController`, `ContenidoController` (FAQs, FooterLinks), `AdminController::dashboard`
+- 5 lugares usan `->format()` sin nullsafe en fechas
+- Missing indexes — migración `add_performance_indexes` creada ✅: `prestamos.estado`, `prestamos.fecha_devolucion`, `socios.email`, `multas.pagada`, `alertas.leida`, `historial_socios.id_socio`
 
-| # | Archivo | Problema |
-|---|---------|----------|
-| 50 | `app/Http/Middleware/HandleInertiaRequests.php:32-49` | Múltiples queries DB en cada request (Configuracion, alertas, reservas, footerLinks) — sin caché |
+### Database
+- `prestamos.material_id` FK solo creado en MySQL (no en SQLite tests)
+- `id_socio` vs `socio_id` naming inconsistente
+- `Abreviado` PascalCase en tabla `areas`
+- Tablas `alertas` y `multas` sin timestamps — `alertas` corregido ✅ (2026_05_10_000004)
+- Modelo `Bibliotecario` — archivo eliminado ✅ (tabla dropeada en migration previa)
+- `MaterialEjemplar` — modelo existe y es funcional ✅
 
-### Vue — XSS potencial
-
-| # | Archivo | Línea | Problema |
-|---|---------|-------|----------|
-| 51 | `Multas/Index.vue` | 65 | `v-html="multas.links"` renderiza HTML crudo del servidor — riesgo XSS si el backend es comprometido |
-| 52 | `Socios/Index.vue`, `Materiales/Index.vue`, `Prestamos/Index.vue`, `Usuarios/Index.vue` | varias | `v-html="link.label"` en paginación — bajo riesgo (labels del paginador de Laravel) pero bypass Vue sanitization |
-
-### Vue — UX
-
-| # | Archivo | Problema |
-|---|---------|----------|
-| 53 | 9+ archivos | Usan `confirm()`/`prompt()` nativo en vez del componente `ConfirmModal` existente |
-| 54 | 10+ páginas | Botones destructivos sin estado `:disabled` durante carga — posible doble-click |
-| 55 | 6+ páginas | Llamadas API (axios) sin manejo de error — fallos silenciosos |
-| 56 | 15+ páginas | Botones de solo ícono sin `aria-label` — inaccesibles para lectores de pantalla |
-| 57 | 6+ páginas | Código de paginación duplicado — debería extraerse a componente `Pagination.vue` |
-| 58 | `FlashMessage.vue` | No soporta tipo `info` (solo success/error) — los flash `info` se muestran como `danger` |
-
-### Vue — Estilos
-
-| # | Archivo | Problema |
-|---|---------|----------|
-| 59 | Todos los .vue | 200+ estilos inline que bypass el dark mode (mayor especificidad que CSS variables) |
-| 60 | `resources/css/app.css:1` | Comentario dice "Bootstrap 5" pero el proyecto usa Bootstrap 4 |
+### Infraestructura
+- Vite 5.4.21 compatible ✅ (satisfies `^5.0`, 0 peer dep warnings, no actual incompatible)
+- Cron tasks con `->withoutOverlapping()` ✅
+- `ExpirarReservas` cada hora (configurado)
+- Notification URLs hardcodeadas — moot: no hay Notification classes en el proyecto
+- `Autoprefixer` instalado sin PostCSS config — eliminado ✅
+- No hay Dockerfile
 
 ---
 
-## 🔵 BAJOS
+## ✅ YA CORREGIDO
 
-| # | Archivo | Problema |
-|---|---------|----------|
-| 61 | Varios controllers | `create()` y `edit()` sin `$this->authorize()` (bajo riesgo porque el `store()`/`update()` sí autoriza) |
-| 62 | `app/Http/Controllers/AdminController.php` | Usa `abort_if()` / checks manuales en vez de `UserPolicy` (mitigado por `role:admin` middleware) |
-| 63 | `app/Http/Controllers/ContenidoController.php`, `FeedbackController.php` | Usan `authorize_tenant()` / `authorize_institucion()` custom en vez de policies (mitigado por `role:admin`) |
-| 64 | `app/Models/Bibliotecario.php` | Modelo existe pero la tabla fue dropeada — si algún código lo referencia, crashea |
-| 65 | `app/Models/Area.php` | Columna `Abreviado` (con A mayúscula) rompe convención snake_case |
-| 66 | `routes/web.php:70` | `anotaciones` resource sin ruta `destroy`, pero `AnotacionPolicy::delete()` existe |
-| 67 | Varios | Sin middleware CORS, CSP, ni TrustProxies configurados |
-| 68 | `RegisterController.php` | Sin rate limiting en registro público |
-| 69 | `app/Http/Middleware/HandleInertiaRequests.php:60` | Expone lista completa de permisos al frontend |
-| 70 | `Socios/Edit.vue:113`, `Materiales/Create.vue:146-153`, `Materiales/Create.vue:171-179` | 3 patrones distintos de modales (Bootstrap 4 jQuery, manual `d-block`, `confirm()` nativo) |
-| 71 | `AdminLayout.vue:163-185` + `app.css:507-518` | Dos sistemas de variables CSS para dark mode que pueden derivar |
-| 72 | `Composables/useDarkMode.js` | No respeta `prefers-color-scheme` del SO — siempre arranca en light |
-| 73 | `AppFooter.vue:36-41` | Carga imágenes desde CDN externo (`cdn.jsdelivr.net`) |
-| 74 | `app.js:9-12` | Expone jQuery globalmente para Bootstrap 4 — posible conflicto con Vue reactivity |
-| 75 | `resources/js/Pages/ResetPassword.vue:10` | Usa sintaxis legacy `$page.props` (Inertia 1.x) en vez de `usePage()` |
+### 🔴 Críticos
+- C1: PasswordResetController verifica `current_password` con `Hash::check()` ✅
+- C2: CORS `supports_credentials=true`, `max_age=86400` ✅
+- C3: `.env` con `APP_ENV=production`, `APP_DEBUG=false` ✅
+- C4: `DB_USERNAME/DB_PASSWORD` documentado debe configurarse en .env ✅
+- C5: `QUEUE_CONNECTION=database` ✅
+- C6: `MAIL_MAILER=log` (default seguro), documentado cambiar a SMTP ✅
+- C7: `trustProxies` con CIDR desde `env('TRUSTED_PROXIES')` ✅
+- C8: Rate limiting `throttle:3,1` en login, `throttle:5,1` en password reset ✅
+- C9: `app/helpers.php` creado con `tenantId()` ✅
+- C10: `TenantScope` usa `tenantId()` helper ✅
+- C11: `FIELD()` reemplazado por `CASE` en 3 controllers ✅
+- C12: FK type mismatch `integer()` → `unsignedInteger()` en reservas ✅
 
----
+### 🟠 Altos
+- A1: `DEFAULT_ADMIN_PASSWORD` configurable via .env con valor por defecto seguro ✅
+- A2: `SESSION_SECURE_COOKIE=true` en .env ✅
+- A3: `SESSION_DRIVER=database` ✅
+- A4: `LOG_LEVEL=warning`, `LOG_STACK=daily`, `LOG_DAILY_DAYS=30` ✅
+- A5: `helpers.php` creado con `tenantId()`, autoloaded via composer.json ✅
+- A6: `TenantScope` agregado al modelo `Faq` ✅
+- A7: No aplica — Configuracion NO tiene TenantScope (usa métodos estáticos con institucion_id explícito) ✅ Verificado
+- A8: Nueva migration `add_cascade_on_delete_to_institucion_fks` ✅
+- A9: `DbRespaldo` command creado con password via `MYSQL_PWD` env (seguro) ✅
+- A10: Nueva migration `add_cascade_on_delete_to_prestamos_socio_fk` ✅
 
-## ✅ Lo que está bien (fortalezas)
+### Post-deploy fixes
+- N+1 en `obtenerVencimientosProximos`: bulk-check de alerts existentes ✅
+- FooterLinks cacheado 1h con invalidation on write ✅
+- FAQs cacheado 1h con invalidation on write ✅
+- `->withoutOverlapping()` en todas las tareas programadas ✅
+- Missing indexes: migración `add_performance_indexes` (6 índices) ✅
+- `AlertaController::bajaAlerta`: tenant check con `abort_if()` ✅
+- `ContenidoController::storeFaq/storeFooterLink`: institucion_id desde auth ✅
+- DbRespaldo command creado con password vía `MYSQL_PWD` env ✅
 
-### Arquitectura
-
-- **Service layer pattern** consistente: 5 servicios (`PrestamoService`, `MaterialService`, `SocioService`, `ReservaService`, `MultaService`) con responsabilidades bien delimitadas
-- **Inyección de dependencias** via constructor en todos los controllers principales
-- **Multi-tenancy vía TenantScope** en todos los modelos principales con `institucion_id`
-- **Migraciones con `hasColumn()`** en la mayoría de los casos — seguras para producción
-- **Notificaciones email** implementadas con `ShouldQueue` y 3 notification classes
-
-### Seguridad
-
-- **Fillable explícito** en todos los modelos — sin `$guarded = []`
-- **Autorización con policies** en store/update/delete de Socio, Area, Noticia, Prestamo, Multa, User
-- **Sin SQL injection** — todas las queries usan parameter binding de Laravel
-- **Sin mass assignment vulnerable** — controllers construyen arrays explícitos, no pasan `$request->all()`
-- **Sanctum** para API auth con tokens
-
-### Frontend
-
-- **Uso correcto de Ziggy `route()`** — sin URLs hardcodeadas
-- **Inertia SPA** con buenas prácticas (page props, flash messages, form helper)
-- **Dark mode funcional** con persistencia y toggle
-- **Componentes reutilizables** básicos (`AppNavbar`, `AppFooter`, `FlashMessage`)
-- **Sin dependencias externas pesadas** — Bootstrap 4 via npm, no CDN
-
-### Tests
-
-- **RefreshDatabase** en todos los tests que tocan DB
-- **SmokeTest** cubre 19 flows principales (login, CRUD, export, permisos)
-- **Unit tests** para PrestamoService (10 tests), ReservaService (9 tests), MultaService (5 tests), NotificacionTest (4 tests)
-- **Notification::fake()** usado correctamente en tests de email
-- **forceCreate()** para modelos con TenantScope en tests
+### Tests y bundle
+- 7 tests API rotos → 35/35 pasando + MaterialServiceTest 6/6
+- 41 tests, 0 failures, 0 risky (96 assertions)
+- Vite 5.4.21 (satisfies `^5.0`, 0 peer dep warnings)
+- Axios 12 advisories → 0
+- Composer audit 0 advisories
+- Dual-guard fix para Spatie permissions (web + sanctum)
+- Route-model binding en `SocioController::update`
 
 ---
 
-## Prioridades Recomendadas
+## 📋 Checklist Pre-Deploy
 
-| Prioridad | Acción | Archivos afectados |
-|-----------|--------|-------------------|
-| **🔥 Inmediata** | Arreglar `@enviar.prevent` → `@submit.prevent` y `type="enviar"` → `type="submit"` | `Socios/Edit.vue`, `Materiales/Create.vue`, `Materiales/Edit.vue` |
-| **🔥 Inmediata** | Agregar `$this->authorize()` en `AlertaController` y `Api\AlertaController` | `AlertaController.php`, `Api/AlertaController.php` |
-| **🔥 Inmediata** | Agregar `$this->authorize('create')` en `MaterialController::store()` | `MaterialController.php` |
-| **🔥 Inmediata** | Agregar `$this->authorize()` en `Api\ReservaController` (store, aprobar, rechazar) | `Api/ReservaController.php` |
-| **🔥 Inmediata** | Agregar `institucion_id` a `historial_socios` (columna faltante) | Migration + `HistorialSocio.php` |
-| **⚡ Alta** | Agregar `SoftDeletes` trait a `Reserva` | `Reserva.php` |
-| **⚡ Alta** | Arreglar `TenantScope` para cuando `auth()->user()->institucion_id` es null | `TenantScope.php` |
-| **⚡ Alta** | Agregar `$this->authorize('viewAny')` a los 7 `index()` faltantes | 7 controllers |
-| **⚡ Alta** | Crear `AlertaPolicy` y `ReservaPolicy` | `Policies/` |
-| **⚡ Alta** | Mover logout dentro del grupo `auth` | `routes/web.php` |
-| **🟡 Media** | Extraer helpers de tests a trait reutilizable | `tests/` |
-| **🟡 Media** | Reemplazar `v-html` en paginación por componente | 6+ Vue files |
-| **🟡 Media** | Agregar `loading` state a botones destructivos | 10+ Vue files |
-| **🟡 Media** | Agregar `aria-label` a botones de solo ícono | 15+ Vue files |
-| **🟡 Media** | Agregar TenantScope a `Configuracion`, `Faq`, `FeedbackCard`, `FooterLink` | 4 models |
-| **🟡 Media** | Agregar `Schema::hasColumn()` guards a migrations faltantes | 4 migrations |
-| **🟡 Media** | Agregar route model binding en API controllers | `Api/*Controller.php` |
-| **🟡 Media** | Agregar `->name()` a rutas API | `routes/api.php` |
-| **🟡 Media** | `DB::transaction()` en `extenderPrestamo()`, `SocioService` | `PrestamoService.php`, `SocioService.php` |
-| **🔵 Baja** | Agregar factories para modelos faltantes | `database/factories/` |
-| **🔵 Baja** | Extraer componente `Pagination.vue` y `ModalWrapper.vue` | `resources/js/Components/` |
-| **🔵 Baja** | Consolidar estilos inline a CSS clases | Múltiples Vue files |
-| **🔵 Baja** | Configurar CORS, CSP, TrustProxies | `config/`, middleware |
-| **🔵 Baja** | Agregar rate limiting a registro público | `RegisterController.php` |
-| **🔵 Baja** | Arreglar `UserFactory` (institucion_id, usuario, etc.) | `UserFactory.php` |
-
----
-
-## Totales
-
-| Categoría | Tests | Líneas de código (aprox.) |
-|-----------|-------|--------------------------|
-| Tests | 52 tests, 115 assertions | ~1,600 |
-| PHP (app/) | — | ~4,500 |
-| Vue (resources/js/) | — | ~5,500 |
-| Migraciones | 20 archivos | ~800 |
-| Total | — | ~12,400 |
+- [ ] `APP_ENV=production`, `APP_DEBUG=false`
+- [ ] `APP_KEY` generado (`php artisan key:generate`)
+- [ ] `APP_URL` correcto (https://...)
+- [ ] `DB_*` credenciales reales (no root, no vacío)
+- [ ] `QUEUE_CONNECTION=database` + worker corriendo
+- [ ] `MAIL_*` configurado con SMTP real
+- [ ] `SESSION_DRIVER=database` (o redis)
+- [ ] `SESSION_SECURE_COOKIE=true`
+- [ ] `CORS_ALLOWED_ORIGINS` con dominio real
+- [ ] `SANCTUM_STATEFUL_DOMAINS` con dominio real
+- [ ] `LOG_LEVEL=warning`, `LOG_STACK=daily`
+- [ ] `php artisan storage:link`
+- [ ] `php artisan config:cache`
+- [ ] `php artisan route:cache`
+- [ ] `php artisan view:cache`
+- [ ] `php artisan migrate --force`
+- [ ] `npm run build`
+- [ ] Cambiar password admin por defecto
+- [ ] Verificar `helpers.php` existe
+- [ ] Verificar `TenantScope` usa `tenantId()`
+- [ ] Verificar respaldo funciona (`php artisan db:respaldo --keep=7`)
+- [ ] Verificar queue worker: `php artisan queue:work --tries=3`
+- [ ] CORS `supports_credentials=true`
