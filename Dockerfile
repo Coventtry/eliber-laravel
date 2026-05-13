@@ -18,7 +18,7 @@ COPY . .
 
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-RUN npm ci && npm run build && rm -rf node_modules
+RUN npm ci --legacy-peer-deps && npm run build && rm -rf node_modules
 
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
