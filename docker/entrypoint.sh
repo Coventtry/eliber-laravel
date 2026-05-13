@@ -25,8 +25,8 @@ if [ "${1}" = "php-fpm" ]; then
 
     echo "Cacheando configuración..."
     php artisan config:cache
-    php artisan route:cache
-    php artisan view:cache
+    php artisan route:cache || echo "WARN: route:cache falló, continuando sin caché de rutas"
+    php artisan view:cache || echo "WARN: view:cache falló"
 
     echo "App lista."
 fi
