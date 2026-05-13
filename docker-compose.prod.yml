@@ -13,6 +13,7 @@ services:
       - ./.env:/var/www/.env:ro
       - ./storage:/var/www/storage
       - ./bootstrap/cache:/var/www/bootstrap/cache
+      - eliber_public:/var/www/public
     networks:
       - eliber-network
     depends_on:
@@ -32,7 +33,7 @@ services:
     ports:
       - "127.0.0.1:8005:80"
     volumes:
-      - ./public:/var/www/public:ro
+      - eliber_public:/var/www/public:ro
       - ./storage/app/public:/var/www/storage_public:ro
       - ./docker/nginx/eliber.conf:/etc/nginx/conf.d/default.conf
     networks:
@@ -99,4 +100,6 @@ networks:
 
 volumes:
   eliber_db_data:
+    driver: local
+  eliber_public:
     driver: local

@@ -3,6 +3,9 @@ set -e
 
 # Solo el contenedor app corre migraciones (no queue ni scheduler)
 if [ "${1}" = "php-fpm" ]; then
+    echo "Sincronizando assets públicos..."
+    cp -rf /var/www/public_build/. /var/www/public/
+
     echo "Esperando base de datos..."
     until php artisan db:show --json > /dev/null 2>&1; do
         sleep 2
