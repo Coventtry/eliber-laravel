@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('multas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('socio_id')->constrained('socios');
-            $table->foreignId('prestamo_id')->nullable()->constrained('prestamos')->nullOnDelete();
+            $table->integer('socio_id')->unsigned();
+            $table->foreign('socio_id')->references('id')->on('socios');
+            $table->integer('prestamo_id')->unsigned()->nullable();
+            $table->foreign('prestamo_id')->references('id')->on('prestamos')->nullOnDelete();
             $table->decimal('monto', 10, 2);
             $table->string('motivo');
             $table->text('observaciones')->nullable();

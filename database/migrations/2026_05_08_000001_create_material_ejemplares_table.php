@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('material_ejemplares', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('material_id');
+            $table->integer('material_id');
             $table->unsignedBigInteger('institucion_id');
             $table->string('codigo_ejemplar')->unique();
             $table->enum('estado', ['disponible', 'prestado', 'reservado', 'baja'])->default('disponible');
