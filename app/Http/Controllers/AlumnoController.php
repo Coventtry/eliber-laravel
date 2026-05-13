@@ -17,7 +17,7 @@ class AlumnoController extends Controller
 {
     public function dashboard(): Response
     {
-        $user    = auth()->user();
+        $user = auth()->user();
         $socioId = $user->socio_id;
 
         $reservas = $socioId
@@ -26,17 +26,17 @@ class AlumnoController extends Controller
                 ->orderByDesc('fecha_reserva')
                 ->take(5)
                 ->get()
-                ->map(fn($r) => [
-                    'id'       => $r->id,
+                ->map(fn ($r) => [
+                    'id' => $r->id,
                     'material' => $r->material->titulo,
-                    'estado'   => $r->estado,
-                    'fecha'    => $r->fecha_reserva->format('d/m/Y'),
+                    'estado' => $r->estado,
+                    'fecha' => $r->fecha_reserva->format('d/m/Y'),
                 ])
             : collect();
 
         return Inertia::render('Alumno/Dashboard', [
             'reservas_recientes' => $reservas,
-            'tiene_socio'        => (bool) $socioId,
+            'tiene_socio' => (bool) $socioId,
         ]);
     }
 
@@ -84,7 +84,7 @@ class AlumnoController extends Controller
 
     public function misReservas(): Response
     {
-        $user    = auth()->user();
+        $user = auth()->user();
         $socioId = $user->socio_id;
 
         $reservas = $socioId
@@ -92,17 +92,17 @@ class AlumnoController extends Controller
                 ->where('socio_id', $socioId)
                 ->orderByDesc('fecha_reserva')
                 ->paginate(15)
-                ->through(fn($r) => [
-                    'id'                => $r->id,
-                    'material'          => $r->material->titulo,
-                    'estado'            => $r->estado,
-                    'fecha_reserva'     => $r->fecha_reserva->format('d/m/Y'),
+                ->through(fn ($r) => [
+                    'id' => $r->id,
+                    'material' => $r->material->titulo,
+                    'estado' => $r->estado,
+                    'fecha_reserva' => $r->fecha_reserva->format('d/m/Y'),
                     'fecha_vencimiento' => $r->fecha_vencimiento?->format('d/m/Y'),
                 ])
             : collect();
 
         return Inertia::render('Alumno/MisReservas', [
-            'reservas'    => $reservas,
+            'reservas' => $reservas,
             'tiene_socio' => (bool) $socioId,
         ]);
     }
@@ -113,31 +113,29 @@ class AlumnoController extends Controller
 
         $materiales = Material::with('area')
             ->where('disponibilidad', '>', 0)
-            ->when($request->search, fn($q, $s) =>
-                $q->where(fn($q2) =>
-                    $q2->where('titulo', 'like', "%{$s}%")
-                       ->orWhere('autor',  'like', "%{$s}%")
-                )
+            ->when($request->search, fn ($q, $s) => $q->where(fn ($q2) => $q2->where('titulo', 'like', "%{$s}%")
+                ->orWhere('autor', 'like', "%{$s}%")
             )
-            ->when($request->area_id, fn($q, $a) => $q->where('area_id', $a))
+            )
+            ->when($request->area_id, fn ($q, $a) => $q->where('area_id', $a))
             ->orderBy('titulo')
             ->paginate(24)
             ->withQueryString()
-            ->through(fn($m) => [
-                'id'             => $m->id,
-                'titulo'         => $m->titulo,
-                'autor'          => $m->autor,
-                'area'           => $m->area?->nombre,
-                'area_id'        => $m->area_id,
-                'categoria'      => $m->categoria,
+            ->through(fn ($m) => [
+                'id' => $m->id,
+                'titulo' => $m->titulo,
+                'autor' => $m->autor,
+                'area' => $m->area?->nombre,
+                'area_id' => $m->area_id,
+                'categoria' => $m->categoria,
                 'disponibilidad' => $m->disponibilidad,
-                'anio'           => $m->anio_publicacion,
+                'anio' => $m->anio_publicacion,
             ]);
 
         return Inertia::render('Alumno/Catalogo', [
-            'materiales'  => $materiales,
-            'areas'       => $areas,
-            'filters'     => $request->only(['search', 'area_id']),
+            'materiales' => $materiales,
+            'areas' => $areas,
+            'filters' => $request->only(['search', 'area_id']),
             'tiene_socio' => (bool) auth()->user()->socio_id,
         ]);
     }
@@ -150,12 +148,13 @@ class AlumnoController extends Controller
 
         $user = auth()->user();
 
-        if (!$user->socio_id) {
+        if (! $user->socio_id) {
             return back()->with('error', 'Tu cuenta no está vinculada a un socio. Contactá al bibliotecario.');
         }
 
         try {
             $service->crearReserva($user->socio_id, $request->material_id);
+
             return back()->with('success', 'Reserva realizada correctamente.');
         } catch (ValidationException $e) {
             $message = collect($e->errors())->flatten()->first() ?? 'Error de validación';
@@ -171,7 +170,7 @@ class AlumnoController extends Controller
             abort(403);
         }
 
-        if (!in_array($reserva->estado, ['pendiente', 'aprobada'])) {
+        if (! in_array($reserva->estado, ['pendiente', 'aprobada'])) {
             return back()->with('error', 'Esta reserva no se puede cancelar.');
         }
 

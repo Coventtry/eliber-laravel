@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('reservas:expirar')->everyMinute();
-Schedule::command('prestamos:marcar-atrasados')->dailyAt('00:00');
-Schedule::command('db:respaldo --keep=7')->dailyAt('03:00');
+Artisan::command('inspire', function () {
+    $this->comment(Inspiring::quote());
+})->purpose('Display an inspiring quote');
+
+Schedule::command('reservas:expirar')->hourly()->withoutOverlapping();
+
+Schedule::command('db:respaldo --keep=7')->dailyAt('03:00')->withoutOverlapping();

@@ -12,11 +12,12 @@ class Socio extends Model
     use HasFactory;
 
     protected $table = 'socios';
+
     public $timestamps = false;
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     protected $fillable = [
@@ -61,7 +62,7 @@ class Socio extends Model
 
     public function scopeBuscarEmail($query, string $prefijo)
     {
-        return $query->where('email', 'like', $prefijo . '%');
+        return $query->where('email', 'like', $prefijo.'%');
     }
 
     public function getFullNameAttribute(): string

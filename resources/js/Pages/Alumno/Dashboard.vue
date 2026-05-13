@@ -5,9 +5,15 @@
     <div class="container page-content">
         <FlashMessage />
 
-        <div class="mb-4">
+        <div class="text-center mb-4">
+            <img
+                :src="$page.props.logo_url || '/img/logo.png'"
+                alt="Logo institucional"
+                style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--eliber-primary);background:#fff;"
+                class="mb-3"
+            >
             <h4 class="mb-0">Bienvenido, {{ auth.user.nombre }}</h4>
-            <small class="text-muted">Biblioteca E-liber</small>
+            <small class="text-muted">{{ $page.props.institucion_activa?.nombre ?? 'Biblioteca E-liber' }}</small>
         </div>
 
         <div class="row">

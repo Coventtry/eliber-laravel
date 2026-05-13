@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,6 +15,11 @@ class Faq extends Model
     protected function casts(): array
     {
         return ['activa' => 'boolean'];
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TenantScope);
     }
 
     public function institucion(): BelongsTo

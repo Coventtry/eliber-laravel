@@ -12,22 +12,23 @@ class Prestamo extends Model
     use HasFactory;
 
     protected $table = 'prestamos';
+
     public $timestamps = false;
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     protected $fillable = [
-        'socio_id', 'material_id', 'fecha_prestamo',
+        'socio_id', 'material_id', 'ejemplar_id', 'fecha_prestamo',
         'fecha_devolucion', 'estado', 'cantidad', 'institucion_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'fecha_prestamo'   => 'date',
+            'fecha_prestamo' => 'date',
             'fecha_devolucion' => 'date',
         ];
     }
@@ -40,6 +41,11 @@ class Prestamo extends Model
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class);
+    }
+
+    public function ejemplar(): BelongsTo
+    {
+        return $this->belongsTo(MaterialEjemplar::class, 'ejemplar_id');
     }
 
     public function scopeActivo($query)
@@ -70,10 +76,18 @@ class Prestamo extends Model
 
     public function getLinkWhatsappAttribute(): ?string
     {
-        if (!$this->socio) return null;
+        if (! $this->socio) {
+            return null;
+        }
         $telefono = preg_replace('/\D/', '', $this->socio->telefono ?? '');
-        if (empty($telefono)) return null;
+        if (empty($telefono)) {
+            return null;
+        }
+        if (! $this->fecha_devolucion) {
+            return null;
+        }
         $mensaje = urlencode("Hola {$this->socio->nombre}, recordamos que el préstamo de *{$this->material->titulo}* vence el {$this->fecha_devolucion->format('d/m/Y')}.");
+
         return "https://wa.me/54{$telefono}?text={$mensaje}";
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Reserva;
+use App\Services\ReservaService;
 use Illuminate\Console\Command;
 
 class ExpirarReservas extends Command
@@ -11,19 +11,10 @@ class ExpirarReservas extends Command
 
     protected $description = 'Expira reservas vencidas y libera stock reservado';
 
-    public function handle(): int
+    public function handle(ReservaService $reservaService): int
     {
-        $vencidas = Reserva::where('estado', 'pendiente')
-            ->where('fecha_vencimiento', '<', now())
-            ->get();
-
-        foreach ($vencidas as $reserva) {
-            $reserva->material->decrement('disponibilidad_reservada');
-            $reserva->update(['estado' => 'expirada']);
-            $this->info("Reserva #{$reserva->id} expirada");
-        }
-
-        $this->info("{$vencidas->count()} reservas expiradas");
+        $count = $reservaService->expirarReservasVencidas();
+        $this->info("{$count} reservas expiradas");
 
         return Command::SUCCESS;
     }

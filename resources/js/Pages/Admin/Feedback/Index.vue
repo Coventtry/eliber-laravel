@@ -75,15 +75,23 @@
                         <span
                             v-for="tag in card.tags"
                             :key="tag"
-                            class="badge"
-                            style="background:#eef2ff;color:#4f46e5;font-size:.65rem;font-weight:500;"
+                            class="badge kanban-tag"
                         >{{ tag }}</span>
                     </div>
 
                     <div class="d-flex align-items-center justify-content-between">
-                        <span class="small text-muted" style="font-size:.72rem;">
-                            {{ card.creado_por?.nombre ?? '—' }}
-                        </span>
+                        <div>
+                            <span class="small text-muted" style="font-size:.72rem;">
+                                {{ card.creado_por?.nombre ?? '—' }}
+                            </span>
+                            <span
+                                v-if="card.creado_por?.institucion && !card.creado_por?.roles?.includes('admin')"
+                                class="d-block text-muted"
+                                style="font-size:.68rem;"
+                            >
+                                <i class="bi bi-building mr-1"></i>{{ card.creado_por.institucion }}
+                            </span>
+                        </div>
                         <span class="small text-muted" style="font-size:.7rem;">{{ card.created_at }}</span>
                     </div>
 
@@ -387,15 +395,26 @@ function ejecutarEliminar() {
     padding: 1rem 0;
 }
 
-@media (max-width: 767.98px) {
-    .kanban-board {
-        flex-direction: column;
-        overflow-x: visible;
-        gap: .75rem;
-    }
-    .kanban-column {
-        min-width: unset;
-        width: 100%;
-    }
+.kanban-tag {
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: .65rem;
+    font-weight: 500;
+}
+
+/* Modales */
+.modal-backdrop-custom {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.modal-dialog-custom {
+    width: 100%;
+    max-width: 560px;
 }
 </style>

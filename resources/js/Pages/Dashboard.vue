@@ -4,7 +4,12 @@
 
     <div class="hero-section text-center" style="background: linear-gradient(rgba(27, 94, 32, 0.85), rgba(27, 94, 32, 0.85)), url('/img/menu_bibliotecario.jpg') center/cover no-repeat;">
         <div class="container">
-            <img src="/img/logo.png" alt="E-liber" height="120" class="mb-3">
+            <img
+                :src="$page.props.logo_url || '/img/logo.png'"
+                alt="Logo institucional"
+                class="mb-3"
+                style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.8);background:#fff;"
+            >
             <h2 class="font-weight-bold">Bienvenido, {{ $page.props.auth.user.nombre }}</h2>
             <p class="lead">Sistema de Gestión de Biblioteca Escolar</p>
         </div>

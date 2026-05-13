@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AlertaController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\MaterialController;
@@ -9,16 +8,18 @@ use App\Http\Controllers\Api\PrestamoController;
 use App\Http\Controllers\Api\ReservaController;
 use App\Http\Controllers\Api\SocioController;
 use App\Http\Controllers\Api\UsuarioController;
-use App\Http\Controllers\Api\MultaController;
+use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->name('api.v1.')->group(function () {
-    // Endpoints públicos
-    Route::get('materiales', [MaterialController::class, 'index'])->name('materiales.index');
-    Route::get('materiales/{material}', [MaterialController::class, 'show'])->name('materiales.show');
-    Route::get('noticias', [NoticiaController::class, 'index'])->name('noticias.index');
+Route::prefix('v1')->group(function () {
+    // Endpoints públicos (con throttle suave)
+    Route::middleware('throttle:30,1')->group(function () {
+        Route::get('materiales', [MaterialController::class, 'index']);
+        Route::get('materiales/{material}', [MaterialController::class, 'show']);
+        Route::get('noticias', [NoticiaController::class, 'index']);
+    });
 
-    // Endpoints autenticados (Sanctum)
-    Route::middleware('auth:sanctum')->group(function () {
+    // Endpoints autenticados (Sanctum) — throttle más permisivo
+    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Materiales
         Route::post('materiales', [MaterialController::class, 'store'])->name('materiales.store');
         Route::put('materiales/{material}', [MaterialController::class, 'update'])->name('materiales.update');

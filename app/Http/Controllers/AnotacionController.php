@@ -14,10 +14,10 @@ class AnotacionController extends Controller
     {
         $this->authorize('viewAny', Anotacion::class);
         return Inertia::render('Anotaciones/Index', [
-            'anotaciones' => Anotacion::orderByDesc('fecha')->paginate(20)->through(fn($a) => [
-                'id'        => $a->id,
+            'anotaciones' => Anotacion::orderByDesc('fecha')->paginate(20)->through(fn ($a) => [
+                'id' => $a->id,
                 'anotacion' => $a->anotacion,
-                'fecha'     => $a->fecha?->format('d/m/Y H:i'),
+                'fecha' => $a->fecha?->format('d/m/Y H:i'),
             ]),
         ]);
     }
@@ -29,11 +29,11 @@ class AnotacionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('create', \App\Models\Anotacion::class);
+        $this->authorize('create', Anotacion::class);
         $request->validate(['anotacion' => 'required|string|max:2000']);
         Anotacion::create([
-            'anotacion'      => $request->anotacion,
-            'fecha'          => now(),
+            'anotacion' => $request->anotacion,
+            'fecha' => now(),
             'institucion_id' => $request->user()->institucion_id,
         ]);
 

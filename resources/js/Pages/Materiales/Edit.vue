@@ -6,13 +6,19 @@
         <div class="main-container" style="max-width:760px;">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="mb-0"><i class="bi bi-pencil-square mr-2"></i>Editar material</h3>
-                <Link v-if="qrUrl" :href="route('materiales.qr', material.id)" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-qr-code mr-1"></i>Ver QR
-                </Link>
+                <div>
+                    <Link v-if="qrUrl" :href="route('materiales.qr', material.id)" class="btn btn-outline-secondary btn-sm mr-2">
+                        <i class="bi bi-qr-code mr-1"></i>Ver QR
+                    </Link>
+                    <button type="button" class="btn btn-outline-info btn-sm" @click="verEjemplares">
+                        <i class="bi bi-collection mr-1"></i>Ejemplares
+                    </button>
+                </div>
             </div>
             <FlashMessage />
 
-            <form @submit.prevent="enviar">
+            <div v-if="!material.id" class="alert alert-warning">Cargando datos del material…</div>
+            <form v-else @submit.prevent="enviar">
                 <div class="form-row">
                     <div class="form-group col-md-8">
                         <label>Título <span class="text-danger">*</span></label>
@@ -39,18 +45,33 @@
 
                 <div class="form-row">
                     <div class="form-group col-md-6">
-                        <label>Área <span class="text-danger">*</span></label>
+                        <label>Clasificación Dewey <span class="text-danger">*</span></label>
                         <select v-model.number="form.area_id" class="form-control">
-                            <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.nombre }}</option>
+                            <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.codigo_dewey }} — {{ a.nombre }}</option>
                         </select>
                     </div>
                     <div class="form-group col-md-3">
-                        <label>Categoría</label>
-                        <input v-model="form.categoria" type="text" class="form-control">
+                        <label>Categoría física</label>
+                        <select v-model="form.categoria" class="form-control">
+                            <option value="">— Seleccioná —</option>
+                            <option v-for="c in categorias" :key="c" :value="c">{{ c }}</option>
+                        </select>
                     </div>
                     <div class="form-group col-md-3">
                         <label>Disponibilidad</label>
                         <input v-model.number="form.disponibilidad" type="number" min="0" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Tipo de préstamo</label>
+                        <select v-model="form.tipo_prestamo" class="form-control">
+                            <option value="">— Sin especificar —</option>
+                            <option>Solo consulta</option>
+                            <option>Copia única</option>
+                            <option>Transitorio</option>
+                        </select>
                     </div>
                 </div>
 
@@ -59,14 +80,98 @@
                     <input type="text" class="form-control-plaintext font-weight-bold" :value="material.codigo" readonly>
                 </div>
 
+                <!-- Ubicación física -->
+                <fieldset class="border p-3 mb-3">
+                    <legend class="w-auto px-2 h6">Ubicación física (opcional)</legend>
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label>Pasillo</label>
+                            <input v-model="form.pasillo" type="text" class="form-control" maxlength="2" placeholder="A-Z">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Tipo</label>
+                            <select v-model="form.tipo_almacenamiento" class="form-control">
+                                <option value="E">Estante (E)</option>
+                                <option value="M">Mueble (M)</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Estante (1-30)</label>
+                            <input v-model.number="form.estante" type="number" min="1" max="30" class="form-control">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Nivel (1-6)</label>
+                            <input v-model.number="form.nivel" type="number" min="1" max="6" class="form-control">
+                        </div>
+                    </div>
+                    <div v-if="material.clasificacion_fisica" class="alert alert-light mb-0" style="font-size:.82rem;">
+                        <i class="bi bi-geo-alt-fill mr-1 text-warning"></i>
+                        Código actual: <strong>{{ material.clasificacion_fisica }}</strong>
+                        — Se recalcula automáticamente al guardar.
+                    </div>
+                </fieldset>
+
                 <div class="d-flex justify-content-between">
-                    <div>
+<div>
                         <Link :href="route('materiales.index')" class="btn btn-outline-secondary mr-2">Cancelar</Link>
                         <button type="button" class="btn btn-outline-danger" @click="eliminar">Eliminar</button>
                     </div>
                     <button type="submit" class="btn btn-success" :disabled="form.processing">Guardar cambios</button>
                 </div>
             </form>
+
+            <!-- Modal de ejemplares -->
+            <div v-if="ejemplaresModal" class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5);" @click.self="cerrarEjemplares">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Ejemplares — {{ props.material.titulo }}</h5>
+                            <button type="button" class="close" @click="cerrarEjemplares">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div v-if="ejemplaresLoading" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary"></div>
+                            </div>
+                            <div v-else-if="!ejemplaresModal.lista.length" class="text-muted text-center py-3">
+                                No hay ejemplares registrados.
+                            </div>
+                            <table v-else class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Estado</th>
+                                        <th>Notas</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="ej in ejemplaresModal.lista" :key="ej.id">
+                                        <td><code>{{ ej.codigo_ejemplar }}</code></td>
+                                        <td>
+                                            <span :class="claseEstadoEjemplar(ej.estado)">{{ ej.estado }}</span>
+                                            <span v-if="ej.prestamo_activo" class="ml-2 text-muted" style="font-size:.75rem;">
+                                                → {{ ej.prestamo_activo.socio?.apellido }}, {{ ej.prestamo_activo.socio?.nombre }}
+                                            </span>
+                                        </td>
+                                        <td style="max-width:120px;"><small class="text-muted">{{ ej.notas || '—' }}</small></td>
+                                        <td class="text-right">
+<button v-if="ej.estado === 'disponible'"
+                                                type="button" class="btn btn-outline-danger btn-sm py-0 px-1"
+                                                title="Dar de baja" @click="darBajaEjemplar(ej)">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div v-if="ejemplarError" class="alert alert-danger py-1 mt-2" style="font-size:.8rem;">{{ ejemplarError }}</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" @click="cerrarEjemplares">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -74,25 +179,43 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
+import axios from 'axios'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
 
 const props = defineProps({
-    material: { type: Object, required: true },
-    areas:    { type: Array, default: () => [] },
-    qrUrl:    { type: String, default: null },
+    material:   { type: Object, required: true },
+    areas:      { type: Array, default: () => [] },
+    categorias: { type: Array, default: () => [] },
+    qrUrl:      { type: String, default: null },
 })
 
+// Parsear clasificacion_fisica existente → ABREV-PASILLO-(TIPO)ESTANTE-NIVEL
+function parsearUbicacion(cf) {
+    if (!cf) return { pasillo: null, tipo: 'E', estante: null, nivel: null }
+    const m = cf.match(/^[^-]+-([^-]+)-\(([^)]+)\)(\d+)-(\d+)$/)
+    if (!m) return { pasillo: null, tipo: 'E', estante: null, nivel: null }
+    return { pasillo: m[1], tipo: m[2], estante: parseInt(m[3]), nivel: parseInt(m[4]) }
+}
+
+const ubic = parsearUbicacion(props.material.clasificacion_fisica)
+
 const form = useForm({
-    titulo: props.material.titulo,
-    autor: props.material.autor,
-    anio_publicacion: props.material.anio_publicacion,
-    area_id: props.material.area_id,
-    categoria: props.material.categoria,
-    disponibilidad: props.material.disponibilidad,
-    editorial: props.material.editorial,
+    titulo:               props.material.titulo          ?? '',
+    autor:                props.material.autor           ?? '',
+    anio_publicacion:     props.material.anio_publicacion,
+    area_id:              props.material.area_id,
+    categoria:            props.material.categoria       ?? '',
+    disponibilidad:       props.material.disponibilidad,
+    editorial:            props.material.editorial       ?? '',
+    tipo_prestamo:        props.material.tipo_prestamo   ?? '',
+    pasillo:              ubic.pasillo,
+    tipo_almacenamiento:  ubic.tipo,
+    estante:              ubic.estante,
+    nivel:                ubic.nivel,
 })
 
 function enviar() {
@@ -103,5 +226,47 @@ function eliminar() {
     if (confirm(`¿Eliminar "${props.material.titulo}"?`)) {
         router.delete(route('materiales.destroy', props.material.id))
     }
+}
+
+const ejemplaresModal   = ref(null)
+const ejemplaresLoading = ref(false)
+const ejemplarError = ref(null)
+
+async function verEjemplares() {
+    ejemplaresModal.value   = { lista: [] }
+    ejemplaresLoading.value  = true
+    ejemplarError.value      = null
+    try {
+        const { data } = await axios.get(route('materiales.ejemplares', props.material.id))
+        ejemplaresModal.value.lista = data
+    } catch {
+        ejemplarError.value = 'Error al cargar exemplares.'
+    } finally {
+        ejemplaresLoading.value = false
+    }
+}
+
+async function darBajaEjemplar(ej) {
+    if (! confirm(`¿Dar de baja ${ej.codigo_ejemplar}?`)) { return }
+    try {
+        await axios.patch(route('materiales.ejemplares.baja', { material: props.material.id, ejemplar: ej.id }))
+        await verEjemplares()
+        ejemplarError.value = null
+    } catch (e) {
+        ejemplarError.value = e.response?.data?.message ?? 'Error al dar de baja.'
+    }
+}
+
+function cerrarEjemplares() {
+    ejemplaresModal.value = null
+}
+
+function claseEstadoEjemplar(estado) {
+    return {
+        disponible: 'badge badge-success',
+        prestado:   'badge badge-warning',
+        reservado:  'badge badge-info',
+        baja:       'badge badge-secondary',
+    }[estado] ?? 'badge badge-secondary'
 }
 </script>

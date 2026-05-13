@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('areas')) {
+        if (! Schema::hasTable('areas')) {
             Schema::create('areas', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->string('codigo_dewey');
@@ -17,7 +17,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('bibliotecarios')) {
+        if (! Schema::hasTable('bibliotecarios')) {
             Schema::create('bibliotecarios', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->string('nombre');
@@ -30,7 +30,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('socios')) {
+        if (! Schema::hasTable('socios')) {
             Schema::create('socios', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->string('nombre');
@@ -44,7 +44,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('materiales')) {
+        if (! Schema::hasTable('materiales')) {
             Schema::create('materiales', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->string('titulo')->nullable();
@@ -59,7 +59,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('prestamos')) {
+        if (! Schema::hasTable('prestamos')) {
             Schema::create('prestamos', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->integer('socio_id');
@@ -71,7 +71,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('noticias')) {
+        if (! Schema::hasTable('noticias')) {
             Schema::create('noticias', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->string('titulo');
@@ -81,7 +81,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('anotaciones')) {
+        if (! Schema::hasTable('anotaciones')) {
             Schema::create('anotaciones', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->string('anotacion', 255);
@@ -89,7 +89,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('historial_socios')) {
+        if (! Schema::hasTable('historial_socios')) {
             Schema::create('historial_socios', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->integer('id_socio');
@@ -100,7 +100,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('notificaciones')) {
+        if (! Schema::hasTable('notificaciones')) {
             Schema::create('notificaciones', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->integer('prestamo_id');
@@ -112,7 +112,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('ubicaciones_fisicas')) {
+        if (! Schema::hasTable('ubicaciones_fisicas')) {
             Schema::create('ubicaciones_fisicas', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->integer('material_id');
@@ -125,7 +125,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('libros')) {
+        if (! Schema::hasTable('libros')) {
             Schema::create('libros', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->string('titulo')->nullable();
@@ -133,7 +133,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('prestamos_detalle')) {
+        if (! Schema::hasTable('prestamos_detalle')) {
             Schema::create('prestamos_detalle', function (Blueprint $table) {
                 $table->integer('id', true);
                 $table->integer('prestamo_id');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ReservaResource;
 use App\Models\Reserva;
 use App\Services\ReservaService;
 use Illuminate\Http\JsonResponse;
@@ -60,7 +61,7 @@ class ReservaController extends Controller
                 ->paginate(20);
         }
 
-        return response()->json($reservas);
+        return ReservaResource::collection($reservas);
     }
 
     #[OA\Post(
@@ -101,9 +102,9 @@ class ReservaController extends Controller
                 $request->material_id
             );
 
-            return response()->json($reserva, 201);
-        } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
+            return ReservaResource::make($reserva)->response()->setStatusCode(201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -126,12 +127,13 @@ class ReservaController extends Controller
         $reserva = Reserva::findOrFail($reserva);
         $user = Auth::user();
 
-        if (!$user->can('gestionar-prestamos') && $reserva->socio_id !== ($user->socio_id ?? 0)) {
+        if (! $user->can('gestionar-prestamos') && $reserva->socio_id !== ($user->socio_id ?? 0)) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
         try {
             $this->reservaService->cancelarReserva($reserva);
+
             return response()->json(['message' => 'Reserva cancelada']);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -178,6 +180,7 @@ class ReservaController extends Controller
 
         try {
             $prestamo = $this->reservaService->aprobarReserva($reserva, $dias);
+
             return response()->json([
                 'message' => 'Reserva aprobada y prestamo creado',
                 'prestamo_id' => $prestamo->id,
@@ -221,6 +224,7 @@ class ReservaController extends Controller
                 $reserva,
                 $request->motivo
             );
+
             return response()->json(['message' => 'Reserva rechazada']);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);

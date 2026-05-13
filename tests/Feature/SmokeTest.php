@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Material;
+use App\Models\MaterialEjemplar;
 use App\Models\Socio;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,14 +20,14 @@ class SmokeTest extends TestCase
         $institucion = $this->createInstitucion();
 
         User::create([
-            'name'           => 'Admin Test',
-            'nombre'         => 'Admin Test',
-            'email'          => 'admin@test.com',
-            'usuario'        => 'admin-test',
-            'password'       => 'secret123',
-            'picture'        => '',
+            'name' => 'Admin Test',
+            'nombre' => 'Admin Test',
+            'email' => 'admin@test.com',
+            'usuario' => 'admin-test',
+            'password' => 'secret123',
+            'picture' => '',
             'institucion_id' => $institucion->id,
-            'activo'         => true,
+            'activo' => true,
         ]);
 
         $response = $this->post('/login', [
@@ -130,6 +131,15 @@ class SmokeTest extends TestCase
             'institucion_id' => $user->institucion_id,
         ]);
 
+        for ($i = 1; $i <= 3; $i++) {
+            MaterialEjemplar::forceCreate([
+                'material_id' => $material->id,
+                'institucion_id' => $user->institucion_id,
+                'codigo_ejemplar' => '200-001-E'.str_pad($i, 2, '0', STR_PAD_LEFT),
+                'estado' => 'disponible',
+            ]);
+        }
+
         $response = $this->actingAs($user)->post('/prestamos', [
             'socio_id' => $socio->id,
             'material_id' => $material->id,
@@ -201,6 +211,15 @@ class SmokeTest extends TestCase
             'institucion_id' => $user->institucion_id,
         ]);
 
+        for ($i = 1; $i <= 2; $i++) {
+            MaterialEjemplar::forceCreate([
+                'material_id' => $material->id,
+                'institucion_id' => $user->institucion_id,
+                'codigo_ejemplar' => '200-002-E'.str_pad($i, 2, '0', STR_PAD_LEFT),
+                'estado' => 'disponible',
+            ]);
+        }
+
         $response = $this->actingAs($user, 'sanctum')->postJson('/api/v1/reservas', [
             'material_id' => $material->id,
             'socio_id' => $socio->id,
@@ -238,14 +257,14 @@ class SmokeTest extends TestCase
         ]);
 
         $reservaId = \DB::table('reservas')->insertGetId([
-            'material_id'    => $material->id,
-            'socio_id'       => $socio->id,
-            'estado'         => 'pendiente',
-            'fecha_reserva'  => now(),
+            'material_id' => $material->id,
+            'socio_id' => $socio->id,
+            'estado' => 'pendiente',
+            'fecha_reserva' => now(),
             'fecha_vencimiento' => now()->addDays(2),
             'institucion_id' => $user->institucion_id,
-            'created_at'     => now(),
-            'updated_at'     => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $response = $this->actingAs($user, 'sanctum')->patchJson("/api/v1/reservas/{$reservaId}/aprobar", [
@@ -263,9 +282,9 @@ class SmokeTest extends TestCase
             'estado' => 'activo',
             'institucion_id' => $user->institucion_id,
         ]);
+        // disponibilidad se gestiona via ExemplarService (no se decrementa en reserva, solo en prestamo real)
         $this->assertDatabaseHas('materiales', [
             'id' => $material->id,
-            'disponibilidad' => 1,
             'disponibilidad_reservada' => 0,
         ]);
     }
@@ -290,14 +309,14 @@ class SmokeTest extends TestCase
         ]);
 
         $reservaId = \DB::table('reservas')->insertGetId([
-            'material_id'    => $material->id,
-            'socio_id'       => $socio->id,
-            'estado'         => 'pendiente',
-            'fecha_reserva'  => now(),
+            'material_id' => $material->id,
+            'socio_id' => $socio->id,
+            'estado' => 'pendiente',
+            'fecha_reserva' => now(),
             'fecha_vencimiento' => now()->addDays(2),
             'institucion_id' => $user->institucion_id,
-            'created_at'     => now(),
-            'updated_at'     => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $response = $this->actingAs($user, 'sanctum')->patchJson("/api/v1/reservas/{$reservaId}/rechazar", [
@@ -585,6 +604,232 @@ class SmokeTest extends TestCase
         $this->actingAs($alumno)->get('/admin/dashboard')->assertStatus(403);
     }
 
+    public function test_cannot_baja_prestado_ejemplar(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Baja Test',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2020,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-007',
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 0,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-7',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $ejemplar = MaterialEjemplar::forceCreate([
+            'material_id' => $material->id,
+            'institucion_id' => $user->institucion_id,
+            'codigo_ejemplar' => '200-007-E01',
+            'estado' => 'prestado',
+        ]);
+
+        $prestamoId = \DB::table('prestamos')->insertGetId([
+            'socio_id' => $socio->id,
+            'material_id' => $material->id,
+            'ejemplar_id' => $ejemplar->id,
+            'fecha_prestamo' => now()->subDays(2)->toDateString(),
+            'fecha_devolucion' => now()->addDays(5)->toDateString(),
+            'estado' => 'activo',
+            'cantidad' => 1,
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $response = $this->actingAs($user)->patchJson(
+            "/materiales/{$material->id}/ejemplares/{$ejemplar->id}/baja"
+        );
+
+        $response->assertStatus(422);
+        $this->assertDatabaseHas('material_ejemplares', [
+            'id' => $ejemplar->id,
+            'estado' => 'prestado',
+        ]);
+    }
+
+    public function test_ejemplar_baja_removes_from_available(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Disponible Test',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2021,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-008',
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 0,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-8',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $ejemplar = MaterialEjemplar::forceCreate([
+            'material_id' => $material->id,
+            'institucion_id' => $user->institucion_id,
+            'codigo_ejemplar' => '200-008-E01',
+            'estado' => 'disponible',
+        ]);
+
+        $response = $this->actingAs($user)->patchJson(
+            "/materiales/{$material->id}/ejemplares/{$ejemplar->id}/baja"
+        );
+
+        $response->assertOk();
+        $this->assertDatabaseHas('material_ejemplares', [
+            'id' => $ejemplar->id,
+            'estado' => 'baja',
+        ]);
+        $this->assertDatabaseHas('materiales', [
+            'id' => $material->id,
+            'disponibilidad' => 0,
+        ]);
+    }
+
+    public function test_reserva_approval_transitions_ejemplar_to_prestado(): void
+    {
+        $user = $this->createBibliotecario();
+        $area = $this->createArea($user->institucion_id);
+        $socio = $this->createSocio($user->institucion_id);
+        $material = Material::forceCreate([
+            'titulo' => 'Libro Reserva Aprob Test',
+            'autor' => 'Autor Test',
+            'anio_publicacion' => 2022,
+            'area_id' => $area->id,
+            'categoria' => 'LIBRO',
+            'codigo' => '200-009',
+            'disponibilidad' => 1,
+            'disponibilidad_reservada' => 1,
+            'editorial' => 'Editorial Test',
+            'clasificacion_fisica' => 'MAT-A-(E)1-9',
+            'institucion_id' => $user->institucion_id,
+        ]);
+
+        $ejemplar = MaterialEjemplar::forceCreate([
+            'material_id' => $material->id,
+            'institucion_id' => $user->institucion_id,
+            'codigo_ejemplar' => '200-009-E01',
+            'estado' => 'reservado',
+        ]);
+
+        $reservaId = \DB::table('reservas')->insertGetId([
+            'material_id' => $material->id,
+            'ejemplar_id' => $ejemplar->id,
+            'socio_id' => $socio->id,
+            'estado' => 'pendiente',
+            'fecha_reserva' => now(),
+            'fecha_vencimiento' => now()->addDays(2),
+            'institucion_id' => $user->institucion_id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')->patchJson(
+            "/api/v1/reservas/{$reservaId}/aprobar",
+            ['dias' => 10]
+        );
+
+        $response->assertOk();
+        $this->assertDatabaseHas('material_ejemplares', [
+            'id' => $ejemplar->id,
+            'estado' => 'prestado',
+        ]);
+        $this->assertDatabaseHas('prestamos', [
+            'socio_id' => $socio->id,
+            'material_id' => $material->id,
+            'ejemplar_id' => $ejemplar->id,
+            'estado' => 'activo',
+        ]);
+        $this->assertDatabaseHas('reservas', [
+            'id' => $reservaId,
+            'estado' => 'aprobada',
+        ]);
+        $this->assertDatabaseHas('materiales', [
+            'id' => $material->id,
+            'disponibilidad_reservada' => 0,
+        ]);
+    }
+
+    private function createInstitucion(): Institucion
+    {
+        return Institucion::create([
+            'nombre' => 'Institucion Test',
+            'slug' => 'institucion-test',
+            'estado' => 'activa',
+        ]);
+    }
 
 
+        $user = User::create([
+            'name' => 'Bibliotecario Test',
+            'nombre' => 'Bibliotecario Test',
+            'email' => 'bibliotecario@test.com',
+            'usuario' => 'bibliotecario-test',
+            'password' => 'secret123',
+            'picture' => '',
+            'institucion_id' => $institucion->id,
+            'activo' => true,
+        ]);
+
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        foreach (['gestionar-socios', 'gestionar-materiales', 'gestionar-prestamos', 'gestionar-areas', 'gestionar-noticias', 'gestionar-anotaciones', 'gestionar-usuarios', 'ver-reportes'] as $p) {
+            Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
+        }
+        $adminRole->givePermissionTo(Permission::all());
+        $user->assignRole($adminRole);
+
+        return $user;
+    }
+
+    private function createArea(int $institucionId): Area
+    {
+        return Area::forceCreate([
+            'codigo_dewey' => '200',
+            'nombre' => 'Matematica',
+            'Abreviado' => 'MAT',
+            'institucion_id' => $institucionId,
+        ]);
+    }
+
+    private function createSocio(int $institucionId): Socio
+    {
+        return Socio::forceCreate([
+            'nombre' => 'Martin',
+            'apellido' => 'Perez',
+            'telefono' => '2454987654',
+            'direccion' => 'Calle 456',
+            'email' => 'martin.perez@test.com',
+            'anio' => 6,
+            'division' => 1,
+            'activo' => 1,
+            'institucion_id' => $institucionId,
+        ]);
+    }
+
+    private function createAlumno(): User
+    {
+        $institucion = $this->createInstitucion();
+
+        $user = User::create([
+            'name' => 'Alumno Test',
+            'nombre' => 'Alumno Test',
+            'email' => 'alumno@test.com',
+            'usuario' => 'alumno-test',
+            'password' => 'secret123',
+            'picture' => '',
+            'institucion_id' => $institucion->id,
+            'activo' => true,
+        ]);
+
+        $role = Role::firstOrCreate(['name' => 'alumno', 'guard_name' => 'web']);
+        $user->assignRole($role);
+
+        return $user;
+    }
 }

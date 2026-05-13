@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class PasswordResetController extends Controller
 {
@@ -12,26 +14,27 @@ class PasswordResetController extends Controller
         return inertia('Auth/ResetPassword');
     }
 
-    public function reset(Request $request)
+    public function reset(Request $request): RedirectResponse
     {
         $request->validate([
-            'usuario' => 'required|string|exists:users,usuario',
-            'password' => 'required|string|min:6|confirmed',
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+            'password_confirmation' => 'required',
         ], [
-            'usuario.exists' => 'El usuario no existe.',
-            'password.min' => 'La contraseña debe tener al menos 6 caracteres.',
+            'current_password.required' => 'Debés ingresar tu contraseña actual.',
+            'password.min' => 'La nueva contraseña debe tener al menos 8 caracteres.',
             'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
-        $user = User::where('usuario', $request->usuario)->first();
+        $user = $request->user();
 
-        if (!$user) {
-            return back()->withErrors(['usuario' => 'El usuario no existe.']);
+        if (! Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'La contraseña actual no es correcta.']);
         }
 
         $user->password = $request->password;
         $user->save();
 
-        return redirect()->route('login')->with('success', 'Contraseña restablecida correctamente. Podés iniciar sesión.');
+        return redirect()->route('perfil.edit')->with('success', 'Contraseña actualizada correctamente.');
     }
 }

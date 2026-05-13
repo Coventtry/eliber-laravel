@@ -26,15 +26,15 @@
                         <button v-for="s in sociosEncontrados" :key="s.id" type="button"
                                 class="list-group-item list-group-item-action"
                                 @click="seleccionarSocio(s)">
-                            <strong>{{ s.apellido }}, {{ s.nombre }}</strong>
-                            <span class="text-muted ml-2">{{ s.email }}</span>
-                            <small class="text-muted ml-2" v-if="s.anio">— {{ s.anio }}° {{ s.division }}</small>
+                            <strong>{{ s.apellido ? `${s.apellido}, ${s.nombre}` : s.nombre }}</strong>
+                            <span class="ml-2">{{ s.email }}</span>
+                            <small class="ml-2" v-if="s.anio">— {{ s.anio }}° {{ s.division }}</small>
                         </button>
                     </ul>
                     <div v-if="form.socio_id" class="alert alert-success mb-0 mt-2">
                         <i class="bi bi-person-check mr-1"></i>
-                        <strong>{{ socioSeleccionado?.apellido }}, {{ socioSeleccionado?.nombre }}</strong>
-                        <span class="text-muted ml-2">{{ socioSeleccionado?.email }}</span>
+                        <strong>{{ socioSeleccionado?.apellido ? `${socioSeleccionado.apellido}, ${socioSeleccionado.nombre}` : socioSeleccionado?.nombre }}</strong>
+                        <span class="ml-2">{{ socioSeleccionado?.email }}</span>
                     </div>
                 </div>
             </div>
@@ -70,6 +70,12 @@
                         <strong>{{ materialSeleccionado.titulo }}</strong>
                         <small class="ml-2">{{ materialSeleccionado.codigo }}</small>
                         <span class="badge badge-info ml-2">{{ materialSeleccionado.disponibilidad }} disponible{{ materialSeleccionado.disponibilidad !== 1 ? 's' : '' }}</span>
+                        <div v-if="ejemplaresDisponibles.length" class="mt-1" style="font-size:.78rem;">
+                            <span class="text-muted">Ejemplares a prestar:</span>
+                            <span v-for="(ej, i) in ejemplaresDisponibles" :key="ej.id" class="badge badge-secondary ml-1">
+                                {{ ej.codigo_ejemplar }}
+                            </span>
+                        </div>
                     </div>
                     <div class="invalid-feedback d-block" v-if="form.errors.material_id">{{ form.errors.material_id }}</div>
                 </div>
@@ -106,7 +112,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import axios from 'axios'
 import AppNavbar from '@/Components/AppNavbar.vue'
@@ -125,6 +131,7 @@ const socioSeleccionado       = ref(null)
 const terminoBusquedaMaterial = ref('')
 const materialesEncontrados   = ref([])
 const materialSeleccionado    = ref(null)
+const ejemplaresDisponibles   = ref([])
 
 const hoy      = new Date().toISOString().split('T')[0]
 const maxFecha = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]
@@ -139,6 +146,12 @@ const form = useForm({
 onMounted(() => {
     if (props.socioInicial) {
         seleccionarSocio(props.socioInicial)
+    }
+})
+
+watch(() => form.cantidad, () => {
+    if (form.material_id && materialSeleccionado.value) {
+        seleccionarMaterial(materialSeleccionado.value)
     }
 })
 
@@ -160,7 +173,7 @@ function seleccionarSocio(s) {
     socioSeleccionado.value       = s
     form.socio_id                 = s.id
     sociosEncontrados.value       = []
-    terminoBusquedaSocio.value    = `${s.apellido}, ${s.nombre}`
+    terminoBusquedaSocio.value    = s.apellido ? `${s.apellido}, ${s.nombre}` : s.nombre
 }
 
 function limpiarSocio() {
@@ -187,11 +200,22 @@ async function buscarMateriales() {
     }, 300)
 }
 
-function seleccionarMaterial(m) {
+async function seleccionarMaterial(m) {
     materialSeleccionado.value       = m
     form.material_id                 = m.id
     materialesEncontrados.value      = []
     terminoBusquedaMaterial.value    = m.titulo
+
+    if (form.cantidad > 0) {
+        try {
+            const { data } = await axios.get(route('api.materiales.ejemplares-disponibles', m.id), {
+                params: { cantidad: form.cantidad },
+            })
+            ejemplaresDisponibles.value = data
+        } catch {
+            ejemplaresDisponibles.value = []
+        }
+    }
 }
 
 function limpiarMaterial() {
@@ -199,6 +223,7 @@ function limpiarMaterial() {
     materialSeleccionado.value    = null
     terminoBusquedaMaterial.value = ''
     materialesEncontrados.value   = []
+    ejemplaresDisponibles.value   = []
 }
 
 function enviar() {

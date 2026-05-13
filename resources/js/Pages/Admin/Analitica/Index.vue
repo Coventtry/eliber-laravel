@@ -70,8 +70,8 @@
         <div class="col-md-6 mb-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <h6 class="font-weight-bold mb-3">Materiales por área</h6>
-                    <div v-if="porArea.length" class="chart-container">
+                    <h6 class="font-weight-bold mb-3">Materiales por categoría</h6>
+                    <div v-if="porArea.length" style="position:relative;height:260px;">
                         <Bar :data="areaData" :options="areaOptions" />
                     </div>
                     <div v-else class="text-center text-muted py-5">Sin datos</div>
@@ -209,7 +209,7 @@ const doughnutOptions = computed(() => ({
     plugins: { legend: { display: false } },
 }))
 
-// ── Gráfico: Materiales por área ──────────────────────────────────────────────
+// ── Gráfico: Materiales por categoría ──────────────────────────────────────────────
 const areaColors = [
     '#1a3a5c','#e8a020','#6f42c1','#20c997','#dc3545',
     '#fd7e14','#0dcaf0','#198754','#6610f2','#d63384',

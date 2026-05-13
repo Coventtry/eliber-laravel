@@ -50,8 +50,8 @@
                                  <span class="nav-user-role">Alumno</span>
                              </div>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right navbar-dropdown-menu">
-                             <h6 class="dropdown-header font-weight-bold" style="color:var(--eliber-primary);">{{ auth.user.usuario }}</h6>
+                        <div class="dropdown-menu dropdown-menu-right" style="border-radius:10px; border:none; box-shadow:0 8px 25px rgba(0,0,0,.15);">
+                            <h6 class="dropdown-header navbar-dropdown-user">{{ auth.user.usuario }}</h6>
                             <div class="dropdown-divider"></div>
                             <Link :href="route('perfil.edit')" class="dropdown-item">
                                 <i class="bi bi-person-gear mr-1"></i>Mi perfil

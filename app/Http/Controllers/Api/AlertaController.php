@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AlertaResource;
 use App\Models\Alerta;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -61,15 +62,12 @@ class AlertaController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
-        if (!$request->user('sanctum')->hasPermissionTo('gestionar-prestamos', 'web')) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
-        $alertas = Alerta::when($request->tipo, fn($q, $t) => $q->where('tipo', $t))
-            ->when($request->has('leida') && $request->leida !== '', fn($q) => $q->where('leida', $request->leida))
+        $alertas = Alerta::when($request->tipo, fn ($q, $t) => $q->where('tipo', $t))
+            ->when($request->has('leida') && $request->leida !== '', fn ($q) => $q->where('leida', $request->leida))
             ->orderByDesc('fecha_alerta')
             ->paginate(20);
 
-        return response()->json($alertas);
+        return AlertaResource::collection($alertas);
     }
 
     #[OA\Patch(

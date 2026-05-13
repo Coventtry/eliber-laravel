@@ -15,6 +15,31 @@
                 <span class="admin-brand-text ml-2">Panel Admin</span>
             </Link>
 
+            <!-- Selector de institución (solo admin, si hay más de una) -->
+            <div v-if="instituciones.length > 1" class="dropdown inst-selector mr-3">
+                <a class="nav-link dropdown-toggle d-flex align-items-center p-0 inst-toggle"
+                   data-toggle="dropdown" href="#" style="gap:.4rem;">
+                    <i class="bi bi-building" style="font-size:.85rem;"></i>
+                    <span class="inst-nombre">{{ institucionActiva?.nombre ?? '—' }}</span>
+                    <i class="bi bi-chevron-down" style="font-size:.55rem;"></i>
+                </a>
+                <div class="dropdown-menu admin-dropdown mt-2" style="min-width:220px;">
+                    <div class="px-3 py-2 border-bottom" style="font-size:.7rem;opacity:.6;text-transform:uppercase;letter-spacing:.06em;">
+                        Institución activa
+                    </div>
+                    <button
+                        v-for="inst in instituciones"
+                        :key="inst.id"
+                        class="dropdown-item admin-dropdown-item"
+                        :class="{ 'inst-activa': inst.id === institucionActiva?.id }"
+                        @click="cambiarInstitucion(inst.id)"
+                    >
+                        <i class="bi bi-check2 mr-1" :style="inst.id === institucionActiva?.id ? '' : 'visibility:hidden'"></i>
+                        {{ inst.nombre }}
+                    </button>
+                </div>
+            </div>
+
             <!-- Right controls -->
             <div class="d-flex align-items-center gap-3">
 
@@ -99,10 +124,11 @@ import { usePage, Link, router } from '@inertiajs/vue3'
 import FlashMessage from '@/Components/FlashMessage.vue'
 import { initDarkMode, useDarkMode } from '@/Composables/useDarkMode'
 
-const page        = usePage()
-const auth        = computed(() => page.props.auth)
-const sidebarOpen = ref(false)
-const cargando    = ref(false)
+const page              = usePage()
+const auth              = computed(() => page.props.auth)
+const instituciones     = computed(() => page.props.instituciones ?? [])
+const institucionActiva = computed(() => page.props.institucion_activa ?? null)
+const sidebarOpen       = ref(false)
 
 const { darkMode, toggleDark } = useDarkMode()
 
@@ -116,6 +142,10 @@ function logout() {
     router.post(route('logout'), {}, {
         onStart: () => { cargando.value = true },
     })
+}
+
+function cambiarInstitucion(id) {
+    router.post(route('admin.switch-institucion'), { institucion_id: id }, { preserveScroll: true })
 }
 
 function isActive(item) {
@@ -209,6 +239,21 @@ const menuItems = computed(() => [
     color: #fff;
     letter-spacing: -.01em;
 }
+
+/* Selector institución */
+.inst-toggle {
+    color: rgba(255,255,255,.8);
+    font-size: .82rem;
+    transition: color .15s;
+}
+.inst-toggle:hover { color: #fff; text-decoration: none; }
+.inst-nombre {
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.inst-activa { font-weight: 600; color: var(--item-active-color) !important; }
 
 /* Avatar */
 .nav-avatar {

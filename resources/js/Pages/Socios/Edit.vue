@@ -131,10 +131,7 @@ function enviar() {
 }
 
 function confirmarBaja() {
-    bajando.value = true
-    router.patch(route('socios.baja', props.socio.id), {}, {
-        onFinish: () => { bajando.value = false },
-    })
+    router.patch(route('socios.baja', props.socio.id))
 }
 
 function reactivar() {

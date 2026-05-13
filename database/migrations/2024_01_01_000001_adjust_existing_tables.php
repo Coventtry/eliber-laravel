@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -12,7 +12,7 @@ return new class extends Migration
         $driver = DB::connection()->getDriverName();
 
         if ($driver === 'mysql') {
-            DB::statement("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+            DB::statement('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
         }
 
         if (Schema::hasColumn('socios', 'activo')) {
@@ -42,14 +42,12 @@ return new class extends Migration
         if ($driver === 'mysql') {
             $col = DB::selectOne("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='prestamos' AND COLUMN_NAME='material_id'");
             if ($col && str_contains(strtolower($col->COLUMN_TYPE), 'unsigned')) {
-                DB::statement("SET FOREIGN_KEY_CHECKS=0");
-                DB::statement("ALTER TABLE prestamos MODIFY material_id INT NULL");
-                DB::statement("SET FOREIGN_KEY_CHECKS=1");
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+                DB::statement('ALTER TABLE prestamos MODIFY material_id INT NULL');
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
             }
         }
     }
 
-    public function down(): void
-    {
-    }
+    public function down(): void {}
 };

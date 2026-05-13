@@ -15,17 +15,17 @@ class AlertaController extends Controller
     {
         $this->authorize('viewAny', Alerta::class);
         $alertas = Alerta::with('prestamo')
-            ->when($request->tipo, fn($q, $t) => $q->where('tipo', $t))
-            ->when($request->has('leida') && $request->leida !== '', fn($q) => $q->where('leida', $request->leida))
+            ->when($request->tipo, fn ($q, $t) => $q->where('tipo', $t))
+            ->when($request->has('leida') && $request->leida !== '', fn ($q) => $q->where('leida', $request->leida))
             ->orderByDesc('fecha_alerta')
             ->paginate(20)
             ->withQueryString()
-            ->through(fn($a) => [
-                'id'          => $a->id,
-                'tipo'        => $a->tipo,
+            ->through(fn ($a) => [
+                'id' => $a->id,
+                'tipo' => $a->tipo,
                 'descripcion' => $a->descripcion,
                 'fecha_alerta' => $a->fecha_alerta->format('d/m/Y H:i'),
-                'leida'       => $a->leida,
+                'leida' => $a->leida,
                 'prestamo_id' => $a->prestamo_id,
             ]);
 
@@ -39,6 +39,7 @@ class AlertaController extends Controller
     {
         $this->authorize('update', Alerta::class);
         $alerta->update(['leida' => true]);
+
         return back()->with('success', 'Alerta marcada como leída.');
     }
 
@@ -46,19 +47,21 @@ class AlertaController extends Controller
     {
         $this->authorize('update', Alerta::class);
         Alerta::noLeidas()->update(['leida' => true]);
+
         return back()->with('success', 'Todas las alertas marcadas como leídas.');
     }
 
     public function bajaAlerta(Request $request, Alerta $alerta): RedirectResponse
     {
-        $this->authorize('baja', Alerta::class);
+        abort_if($alerta->institucion_id !== tenantId(), 403);
+
         $request->validate([
             'observaciones' => 'required|string|max:500',
         ]);
 
         $prestamo = $alerta->prestamo()->with('material')->first();
 
-        abort_if(!$prestamo || !$prestamo->material, 404, 'El préstamo o material no existe.');
+        abort_if(! $prestamo || ! $prestamo->material, 404, 'El préstamo o material no existe.');
 
         $material = $prestamo->material;
 
@@ -67,8 +70,8 @@ class AlertaController extends Controller
 
         // Registrar la anotación con el motivo
         Anotacion::create([
-            'anotacion'      => "Baja de material — {$material->titulo}: {$request->observaciones}",
-            'fecha'          => now(),
+            'anotacion' => "Baja de material — {$material->titulo}: {$request->observaciones}",
+            'fecha' => now(),
             'institucion_id' => auth()->user()->institucion_id,
         ]);
 

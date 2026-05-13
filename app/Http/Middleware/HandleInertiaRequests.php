@@ -5,9 +5,10 @@ namespace App\Http\Middleware;
 use App\Models\Alerta;
 use App\Models\Configuracion;
 use App\Models\FooterLink;
-use App\Models\Reserva;
+use App\Models\Institucion;
 use App\Services\PrestamoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -21,30 +22,50 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        $vencimientos    = 0;
+        $vencimientos = 0;
         $alertasNoLeidas = 0;
-        $solicitudesPendientes = 0;
-        $anuncio         = null;
-        $footerLinks     = [];
+        $anuncio = null;
+        $footerLinks = [];
+        $institucionActiva = null;
+        $instituciones = [];
+        $logoUrl = '';
         $user = $request->user();
 
         if ($user) {
-            $diasAlerta   = (int) Configuracion::get($user->institucion_id, 'dias_alerta_previa', 4);
+            $diasAlerta = (int) Configuracion::get(tenantId(), 'dias_alerta_previa', 4);
+            $logoUrl = Configuracion::get(tenantId(), 'logo_url', '');
             $vencimientos = app(PrestamoService::class)->obtenerVencimientosProximos($diasAlerta)->count();
             $alertasNoLeidas = Alerta::noLeidas()->count();
             $solicitudesPendientes = Reserva::where('estado', 'pendiente')->count();
 
-            $institucion = $user->institucion;
+            $institucion = $user->hasRole('admin')
+                ? Institucion::find(tenantId())
+                : $user->institucion;
+
             if ($institucion) {
+                $institucionActiva = [
+                    'id' => $institucion->id,
+                    'nombre' => $institucion->nombre,
+                    'slug' => $institucion->slug,
+                ];
                 if ($institucion->anuncio_activo && $institucion->anuncio_texto) {
                     $anuncio = [
-                        'texto'  => $institucion->anuncio_texto,
+                        'texto' => $institucion->anuncio_texto,
                         'estilo' => $institucion->anuncio_estilo ?? 'info',
                     ];
                 }
-                $footerLinks = FooterLink::where('institucion_id', $user->institucion_id)
-                    ->orderBy('orden')->orderBy('id')
-                    ->get(['id', 'label', 'url'])
+                $footerLinks = Cache::remember("footer_links_{$institucion->id}", 3600, function () use ($institucion) {
+                    return FooterLink::where('institucion_id', $institucion->id)
+                        ->orderBy('orden')->orderBy('id')
+                        ->get(['id', 'label', 'url'])
+                        ->toArray();
+                });
+            }
+
+            if ($user->hasRole('admin')) {
+                $instituciones = Institucion::where('estado', 'activa')
+                    ->orderBy('nombre')
+                    ->get(['id', 'nombre'])
                     ->toArray();
             }
         }
@@ -52,32 +73,36 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $user ? [
-                    'id'          => $user->id,
-                    'nombre'      => $user->nombre,
-                    'usuario'    => $user->usuario,
+                    'id' => $user->id,
+                    'nombre' => $user->nombre,
+                    'usuario' => $user->usuario,
                     'picture_url' => $user->picture_url ?? null,
                 ] : null,
                 'permisos' => $user ? $user->getAllPermissions()->pluck('name')->toArray() : [],
-                'roles'    => $user ? $user->getRoleNames()->toArray() : [],
+                'roles' => $user ? $user->getRoleNames()->toArray() : [],
                 'es_admin' => $user ? $user->hasRole('admin') : false,
             ],
             'menu' => $this->buildMenu($user),
             'flash' => [
                 'success' => session('success'),
-                'error'   => session('error'),
-                'info'    => session('info'),
+                'error' => session('error'),
+                'info' => session('info'),
             ],
-            'vencimientos_proximos'  => $vencimientos,
-            'alertas_no_leidas'      => $alertasNoLeidas,
-            'solicitudes_pendientes' => $solicitudesPendientes,
-            'anuncio'                => $anuncio,
-            'footer_links'           => $footerLinks,
+            'vencimientos_proximos' => $vencimientos,
+            'alertas_no_leidas' => $alertasNoLeidas,
+            'anuncio' => $anuncio,
+            'footer_links' => $footerLinks,
+            'institucion_activa' => $institucionActiva,
+            'instituciones' => $instituciones,
+            'logo_url' => $logoUrl,
         ]);
     }
 
     private function buildMenu($user): array
     {
-        if (!$user) return [];
+        if (! $user) {
+            return [];
+        }
 
         $items = [
             ['label' => 'Dashboard', 'route' => 'dashboard', 'permission' => null],
@@ -91,7 +116,7 @@ class HandleInertiaRequests extends Middleware
         ];
 
         return collect($items)
-            ->filter(fn($item) => $item['permission'] === null || $user->can($item['permission']))
+            ->filter(fn ($item) => $item['permission'] === null || $user->can($item['permission']))
             ->values()
             ->toArray();
     }

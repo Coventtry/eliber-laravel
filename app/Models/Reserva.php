@@ -15,6 +15,7 @@ class Reserva extends Model
 
     protected $fillable = [
         'material_id',
+        'ejemplar_id',
         'socio_id',
         'estado',
         'fecha_reserva',
@@ -24,7 +25,7 @@ class Reserva extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     protected function casts(): array
@@ -38,6 +39,11 @@ class Reserva extends Model
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class);
+    }
+
+    public function ejemplar(): BelongsTo
+    {
+        return $this->belongsTo(MaterialEjemplar::class, 'ejemplar_id');
     }
 
     public function socio(): BelongsTo

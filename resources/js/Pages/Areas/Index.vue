@@ -1,11 +1,11 @@
 <template>
-    <Head title="Áreas" />
+    <Head title="Categorías" />
     <AppNavbar />
 
     <div class="container page-content">
         <div class="main-container">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="mb-0"><i class="bi bi-tag mr-2"></i>Áreas</h3>
+                <h3 class="mb-0"><i class="bi bi-tag mr-2"></i>Categorías Dewey</h3>
                 <Link :href="route('areas.create')" class="btn btn-success">
                     <i class="bi bi-plus-lg mr-1"></i>Nueva
                 </Link>
@@ -47,7 +47,7 @@ import FlashMessage from '@/Components/FlashMessage.vue'
 defineProps({ areas: { type: Object, required: true } })
 
 function eliminar(area) {
-    if (confirm(`¿Eliminar el área "${area.nombre}"?`)) {
+    if (confirm(`¿Eliminar la categoría "${area.nombre}"?`)) {
         router.delete(route('areas.destroy', area.id))
     }
 }

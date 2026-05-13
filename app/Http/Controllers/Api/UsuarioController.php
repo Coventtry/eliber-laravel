@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -55,22 +56,14 @@ class UsuarioController extends Controller
 
         $usuarios = User::with('roles')
             ->where('institucion_id', auth()->user()->institucion_id)
-            ->when($request->search, fn($q, $s) =>
-                $q->where('nombre', 'like', "%{$s}%")
-                  ->orWhere('email', 'like', "%{$s}%")
-                  ->orWhere('usuario', 'like', "%{$s}%")
+            ->when($request->search, fn ($q, $s) => $q->where('nombre', 'like', "%{$s}%")
+                ->orWhere('email', 'like', "%{$s}%")
+                ->orWhere('usuario', 'like', "%{$s}%")
             )
             ->orderBy('nombre')
             ->paginate(20);
 
-        return response()->json($usuarios->through(fn($u) => [
-            'id'      => $u->id,
-            'nombre'  => $u->nombre,
-            'email'   => $u->email,
-            'usuario' => $u->usuario,
-            'activo'  => $u->activo,
-            'rol'     => $u->roles->first()?->name ?? 'sin rol',
-        ]));
+        return UserResource::collection($usuarios);
     }
 
     #[OA\Get(
@@ -92,13 +85,7 @@ class UsuarioController extends Controller
         $user->load('roles');
         $this->authorize('update', $user);
 
-        return response()->json([
-            'id'       => $user->id,
-            'nombre'   => $user->nombre,
-            'email'    => $user->email,
-            'usuario'  => $user->usuario,
-            'activo'   => $user->activo,
-            'rol'      => $user->roles->first()?->name ?? 'sin rol',
+        return UserResource::make($user)->additional([
             'permisos' => $user->getDirectPermissions()->pluck('name'),
         ]);
     }
@@ -134,22 +121,17 @@ class UsuarioController extends Controller
         $this->authorize('create', User::class);
 
         $user = User::create([
-            'name'           => $request->nombre,
-            'nombre'         => $request->nombre,
-            'email'          => $request->email,
-            'usuario'        => $request->usuario,
-            'password'       => $request->password,
+            'name' => $request->nombre,
+            'nombre' => $request->nombre,
+            'email' => $request->email,
+            'usuario' => $request->usuario,
+            'password' => $request->password,
             'institucion_id' => auth()->user()->institucion_id,
-            'activo'         => true,
+            'activo' => true,
         ]);
         $user->assignRole($request->rol ?? 'bibliotecario');
 
-        return response()->json([
-            'id'      => $user->id,
-            'nombre'  => $user->nombre,
-            'usuario' => $user->usuario,
-            'rol'     => $request->rol,
-        ], 201);
+        return UserResource::make($user)->response()->setStatusCode(201);
     }
 
     #[OA\Put(
@@ -192,7 +174,7 @@ class UsuarioController extends Controller
         }
         $user->update($data);
 
-        return response()->json(['id' => $user->id, 'nombre' => $user->nombre, 'usuario' => $user->usuario]);
+        return new UserResource($user);
     }
 
     #[OA\Delete(
@@ -251,12 +233,13 @@ class UsuarioController extends Controller
     )]
     public function updatePermisos(Request $request, User $user): JsonResponse
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+        $user = User::where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         abort_if($user->hasRole('admin'), 403, 'No se pueden editar los permisos de un administrador.');
 
         $request->validate([
-            'permisos'   => 'array',
-            'permisos.*' => 'string|in:' . implode(',', self::PERMISOS_ADMINISTRATIVOS),
+            'permisos' => 'array',
+            'permisos.*' => 'string|in:'.implode(',', self::PERMISOS_ADMINISTRATIVOS),
         ]);
 
         $user->syncPermissions($request->permisos ?? []);
@@ -281,10 +264,11 @@ class UsuarioController extends Controller
     )]
     public function toggleActivo(User $user): JsonResponse
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+        $user = User::where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         abort_if($user->id === auth()->id(), 403, 'No podés desactivarte a vos mismo.');
 
-        $user->update(['activo' => !$user->activo]);
+        $user->update(['activo' => ! $user->activo]);
 
         return response()->json(['activo' => $user->activo, 'message' => $user->activo ? 'Usuario activado.' : 'Usuario desactivado.']);
     }

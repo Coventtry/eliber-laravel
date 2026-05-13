@@ -13,11 +13,12 @@ class Anotacion extends Model
     use SoftDeletes;
 
     protected $table = 'anotaciones';
+
     public $timestamps = false;
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     protected $fillable = ['anotacion', 'fecha', 'institucion_id'];

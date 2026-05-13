@@ -1,9 +1,9 @@
 <template>
-    <Head title="Editar área" />
+    <Head title="Editar categoría" />
     <AppNavbar />
     <div class="container page-content">
-        <div class="main-container" style="max-width:560px;">
-            <h3 class="mb-4"><i class="bi bi-tag mr-2"></i>Editar área</h3>
+        <div class="main-container" style="max-width: 560px; margin: auto;">
+            <h3 class="mb-4"><i class="bi bi-tag mr-2"></i>Editar categoría</h3>
             <FlashMessage />
             <form @submit.prevent="submit">
                 <div class="form-group">

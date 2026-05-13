@@ -1,62 +1,70 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\PasswordResetController;
-use App\Http\Controllers\SocioController;
-use App\Http\Controllers\MaterialController;
-use App\Http\Controllers\AreaController;
-use App\Http\Controllers\PrestamoController;
-use App\Http\Controllers\NoticiaController;
-use App\Http\Controllers\AnotacionController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\LandingController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\ExportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\AlumnoController;
-use App\Http\Controllers\MultaController;
-use App\Http\Controllers\PerfilController;
-use App\Http\Controllers\FeedbackController;
-use App\Http\Controllers\ContenidoController;
 use App\Http\Controllers\AnaliticaController;
+use App\Http\Controllers\AnotacionController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\CategoriaFisicaController;
 use App\Http\Controllers\ConfiguracionController;
+use App\Http\Controllers\ContenidoController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\NoticiaController;
+use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\PrestamoController;
+use App\Http\Controllers\SocioController;
+use App\Http\Controllers\UserController;
+use App\Models\Faq;
 use Illuminate\Support\Facades\Route;
+
+// Ficha pública de material (accesible sin login — para QR)
+Route::get('/materiales/{id}/ficha', [MaterialController::class, 'fichaPublica'])->name('materiales.ficha');
 
 // Landing page - pública
 Route::get('/', [LandingController::class, '__invoke'])->name('landing');
-Route::get('/acerca', fn() => inertia('Acerca'))->name('acerca');
+Route::get('/acerca', fn () => inertia('Acerca'))->name('acerca');
 Route::get('/faqs', function () {
     // Muestra FAQs activas de la primera institución activa (público)
-    $faqs = \App\Models\Faq::where('activa', true)
+    $faqs = Faq::where('activa', true)
         ->orderBy('orden')->orderBy('id')
         ->get(['id', 'pregunta', 'respuesta']);
+
     return inertia('FAQs', ['faqs' => $faqs]);
 })->name('faqs');
 
 // Auth
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login')->middleware('guest');
-Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('guest');
-Route::post('/register', [RegisterController::class, 'store'])->name('register')->middleware('guest');
-
-// Password reset (público)
-Route::get('/reset-password', [PasswordResetController::class, 'showForm'])->name('password.reset');
-Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.reset.submit');
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware(['guest', 'throttle:10,1']);
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+Route::post('/register', [RegisterController::class, 'store'])->name('register')->middleware(['guest', 'throttle:3,1']);
 
 // Protected routes
 Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    // Password change (requiere auth + contraseña actual)
+    Route::get('/reset-password', [PasswordResetController::class, 'showForm'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.reset.submit')->middleware('throttle:5,1');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('feedback/nota', [FeedbackController::class, 'storeNota'])->name('feedback.nota');
 
     Route::resource('socios', SocioController::class);
     Route::patch('socios/{socio}/baja', [SocioController::class, 'baja'])->name('socios.baja');
     Route::patch('socios/{socio}/reactivar', [SocioController::class, 'reactivar'])->name('socios.reactivar');
 
-    Route::resource('materiales', MaterialController::class);
+    Route::resource('materiales', MaterialController::class)->parameters(['materiales' => 'material']);
     Route::get('materiales/{material}/qr', [MaterialController::class, 'qrCode'])->name('materiales.qr');
+    Route::get('materiales/{material}/ejemplares', [MaterialController::class, 'ejemplares'])->name('materiales.ejemplares');
+    Route::patch('materiales/{material}/ejemplares/{ejemplar}/baja', [MaterialController::class, 'bajaEjemplar'])->name('materiales.ejemplares.baja');
+    Route::get('api/materiales/ejemplares-disponibles', [MaterialController::class, 'ejemplaresDisponibles'])->name('api.materiales.ejemplares-disponibles');
 
     Route::resource('areas', AreaController::class);
+    Route::resource('categorias', CategoriaFisicaController::class)->except(['show']);
 
     Route::get('prestamos/solicitudes', [PrestamoController::class, 'solicitudes'])->name('prestamos.solicitudes');
     Route::patch('prestamos/solicitudes/{reserva}/aprobar', [PrestamoController::class, 'aprobarSolicitud'])->name('prestamos.solicitudes.aprobar');
@@ -71,7 +79,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('usuarios', UserController::class)
         ->parameters(['usuarios' => 'user'])
-        ->only(['index', 'create', 'store', 'edit', 'update']);
+        ->only(['index', 'edit', 'update']);
     Route::patch('usuarios/{user}/permisos', [UserController::class, 'updatePermisos'])->name('usuarios.permisos');
     Route::patch('usuarios/{user}/toggle-activo', [UserController::class, 'toggleActivo'])->name('usuarios.toggle-activo');
     Route::patch('usuarios/{user}/aprobar', [UserController::class, 'aprobar'])->name('usuarios.aprobar');
@@ -122,6 +130,9 @@ Route::middleware('auth')->group(function () {
         // Configuración
         Route::get('configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
         Route::put('configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
+
+        // Selector de institución
+        Route::post('switch-institucion', [AdminController::class, 'switchInstitucion'])->name('switch-institucion');
     });
 
     // Perfil (todos los roles)

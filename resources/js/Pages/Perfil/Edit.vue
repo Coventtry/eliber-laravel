@@ -46,12 +46,6 @@
                                        placeholder="tucorreo@ejemplo.com">
                             </div>
 
-                            <div class="form-group">
-                                <label class="font-weight-bold">Apellido</label>
-                                <input v-model="form.apellido" type="text" class="form-control"
-                                       placeholder="Tu apellido">
-                            </div>
-
                             <!-- Año y División (solo alumno, solo lectura) -->
                             <div v-if="es_alumno" class="form-row">
                                 <div class="form-group col-6">
@@ -141,7 +135,6 @@ const esAlumno = computed(() => page.props.auth?.roles?.includes('alumno') ?? fa
 
 const form = ref({
     email:    props.perfil.email    ?? '',
-    apellido: props.perfil.apellido ?? '',
     anio:     props.perfil.anio     ?? '',
     division: props.perfil.division ?? '',
 })
@@ -181,7 +174,6 @@ function guardar() {
     const data = new FormData()
     data.append('_method', 'PUT')
     if (form.value.email)    data.append('email',    form.value.email)
-    if (form.value.apellido) data.append('apellido', form.value.apellido)
     if (archivoAvatar.value) data.append('picture',  archivoAvatar.value)
     if (archivoBanner.value) data.append('wallpaper', archivoBanner.value)
 

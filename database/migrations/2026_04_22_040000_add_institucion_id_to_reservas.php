@@ -2,14 +2,14 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('reservas', 'institucion_id')) {
+        if (! Schema::hasColumn('reservas', 'institucion_id')) {
             Schema::table('reservas', function (Blueprint $table) {
                 $table->unsignedBigInteger('institucion_id')->nullable()->after('id');
             });
@@ -35,6 +35,7 @@ return new class extends Migration
     private function getDefaultInstitucionId(): int
     {
         $institucion = DB::table('instituciones')->first();
+
         return $institucion?->id ?? 1;
     }
 };

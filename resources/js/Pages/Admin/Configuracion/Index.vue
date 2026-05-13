@@ -65,7 +65,7 @@
                                                class="form-control" style="width:90px;">
                                         <span class="text-muted small">días</span>
                                     </div>
-                                    <small class="text-muted">Actualmente hardcodeado en 14. Este valor es referencial para futuras versiones.</small>
+                                    <small class="text-muted">Límite máximo que puede seleccionarse al crear un préstamo.</small>
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -104,11 +104,11 @@
                         </li>
                         <li class="mb-2">
                             <i class="bi bi-dot text-primary"></i>
-                            Los días de préstamo y alerta quedan guardados en la BD como referencia para futuras integraciones.
+                            Los días de préstamo se aplican como límite en la terminal de préstamos.
                         </li>
                         <li class="mb-2">
-                            <i class="bi bi-dot text-warning"></i>
-                            Los parámetros operacionales (días máximos en <code>PrestamoService</code>, días de alerta en <code>HandleInertiaRequests</code>) aún se leen desde código. Se conectarán en la siguiente versión.
+                            <i class="bi bi-dot text-primary"></i>
+                            Los días de alerta determinan con cuánta anticipación aparecen los avisos de vencimiento.
                         </li>
                         <li>
                             <i class="bi bi-dot text-primary"></i>

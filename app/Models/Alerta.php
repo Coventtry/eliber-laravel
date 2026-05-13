@@ -9,10 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Alerta extends Model
 {
-    use HasFactory;
-
-    public $timestamps = false;
-
     protected $fillable = [
         'institucion_id', 'prestamo_id', 'tipo', 'descripcion', 'fecha_alerta', 'leida',
     ];
@@ -21,13 +17,13 @@ class Alerta extends Model
     {
         return [
             'fecha_alerta' => 'datetime',
-            'leida'        => 'boolean',
+            'leida' => 'boolean',
         ];
     }
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     public function prestamo(): BelongsTo

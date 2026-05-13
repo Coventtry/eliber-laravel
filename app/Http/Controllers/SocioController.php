@@ -19,22 +19,22 @@ class SocioController extends Controller
     {
         $this->authorize('viewAny', Socio::class);
         $socios = Socio::query()
-            ->withCount(['prestamos as atrasados_count' => fn($q) => $q->where('estado', 'atrasado')])
-            ->when($request->busqueda, fn($q, $s) => $q->where(function ($q) use ($s) {
+            ->withCount(['prestamos as atrasados_count' => fn ($q) => $q->where('estado', 'atrasado')])
+            ->when($request->busqueda, fn ($q, $s) => $q->where(function ($q) use ($s) {
                 $q->where('nombre', 'like', "%{$s}%")
-                  ->orWhere('apellido', 'like', "%{$s}%")
-                  ->orWhere('email', 'like', "%{$s}%");
+                    ->orWhere('apellido', 'like', "%{$s}%")
+                    ->orWhere('email', 'like', "%{$s}%");
             }))
-            ->when($request->activo !== null && $request->activo !== '', fn($q) => $q->where('activo', $request->activo))
-            ->when($request->anio, fn($q, $a) => $q->where('anio', $a))
-            ->when($request->division, fn($q, $d) => $q->where('division', $d))
-            ->when($request->moroso, fn($q) => $q->whereHas('prestamos', fn($pq) => $pq->where('estado', 'atrasado')))
+            ->when($request->activo !== null && $request->activo !== '', fn ($q) => $q->where('activo', $request->activo))
+            ->when($request->anio, fn ($q, $a) => $q->where('anio', $a))
+            ->when($request->division, fn ($q, $d) => $q->where('division', $d))
+            ->when($request->moroso, fn ($q) => $q->whereHas('prestamos', fn ($pq) => $pq->where('estado', 'atrasado')))
             ->orderBy('apellido')
             ->paginate(20)
             ->withQueryString();
 
         return Inertia::render('Socios/Index', [
-            'socios'  => $socios,
+            'socios' => $socios,
             'filters' => $request->only(['busqueda', 'activo', 'anio', 'division', 'moroso']),
         ]);
     }
@@ -51,13 +51,14 @@ class SocioController extends Controller
             ...$request->validated(),
             'institucion_id' => $request->user()->institucion_id,
         ]);
+
         return redirect()->route('socios.index')->with('success', 'Socio registrado correctamente.');
     }
 
     public function edit(Socio $socio): Response
     {
         return Inertia::render('Socios/Edit', [
-            'socio'    => $socio,
+            'socio' => $socio,
             'historial' => $socio->historial()->orderByDesc('fecha')->get(),
         ]);
     }
@@ -66,6 +67,7 @@ class SocioController extends Controller
     {
         $this->authorize('update', $socio);
         $socio->update($request->validated());
+
         return redirect()->route('socios.index')->with('success', 'Socio actualizado.');
     }
 
@@ -73,6 +75,7 @@ class SocioController extends Controller
     {
         $this->authorize('delete', $socio);
         $socio->delete();
+
         return redirect()->route('socios.index')->with('success', 'Socio eliminado.');
     }
 
@@ -80,6 +83,7 @@ class SocioController extends Controller
     {
         $this->authorize('update', $socio);
         $this->socioService->darDeBaja($socio, $request->input('observaciones', ''));
+
         return redirect()->route('socios.index')->with('success', 'Socio dado de baja.');
     }
 
@@ -87,6 +91,7 @@ class SocioController extends Controller
     {
         $this->authorize('update', $socio);
         $this->socioService->reactivar($socio);
+
         return redirect()->route('socios.index')->with('success', 'Socio reactivado.');
     }
 
@@ -97,8 +102,8 @@ class SocioController extends Controller
         $socios = Socio::activos()
             ->where(function ($q) use ($termino) {
                 $q->where('nombre', 'like', "%{$termino}%")
-                  ->orWhere('apellido', 'like', "%{$termino}%")
-                  ->orWhere('email', 'like', "%{$termino}%");
+                    ->orWhere('apellido', 'like', "%{$termino}%")
+                    ->orWhere('email', 'like', "%{$termino}%");
             })
             ->select('id', 'nombre', 'apellido', 'email', 'anio', 'division')
             ->limit(10)
@@ -111,24 +116,24 @@ class SocioController extends Controller
     {
         $prestamos = $socio->prestamos()
             ->with('material:id,titulo,codigo')
-            ->orderByRaw("FIELD(estado, 'atrasado', 'activo', 'pendiente', 'devuelto')")
+            ->orderByRaw("CASE estado WHEN 'atrasado' THEN 1 WHEN 'activo' THEN 2 WHEN 'pendiente' THEN 3 WHEN 'devuelto' THEN 4 END")
             ->orderBy('fecha_devolucion')
             ->get(['id', 'material_id', 'fecha_prestamo', 'fecha_devolucion', 'estado', 'cantidad'])
-            ->map(fn($p) => [
-                'id'                   => $p->id,
-                'material'             => $p->material?->titulo,
-                'codigo'               => $p->material?->codigo,
-                'fecha_prestamo'       => $p->fecha_prestamo?->format('d/m/Y'),
-                'fecha_devolucion'     => $p->fecha_devolucion?->format('d/m/Y'),
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'material' => $p->material?->titulo,
+                'codigo' => $p->material?->codigo,
+                'fecha_prestamo' => $p->fecha_prestamo?->format('d/m/Y'),
+                'fecha_devolucion' => $p->fecha_devolucion?->format('d/m/Y'),
                 'fecha_devolucion_raw' => $p->fecha_devolucion?->format('Y-m-d'),
-                'estado'               => $p->estado,
-                'cantidad'             => $p->cantidad,
+                'estado' => $p->estado,
+                'cantidad' => $p->cantidad,
             ]);
 
         return response()->json([
             'circulacion' => $prestamos->whereIn('estado', ['activo', 'pendiente', 'atrasado'])->values(),
-            'historial'   => $prestamos->where('estado', 'devuelto')->take(10)->values(),
-            'atrasados'   => $prestamos->where('estado', 'atrasado')->count(),
+            'historial' => $prestamos->where('estado', 'devuelto')->take(10)->values(),
+            'atrasados' => $prestamos->where('estado', 'atrasado')->count(),
         ]);
     }
 }

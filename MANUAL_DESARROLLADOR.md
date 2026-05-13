@@ -26,15 +26,17 @@ Guía técnica para contribuir al proyecto. Para instalar el entorno de desarrol
 
 | Capa | Tecnología |
 |------|-----------|
-| Backend | Laravel 12, PHP 8.2 |
-| Frontend | Vue 3, Vite, Bootstrap 4.6.2 |
+| Backend | Laravel 12, PHP 8.2+ |
+| Frontend | Vue 3, Vite 5, Bootstrap 4.6.2 |
 | SPA bridge | Inertia.js v2 |
-| Auth | Laravel Session + Spatie Permission (roles/permisos) |
+| Auth | Laravel Session + Spatie Permission v6 (roles/permisos) |
 | API REST | Laravel Sanctum |
 | DB | MySQL 8+ / MariaDB 10.6+ |
 | Íconos | Bootstrap Icons |
 | QR | simplesoftwareio/simple-qrcode |
 | Rutas JS | Ziggy (genera `route()` en Vue) |
+| Testing | PHPUnit 11, SQLite en memoria |
+| Documentación API | darkaonline/l5-swagger |
 
 ---
 
@@ -42,36 +44,38 @@ Guía técnica para contribuir al proyecto. Para instalar el entorno de desarrol
 
 ```
 app/
+  Console/Commands/       # db:respaldo, expirar-reservas, migrar-ejemplares
   Http/
-    Controllers/          # Un controlador por módulo
+    Controllers/          # Un controlador por módulo (+ Api/)
     Middleware/           # HandleInertiaRequests (comparte props globales)
     Requests/             # Form Requests para validación
-  Models/                 # Eloquent models con TenantScope
+  Models/                 # 17 modelos Eloquent (ver tabla abajo)
   Services/               # Lógica de negocio (PrestamoService, etc.)
-  Policies/               # Autorización por modelo
+  Scopes/                 # TenantScope (filtra por institucion_id)
+  Policies/               # Autorización por modelo (Spatie)
 
 database/
-  migrations/             # Una migración por cambio de esquema
-  seeders/                # Datos iniciales (roles, institución, admin)
+  migrations/             # ~38 migraciones ordenadas
+  seeders/                # Roles, instituciones, admin, áreas, datos de prueba
 
 resources/
   js/
     Components/           # Componentes reutilizables (AppNavbar, FlashMessage…)
-    Composables/          # Composables Vue (useDarkMode)
+    Composables/          # Composables Vue (useDarkMode, useAlertSound)
     Layouts/              # AdminLayout
-    Pages/                # Vistas Inertia (mapeadas 1:1 a Inertia::render())
-      Admin/
-      Auth/
-      Materiales/
+    Pages/                # ~30 vistas Inertia (mapeadas 1:1 a Inertia::render())
+      Admin/              # Dashboard, Usuarios, Configuración, Contenido, Analítica, Feedback
+      Auth/               # Login, Register, ResetPassword
+      Alumno/             # Dashboard, Catálogo, Reservas
+      Materiales/         # Index, Create, Edit
       Prestamos/
       Socios/
-      Usuarios/
-      Perfil/
       …
 
 routes/
-  web.php                 # Rutas web + AJAX interno
-  api.php                 # API REST pública (v1) con Sanctum
+  web.php                 # Rutas web Inertia + AJAX interno
+  api.php                 # API REST pública /api/v1/ con Sanctum
+  console.php             # Tareas programadas (schedule)
 ```
 
 ---
@@ -121,15 +125,25 @@ protected static function booted(): void
 
 ### Modelos principales
 
-| Modelo | Tabla | Relaciones clave |
-|--------|-------|-----------------|
-| `User` | `users` | `belongsTo Institucion`, `belongsTo Socio` |
-| `Socio` | `socios` | `hasMany Prestamo`, `hasMany HistorialSocio` |
-| `Material` | `materiales` | `belongsTo Area`, `hasMany Prestamo` |
-| `Prestamo` | `prestamos` | `belongsTo Socio`, `belongsTo Material` |
-| `Reserva` | `reservas` | `belongsTo Socio`, `belongsTo Material` |
-| `Area` | `areas` | `hasMany Material` |
-| `Institucion` | `instituciones` | raíz tenant, SoftDeletes |
+| Modelo | Tabla | TenantScope | Relaciones clave |
+|--------|-------|-------------|-----------------|
+| `User` | `users` | No (campo `institucion_id`) | `belongsTo Institucion`, `belongsTo Socio` |
+| `Socio` | `socios` | Sí | `hasMany Prestamo`, `hasMany HistorialSocio` |
+| `Material` | `materiales` | Sí | `belongsTo Area`, `hasMany MaterialEjemplar` |
+| `MaterialEjemplar` | `material_ejemplares` | Sí | `belongsTo Material`, `hasMany Prestamo` |
+| `Prestamo` | `prestamos` | Sí | `belongsTo Socio`, `belongsTo Material`, `belongsTo MaterialEjemplar` |
+| `Reserva` | `reservas` | Sí | `belongsTo Socio`, `belongsTo Material`, `belongsTo MaterialEjemplar` |
+| `Area` | `areas` | No (global) | `hasMany Material` |
+| `Institucion` | `instituciones` | N/A (raíz tenant) | raíz tenant, SoftDeletes |
+| `Alerta` | `alertas` | Sí | `belongsTo Prestamo` |
+| `Anotacion` | `anotaciones` | Sí | SoftDeletes |
+| `Noticia` | `noticias` | Sí | SoftDeletes |
+| `CategoriaFisica` | `categorias_fisicas` | Sí | — |
+| `Faq` | `faqs` | Sí | `belongsTo Institucion` |
+| `FooterLink` | `footer_links` | No (filtro manual) | `belongsTo Institucion` |
+| `FeedbackCard` | `feedback_cards` | No (filtro manual) | Kanban interno |
+| `Configuracion` | `configuraciones` | No (usa `get`/`set` estáticos) | KV store por institución |
+| `HistorialSocio` | `historial_socios` | Sí | `belongsTo Socio` |
 
 ---
 
@@ -171,14 +185,14 @@ Disponibles en todos los componentes Vue via `usePage().props`:
 ```js
 auth.user        // usuario autenticado
 auth.roles       // array de roles
-auth.permisos    // array de permisos
-auth.es_admin    // boolean
+auth.permisos    // array de permisos (Spatie)
+auth.es_admin    // boolean shortcut
 menu             // links del menú según rol
-flash.success / flash.error / flash.info
-vencimientos_proximos  // count
-alertas_no_leidas      // count
-anuncio          // objeto {texto, estilo} o null
-footer_links     // array
+flash.success / flash.error / flash.info / flash.warning
+vencimientos_proximos  // conteo de préstamos próximos a vencer
+alertas_no_leidas      // conteo de alertas sin leer
+anuncio          // {texto, estilo, activo} o null, desde Institucion
+footer_links     // array de {label, url}, cacheado 1h
 ```
 
 ---
@@ -189,10 +203,10 @@ La lógica de negocio compleja vive en `app/Services/`, no en los controladores.
 
 | Servicio | Responsabilidad |
 |----------|----------------|
-| `PrestamoService` | Crear, devolver, extender préstamos. Valida: socio activo, < 3 préstamos, no duplicado, fecha dentro de 14 días. |
-| `ReservaService` | Crear, aprobar, rechazar, cancelar, expirar reservas. Gestiona `disponibilidad_reservada`. |
-| `SocioService` | `darDeBaja()` y `reactivar()`. Ambos logean en `HistorialSocio`. |
-| `MaterialService` | `generarCodigo()`, `generarClasificacionFisica()`, `generarQR()`. |
+| `PrestamoService` | `crearPrestamo()`, `devolverPrestamo()`, `extenderPrestamo()`, `marcarAtrasados()`, `obtenerVencimientosProximos()`. Valida: socio activo, máximo de préstamos simultáneos, fecha dentro del límite configurado. Bloquea ejemplares con `lockForUpdate()`. |
+| `ReservaService` | `crearReserva()`, `aprobarReserva()`, `rechazarReserva()`, `cancelarReserva()`, `expirarReservasVencidas()`. Gestiona `disponibilidad_reservada` y transición de ejemplares. |
+| `SocioService` | `darDeBaja()` y `reactivar()`. Ambos registran en `HistorialSocio`. |
+| `MaterialService` | `generarCodigo()`, `generarClasificacionFisica()`, `generarQR()`, `crearEjemplares()`, `ajustarEjemplares()`, `sincronizarDisponibilidad()`, `generarCodigoEjemplar()`. |
 
 **Regla**: los controladores llaman al servicio y devuelven la respuesta. La lógica transaccional (DB::transaction) va en el servicio.
 
@@ -442,6 +456,33 @@ class MultaTest extends TestCase
 
 ---
 
+## Caché
+
+El sistema usa el driver `file` por defecto (configurable a `redis` en producción).
+
+### Keys cacheadas (TTL: 1 hora)
+
+| Key | Propósito | Invalidación |
+|-----|-----------|-------------|
+| `faqs_{institucion_id}` | FAQs del panel de contenido | `Cache::forget()` en store/update/destroy de FAQ |
+| `footer_links_{institucion_id}` | Enlaces del pie de página | `Cache::forget()` en store/update/destroy de FooterLink |
+
+Se usan en `ContenidoController::index()` y `HandleInertiaRequests::share()`.
+
+---
+
+## Comandos de Artisan
+
+| Comando | Descripción | Programación |
+|---------|-------------|-------------|
+| `db:respaldo --keep=7` | Backup MySQL comprimido a `storage/app/backups/` | Diario 03:00 |
+| `reservas:expirar` | Expira reservas vencidas, libera ejemplares | Cada hora |
+| `ejemplares:migrar --dry-run` | Migración única: crea ejemplares para materiales existentes | Manual (one-shot) |
+
+Todos los comandos programados usan `->withoutOverlapping()`.
+
+---
+
 ## Variables de entorno clave
 
 | Variable | Uso |
@@ -451,30 +492,61 @@ class MultaTest extends TestCase
 | `DEFAULT_ADMIN_*` | Credenciales del admin inicial (seed) |
 | `DEFAULT_INSTITUCION_*` | Institución creada en el seed |
 | `SEED_SAMPLE_DATA=true` | Activa el seeder de datos de prueba |
+| `SESSION_ENCRYPT=true` | Encripta datos de sesión |
+| `SESSION_SECURE_COOKIE=true` | Cookie solo por HTTPS |
 | `L5_SWAGGER_GENERATE_ALWAYS` | Regenera docs Swagger en cada request (solo dev) |
 
 ---
 
 ## Despliegue en producción
 
+Ver `DEPLOY.md` para instrucciones completas paso a paso. Resumen de comandos:
+
 ```bash
-composer install --no-dev --optimize-autoloader
+composer install --optimize-autoloader --no-dev
 npm ci && npm run build
-php artisan migrate --force
 php artisan storage:link
-php artisan optimize:clear
-php artisan config:cache && php artisan route:cache && php artisan view:cache
-sudo chown -R www-data:www-data storage bootstrap/cache
-sudo systemctl reload php8.2-fpm
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan migrate --force
 ```
 
-Usar `nginx/eliber.conf` como plantilla de vhost. Variables críticas en `.env` de producción:
+**Post-deploy obligatorio:**
+- Iniciar queue worker: `php artisan queue:work --tries=3 --daemon`
+- Agregar cron: `* * * * * cd /ruta && php artisan schedule:run >> /dev/null 2>&1`
+- Verificar backup: `php artisan db:respaldo --keep=7`
 
-```env
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://eliber.tuinstitucion.edu.ar
+> En producción, las credenciales SMTP, DB y `APP_URL` deben configurarse en `.env` según el entorno real. Ver `DEPLOY.md` sección 3.
+
+---
+
+## Notas importantes
+
+### Configuracion model
+
+El modelo `Configuracion` **NO aplica TenantScope** a propósito. Usa métodos estáticos con `institucion_id` explícito:
+
+```php
+$valor = Configuracion::get(tenantId(), 'clave', $default);
+Configuracion::set(tenantId(), 'clave', $valor);
 ```
+
+### Nullsafe en fechas
+
+Columnas de fecha nullable (ej: `fecha_devolucion`) usan `?->format()` en lugar de condicionales:
+
+```php
+// Correcto
+$prestamo->fecha_devolucion?->format('d/m/Y');
+
+// Evitar
+$prestamo->fecha_devolucion ? $prestamo->fecha_devolucion->format('d/m/Y') : null;
+```
+
+### Login con `usuario` (no email)
+
+El campo de login es `usuario`, no `email`. Esto está configurado en `AuthenticatedSessionController` y en el seeder.
 
 ---
 
@@ -490,4 +562,7 @@ APP_URL=https://eliber.tuinstitucion.edu.ar
 | `routes/api.php` | API REST pública (Sanctum) |
 | `resources/js/Components/AppNavbar.vue` | Navbar principal con control de permisos |
 | `database/seeders/DatabaseSeeder.php` | Punto de entrada del seed |
-| `CLAUDE.md` | Instrucciones para el agente de IA (también útil como referencia técnica) |
+| `AGENTS.md` | Referencia operativa para desarrollo y deploy |
+| `CLAUDE.md` | Instrucciones para el agente de IA |
+| `DEPLOY.md` | Guía paso a paso para puesta en producción |
+| `AUDITORIA.md` | Auditoría completa de seguridad y calidad pre-deploy |

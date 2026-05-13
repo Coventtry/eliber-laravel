@@ -10,13 +10,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'usuario')) {
+            if (! Schema::hasColumn('users', 'usuario')) {
                 $table->string('usuario')->nullable()->unique()->after('nombre');
             }
-            if (!Schema::hasColumn('users', 'picture')) {
+            if (! Schema::hasColumn('users', 'picture')) {
                 $table->string('picture')->nullable()->after('usuario');
             }
-            if (!Schema::hasColumn('users', 'telefono')) {
+            if (! Schema::hasColumn('users', 'telefono')) {
                 $table->string('telefono')->nullable()->after('picture');
             }
         });
@@ -27,7 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(array_filter(['usuario', 'picture', 'telefono'], fn($col) => Schema::hasColumn('users', $col)));
+            $table->dropColumn(array_filter(['usuario', 'picture', 'telefono'], fn ($col) => Schema::hasColumn('users', $col)));
         });
     }
 
@@ -41,17 +41,17 @@ return new class extends Migration
             }
 
             $userId = DB::table('users')->insertGetId([
-                'name'           => $bib->nombre,
-                'nombre'         => $bib->nombre,
-                'email'          => $bib->email,
-                'usuario'        => $bib->usuario,
-                'password'       => $bib->password,
-                'picture'        => $bib->picture ?? '',
-                'telefono'       => $bib->telefono ?? null,
-                'activo'         => true,
+                'name' => $bib->nombre,
+                'nombre' => $bib->nombre,
+                'email' => $bib->email,
+                'usuario' => $bib->usuario,
+                'password' => $bib->password,
+                'picture' => $bib->picture ?? '',
+                'telefono' => $bib->telefono ?? null,
+                'activo' => true,
                 'institucion_id' => $bib->institucion_id,
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             // Migrate existing role assignments from Bibliotecario model type
@@ -62,9 +62,9 @@ return new class extends Migration
 
             foreach ($existingRoles as $assignment) {
                 DB::table('model_has_roles')->insertOrIgnore([
-                    'role_id'    => $assignment->role_id,
+                    'role_id' => $assignment->role_id,
                     'model_type' => 'App\\Models\\User',
-                    'model_id'   => $userId,
+                    'model_id' => $userId,
                 ]);
             }
 
@@ -77,9 +77,9 @@ return new class extends Migration
 
                 if ($adminRole) {
                     DB::table('model_has_roles')->insertOrIgnore([
-                        'role_id'    => $adminRole->id,
+                        'role_id' => $adminRole->id,
                         'model_type' => 'App\\Models\\User',
-                        'model_id'   => $userId,
+                        'model_id' => $userId,
                     ]);
                 }
             }

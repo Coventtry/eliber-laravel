@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NoticiaResource;
 use App\Models\Noticia;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class NoticiaController extends Controller
             ->orderBy('fecha', 'desc')
             ->paginate(10);
 
-        return response()->json($noticias);
+        return NoticiaResource::collection($noticias);
     }
 
     #[OA\Post(
@@ -77,9 +78,9 @@ class NoticiaController extends Controller
     {
         $this->authorize('create', Noticia::class);
         $request->validate([
-            'titulo'      => 'required|string|max:255',
+            'titulo' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
-            'imagen'      => 'nullable|image|max:2048',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
         $nombreImagen = null;
@@ -88,13 +89,13 @@ class NoticiaController extends Controller
         }
 
         $noticia = Noticia::create([
-            'titulo'         => $request->titulo,
-            'descripcion'    => $request->descripcion,
-            'imagen'         => $nombreImagen,
+            'titulo' => $request->titulo,
+            'descripcion' => $request->descripcion,
+            'imagen' => $nombreImagen,
             'institucion_id' => $request->user()->institucion_id,
         ]);
 
-        return response()->json($noticia, 201);
+        return NoticiaResource::make($noticia)->response()->setStatusCode(201);
     }
 
     #[OA\Put(
@@ -131,23 +132,23 @@ class NoticiaController extends Controller
         $noticia = Noticia::findOrFail($id);
         $this->authorize('update', $noticia);
         $request->validate([
-            'titulo'      => 'required|string|max:255',
+            'titulo' => 'required|string|max:255',
             'descripcion' => 'required|string|max:255',
-            'imagen'      => 'nullable|image|max:2048',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
         $data = $request->only('titulo', 'descripcion');
 
         if ($request->hasFile('imagen')) {
             if ($noticia->imagen) {
-                Storage::disk('public')->delete('noticias/' . $noticia->imagen);
+                Storage::disk('public')->delete('noticias/'.$noticia->imagen);
             }
             $data['imagen'] = basename($request->file('imagen')->store('noticias', 'public'));
         }
 
         $noticia->update($data);
 
-        return response()->json($noticia);
+        return new NoticiaResource($noticia);
     }
 
     #[OA\Delete(
@@ -171,7 +172,7 @@ class NoticiaController extends Controller
         $this->authorize('delete', $noticia);
 
         if ($noticia->imagen) {
-            Storage::disk('public')->delete('noticias/' . $noticia->imagen);
+            Storage::disk('public')->delete('noticias/'.$noticia->imagen);
         }
         $noticia->delete();
 

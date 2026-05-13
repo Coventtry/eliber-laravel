@@ -2,68 +2,101 @@
 
 namespace App\Console\Commands;
 
+use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Process;
 
 class DbRespaldo extends Command
 {
     protected $signature = 'db:respaldo
-        {--keep=7 : Días a conservar backups}';
+                            {--keep=7 : Número de backups a conservar}';
 
-    protected $description = 'Crea un respaldo MySQL y elimina los antiguos';
+    protected $description = 'Genera un respaldo MySQL de la base de datos';
 
     public function handle(): int
     {
-        $db     = config('database.connections.mysql.database');
-        $user   = config('database.connections.mysql.username');
-        $pass   = config('database.connections.mysql.password');
-        $host   = config('database.connections.mysql.host');
-        $port   = config('database.connections.mysql.port');
+        $connection = DB::connection();
+        $driver = $connection->getDriverName();
 
-        if (!$db) {
-            $this->error('La conexión MySQL no está configurada en .env');
-            return Command::FAILURE;
+        if ($driver !== 'mysql') {
+            $this->error('Este comando solo funciona con MySQL.');
+
+            return self::FAILURE;
         }
 
-        $disk = Storage::build(['driver' => 'local', 'root' => storage_path('app/backups')]);
-        if (!$disk->exists('')) {
-            $disk->makeDirectory('');
-        }
-
-        $filename = 'respaldo_' . now()->format('Y-m-d_H-i-s') . '.sql';
-        $path = storage_path("app/backups/{$filename}");
-
-        $cmd = sprintf(
-            'mysqldump --host=%s --port=%s --user=%s --password=%s --single-transaction --routines --triggers %s > %s',
-            escapeshellarg($host),
-            escapeshellarg($port),
-            escapeshellarg($user),
-            escapeshellarg($pass),
-            escapeshellarg($db),
-            escapeshellarg($path)
-        );
-
-        $output = null;
-        $resultCode = null;
-        exec($cmd, $output, $resultCode);
-
-        if ($resultCode !== 0) {
-            $this->error("Error al ejecutar mysqldump (código {$resultCode})");
-            return Command::FAILURE;
-        }
-
-        $size = filesize($path);
-        $this->info("Respaldo creado: {$filename} (" . number_format($size / 1024, 1) . " KB)");
+        $config = $connection->getConfig();
+        $host = $config['host'] ?? '127.0.0.1';
+        $port = $config['port'] ?? '3306';
+        $database = $config['database'];
+        $username = $config['username'];
+        $password = $config['password'] ?? '';
 
         $keep = max(1, (int) $this->option('keep'));
-        $files = collect($disk->files())->filter(fn($f) => str_starts_with($f, 'respaldo_'))->sort();
-        $toDelete = $files->slice(0, -$keep);
+        $timestamp = Carbon::now()->format('Ymd_His');
+        $filename = "respaldo_{$database}_{$timestamp}.sql.gz";
+        $path = 'backups/'.$filename;
 
-        foreach ($toDelete as $f) {
-            $disk->delete($f);
-            $this->line("Eliminado backup antiguo: {$f}");
+        Storage::makeDirectory('backups');
+
+        $command = [
+            'mysqldump',
+            '-h', $host,
+            '-P', (string) $port,
+            '-u', $username,
+            '--routines',
+            '--single-transaction',
+            '--opt',
+            $database,
+        ];
+
+        $this->info("Generando respaldo: {$filename}");
+
+        $process = new Process($command);
+        $process->setEnv(['MYSQL_PWD' => $password]);
+        $process->setTimeout(300);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            $this->error('Error al generar el respaldo: '.$process->getErrorOutput());
+
+            return self::FAILURE;
         }
 
-        return Command::SUCCESS;
+        Storage::put($path, gzencode($process->getOutput()));
+
+        $fullPath = Storage::path($path);
+        $size = round(filesize($fullPath) / 1024 / 1024, 2);
+        $this->info("Respaldo completado: {$filename} ({$size} MB)");
+
+        $this->pruneOldBackups($keep);
+
+        return self::SUCCESS;
+    }
+
+    private function pruneOldBackups(int $keep): void
+    {
+        $files = Storage::files('backups');
+        $backupFiles = [];
+
+        foreach ($files as $file) {
+            if (str_starts_with(basename($file), 'respaldo_')) {
+                $backupFiles[] = $file;
+            }
+        }
+
+        if (count($backupFiles) <= $keep) {
+            return;
+        }
+
+        sort($backupFiles);
+
+        $toDelete = array_slice($backupFiles, 0, count($backupFiles) - $keep);
+
+        foreach ($toDelete as $file) {
+            Storage::delete($file);
+            $this->line("Eliminado respaldo antiguo: {$file}");
+        }
     }
 }

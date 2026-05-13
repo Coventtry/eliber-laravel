@@ -26,20 +26,22 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th scope="col">Socio</th>
-                            <th scope="col">Material</th>
-                            <th scope="col" class="d-none d-md-table-cell">Préstamo</th>
-                            <th scope="col" class="d-none d-md-table-cell">Devolución</th>
-                            <th scope="col">Estado</th>
-                            <th scope="col"></th>
+                            <th>Socio</th>
+                            <th>Material</th>
+                            <th>Ejemplar</th>
+                            <th>Préstamo</th>
+                            <th>Devolución</th>
+                            <th>Estado</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="p in prestamos.data" :key="p.id">
                             <td>{{ p.socio?.apellido }}, {{ p.socio?.nombre }}</td>
                             <td>{{ p.material?.titulo }}</td>
-                            <td class="d-none d-md-table-cell">{{ formatearFecha(p.fecha_prestamo) }}</td>
-                            <td :class="[{ 'text-danger font-weight-bold': p.estado === 'atrasado' }, 'd-none d-md-table-cell']">
+                            <td><code v-if="p.ejemplar">{{ p.ejemplar.codigo_ejemplar }}</code><span v-else class="text-muted">—</span></td>
+                            <td>{{ formatearFecha(p.fecha_prestamo) }}</td>
+                            <td :class="{ 'text-danger font-weight-bold': p.estado === 'atrasado' }">
                                 {{ formatearFecha(p.fecha_devolucion) }}
                             </td>
                             <td>

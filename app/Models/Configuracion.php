@@ -28,6 +28,7 @@ class Configuracion extends Model
     public static function get(int $institucionId, string $clave, mixed $default = null): mixed
     {
         $row = static::where('institucion_id', $institucionId)->where('clave', $clave)->first();
+
         return $row ? $row->valor : $default;
     }
 

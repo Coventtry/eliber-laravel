@@ -28,13 +28,13 @@ class DefaultBibliotecarioSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['usuario' => $usuario],
             [
-                'name'           => $nombre,
-                'nombre'         => $nombre,
-                'email'          => $email,
-                'password'       => $password,
-                'picture'        => '',
+                'name' => $nombre,
+                'nombre' => $nombre,
+                'email' => $email,
+                'password' => $password,
+                'picture' => '',
                 'institucion_id' => $institucion->id,
-                'activo'         => true,
+                'activo' => true,
             ]
         );
 
@@ -42,7 +42,7 @@ class DefaultBibliotecarioSeeder extends Seeder
             $admin->forceFill(['institucion_id' => $institucion->id])->save();
         }
 
-        if (!$admin->hasRole('admin')) {
+        if (! $admin->hasRole('admin')) {
             $admin->assignRole('admin');
         }
     }

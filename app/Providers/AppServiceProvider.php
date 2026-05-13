@@ -2,20 +2,14 @@
 
 namespace App\Providers;
 
-use App\Models\Socio;
 use App\Models\Material;
 use App\Models\Prestamo;
-use App\Models\Multa;
-use App\Models\Alerta;
-use App\Models\Reserva;
-use App\Policies\SocioPolicy;
+use App\Models\Socio;
 use App\Policies\MaterialPolicy;
 use App\Policies\PrestamoPolicy;
-use App\Policies\MultaPolicy;
-use App\Policies\AlertaPolicy;
-use App\Policies\ReservaPolicy;
-use Illuminate\Support\ServiceProvider;
+use App\Policies\SocioPolicy;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {

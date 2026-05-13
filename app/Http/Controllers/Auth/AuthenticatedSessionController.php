@@ -24,21 +24,22 @@ class AuthenticatedSessionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'usuario'  => 'required|string',
+            'usuario' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        if (!Auth::attempt(['usuario' => $request->usuario, 'password' => $request->password], $request->boolean('remember'))) {
+        if (! Auth::attempt(['usuario' => $request->usuario, 'password' => $request->password], $request->boolean('remember'))) {
             return back()->withErrors(['usuario' => 'Las credenciales no son correctas.'])->onlyInput('usuario');
         }
 
         $usuario = Auth::user();
 
-        if (!$usuario->activo) {
+        if (! $usuario->activo) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             $revisor = $usuario->hasRole('bibliotecario') ? 'el administrador' : 'el bibliotecario';
+
             return back()
                 ->withErrors(['usuario' => "Tu cuenta está pendiente de aprobación por {$revisor}."])
                 ->onlyInput('usuario');
@@ -52,6 +53,7 @@ class AuthenticatedSessionController extends Controller
         if ($usuario->hasRole('alumno')) {
             return redirect()->intended(route('alumno.dashboard'));
         }
+
         return redirect()->intended(route('dashboard'));
     }
 

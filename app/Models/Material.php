@@ -13,17 +13,18 @@ class Material extends Model
     use HasFactory;
 
     protected $table = 'materiales';
+
     public $timestamps = false;
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
     }
 
     protected $fillable = [
         'titulo', 'autor', 'anio_publicacion', 'area_id',
-        'categoria', 'codigo', 'disponibilidad', 'disponibilidad_reservada',
-        'editorial', 'clasificacion_fisica', 'institucion_id',
+        'categoria', 'codigo', 'disponibilidad', 'editorial',
+        'clasificacion_fisica', 'tipo_prestamo', 'institucion_id',
     ];
 
     public function area(): BelongsTo
@@ -36,9 +37,9 @@ class Material extends Model
         return $this->hasMany(Prestamo::class);
     }
 
-    public function reservas(): HasMany
+    public function ejemplares(): HasMany
     {
-        return $this->hasMany(Reserva::class);
+        return $this->hasMany(MaterialEjemplar::class);
     }
 
     public function scopeDisponible($query)
