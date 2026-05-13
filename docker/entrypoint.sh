@@ -9,10 +9,19 @@ if [ "${1}" = "php-fpm" ]; then
     done
 
     echo "Ejecutando migraciones..."
-    php artisan migrate --force
+    if ! php artisan migrate --force 2>&1; then
+        echo "WARN: migrate falló — verificando si la app puede continuar..."
+        php artisan migrate:status 2>&1 || true
+    fi
+
+    echo "Generando APP_KEY si falta..."
+    php artisan key:generate --no-interaction --force 2>/dev/null || true
 
     echo "Vinculando storage..."
     php artisan storage:link --force 2>/dev/null || true
+
+    echo "Sembrando datos iniciales..."
+    php artisan db:seed --class=RolesAndPermissionsSeeder --force 2>/dev/null || true
 
     echo "Cacheando configuración..."
     php artisan config:cache
