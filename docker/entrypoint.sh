@@ -14,9 +14,6 @@ if [ "${1}" = "php-fpm" ]; then
         php artisan migrate:status 2>&1 || true
     fi
 
-    echo "Generando APP_KEY si falta..."
-    php artisan key:generate --no-interaction --force 2>/dev/null || true
-
     echo "Vinculando storage..."
     php artisan storage:link --force 2>/dev/null || true
 
