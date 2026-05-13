@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AlertaController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\MaterialController;
+use App\Http\Controllers\Api\MultaController;
 use App\Http\Controllers\Api\NoticiaController;
 use App\Http\Controllers\Api\PrestamoController;
 use App\Http\Controllers\Api\ReservaController;
@@ -10,7 +11,7 @@ use App\Http\Controllers\Api\SocioController;
 use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->name('api.v1.')->group(function () {
     // Endpoints públicos (con throttle suave)
     Route::middleware('throttle:30,1')->group(function () {
         Route::get('materiales', [MaterialController::class, 'index']);
