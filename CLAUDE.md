@@ -53,7 +53,7 @@ Use `nginx/eliber.conf` as the vhost template.
 
 ### Authentication & Roles
 
-**Primary auth model is `User`** (not `Bibliotecario` — that is a legacy model for the old Bibliotecario-only workflow). `User` uses `Spatie\Permission\Traits\HasRoles` with three roles:
+**Primary auth model is `User`**. `User` uses `Spatie\Permission\Traits\HasRoles` with three roles:
 
 - `admin` — superuser; can switch between institutions via session (`admin_institucion_id`); access to `/admin/*`
 - `bibliotecario` — library staff; manages socios, materiales, préstamos; requires approval (`activo = true`)
@@ -106,7 +106,7 @@ All web routes are in `routes/web.php`. The REST API is in `routes/api.php` unde
 
 ### Authentication & Authorization
 
-The auth user model is `App\Models\User` (not `Bibliotecario` — that model is legacy/deprecated). Login uses the `usuario` field (not `email`). Users have an `activo` boolean; inactive accounts are rejected at login.
+The auth user model is `App\Models\User`. Login uses the `usuario` field (not `email`). Users have an `activo` boolean; inactive accounts are rejected at login.
 
 Post-login redirect is role-based: `admin` → `admin.dashboard`, `alumno` → `alumno.dashboard`, others → `dashboard`.
 
@@ -136,7 +136,7 @@ When adding new models or queries, always register `TenantScope` in `booted()` a
 
 ### Core Models & Relationships
 
-**User** — primary auth user (`bibliotecarios` table via `User` model, uses `HasRoles`); fields: nombre, apellido, email, usuario, password, picture, wallpaper, anio, division, activo, institucion_id, socio_id
+**User** — primary auth user (`users` table, uses `HasRoles`); fields: nombre, apellido, email, usuario, password, picture, wallpaper, anio, division, activo, institucion_id, socio_id
 
 **Socio** (Member) — `prestamos()`, `historial()`; scopes: `activos()`, `buscarEmail()`; `full_name` attr; fields: nombre, apellido, telefono, direccion, email, anio, division, activo, institucion_id
 
@@ -152,27 +152,31 @@ When adding new models or queries, always register `TenantScope` in `booted()` a
 
 **Configuracion** — per-institution key-value settings; no TenantScope (uses explicit `institucion_id` in queries); use `Configuracion::get()` / `::set()` everywhere
 
-**Supporting**: Bibliotecario (legacy auth model — do not use for new features), HistorialSocio, Alerta, Noticia, Anotacion, Notificacion, UbicacionFisica, PrestamoDetalle, CategoriaFisica, Faq, FeedbackCard, FooterLink
+**Supporting**: HistorialSocio, Alerta, Noticia, Anotacion, MaterialEjemplar, Multa, Notificacion, UbicacionFisica, PrestamoDetalle, CategoriaFisica, Faq, FeedbackCard, FooterLink
 
 ### Service Layer
 
-**PrestamoService** — Loan lifecycle (transactional)
-- `crearPrestamo(socioId, materialId, cantidad, fechaDevolucion)` — validates: member active, < 3 active loans, no duplicate, date within 14 days; decrements stock
-- `devolverPrestamo(Prestamo)` — increments stock, marks devuelto
-- `extenderPrestamo(Prestamo, dias)` — extends due date (1–30 days)
-- `marcarAtrasados()`, `obtenerVencimientosProximos(dias)`
+**PrestamoService** — Loan lifecycle (fully transactional, race-condition safe)
+- `crearPrestamo(socioId, materialId, cantidad, fechaDevolucion)` — validates: member active, < 3 active loans, no duplicate, date within configured days; pre-flight checks outside transaction for UX, critical checks re-run inside with `lockForUpdate`; decrements stock via `MaterialEjemplar`
+- `devolverPrestamo(Prestamo)` — increments stock, marks devuelto, clears related alerts
+- `extenderPrestamo(Prestamo, dias)` — extends due date (1–30 days), registers alert
+- `marcarAtrasados()` — transaction + `lockForUpdate`; sends `PrestamoVencido` notification to linked user; generates multa if `monto_multa_por_dia > 0`
+- `obtenerVencimientosProximos(dias)` — sends `PrestamoProximoVencer` notification to linked user
 
-**MaterialService** — QR + code generation
-- `generarCodigo(Area)` → `{codigo_dewey}-{seq:3digits}` (e.g. `1300-002`)
+**MaterialService** — QR + code + exemplar management
+- `generarCodigo(Area)` → `{codigo_dewey}-{seq:3digits}`
 - `generarClasificacionFisica(Area, pasillo, tipo, estante, nivel)` → `{AREA_ABREV}-{PASILLO}-({TIPO}){ESTANTE}-{NIVEL}`
-- `generarQR(Material)` → PNG stored at `public/qrcodes/QR_{id}.png`
+- `generarQR(Material)` → PNG at `public/qrcodes/QR_{id}.png`
+- `crearEjemplares(Material, cantidad)` — creates `MaterialEjemplar` records on material creation
+- `ajustarEjemplares(Material, nuevaCantidad)` — adds or soft-deletes exemplars on stock update
 
 **SocioService** — `darDeBaja(Socio, observaciones)` and `reactivar(Socio)` — both log to `HistorialSocio`
 
-**ReservaService** — Reservation lifecycle (transactional)
-- `crearReserva(socioId, materialId)` — checks real stock (`disponibilidad - disponibilidad_reservada`), increments `disponibilidad_reservada`
-- `aprobarReserva(Reserva, dias)` — creates Prestamo, decrements both `disponibilidad_reservada` and `disponibilidad`
-- `rechazarReserva(Reserva)`, `cancelarReserva(Reserva)`, `expirarReservasVencidas()`
+**ReservaService** — Reservation lifecycle (fully transactional, race-condition safe)
+- `crearReserva(socioId, materialId)` — duplicate check and exemplar lock all inside `DB::transaction` with `lockForUpdate`; increments `disponibilidad_reservada`; creates `solicitud_reserva` alert
+- `aprobarReserva(Reserva, dias)` — creates Prestamo, decrements `disponibilidad_reservada` and `disponibilidad`, sends `ReservaAprobada` notification
+- `rechazarReserva(Reserva)`, `cancelarReserva(Reserva)` — restore exemplar estado
+- `expirarReservasVencidas()` — transaction + `lockForUpdate`; run by scheduler hourly
 
 ### Inertia Shared Props
 
@@ -201,6 +205,29 @@ Components live in `resources/js/Pages/` (version-controlled). Inertia render pa
 
 Always run `php artisan storage:link` after deployment.
 
+### Concurrency & Race Conditions
+
+All stock-mutating operations use `DB::transaction()` + `lockForUpdate()`. The pattern is:
+
+1. **Pre-flight checks** outside the transaction (fast UX feedback)
+2. **Atomic re-checks** with `lockForUpdate` inside the transaction (actual safety)
+
+Critical operations and their protection:
+- `crearPrestamo` — locks `Material` + `MaterialEjemplar` rows; re-checks limit and duplicate inside transaction
+- `crearReserva` — duplicate check, exemplar selection, and `disponibilidad_reservada` increment all inside one transaction with locks
+- `expirarReservasVencidas` — `lockForUpdate` on Reserva + MaterialEjemplar rows to prevent double-decrement from concurrent scheduler runs
+- `marcarAtrasados` — already protected with transaction + `lockForUpdate`
+
+Do not add state-changing operations outside `DB::transaction()`.
+
+### API Controllers
+
+All `GET /api/v1/*` collection endpoints return paginated `JsonResource::collection()->response()`. Single-resource endpoints return `(new XxxResource($model))->response()`. All must declare `JsonResponse` return type and call `->response()` — PHP 8.2 enforces this strictly.
+
+The REST API under `/api/v1/` covers: socios, materiales, areas, noticias, prestamos, reservas, multas, alertas, usuarios. Full OpenAPI annotations via `zircote/swagger-php`.
+
 ### Database Safety
 
 Migrations use `Schema::table()` (not `Schema::create()`), preserving existing data. Tests use SQLite in-memory (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`) with `RefreshDatabase`.
+
+The `MaterialEjemplar` table (individual physical copies) is the source of truth for stock. `Material.disponibilidad` is a denormalized counter kept in sync. Always create `MaterialEjemplar` records when adding test materials that go through the loan/reservation service.
