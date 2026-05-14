@@ -28,6 +28,8 @@ class PrestamoService
         $material = Material::findOrFail($materialId);
 
         $this->validarCreacion($socio, $material, $cantidad, $fechaDevolucion);
+        $this->validarFechaDevolucion($socio, $fechaDevolucion);
+        $this->validarLimiteActivos($socio, $cantidad);
 
         return DB::transaction(function () use ($socio, $material, $cantidad, $fechaDevolucion) {
             Material::where('id', $material->id)->lockForUpdate();
@@ -86,6 +88,10 @@ class PrestamoService
 
     public function extenderPrestamo(Prestamo $prestamo, int $dias): void
     {
+        if ($dias < 1 || $dias > 30) {
+            throw ValidationException::withMessages(['dias' => 'La extensión debe ser entre 1 y 30 días.']);
+        }
+
         DB::transaction(function () use ($prestamo, $dias) {
             if ($prestamo->ejemplar_id && $prestamo->ejemplar?->estado !== 'prestado') {
                 throw ValidationException::withMessages(['prestamo' => 'El ejemplar no está en préstamo activo.']);
@@ -124,6 +130,11 @@ class PrestamoService
                     true
                 );
                 $this->generarMultaSiCorresponde($prestamo);
+
+                $user = \App\Models\User::where('socio_id', $prestamo->socio_id)->first();
+                if ($user) {
+                    $user->notify(new \App\Notifications\PrestamoVencido($prestamo));
+                }
             }
 
             return count($atrasados);
@@ -154,6 +165,11 @@ class PrestamoService
                     'proximo_vencer',
                     "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (vence el {$fecha})"
                 );
+
+                $user = \App\Models\User::where('socio_id', $prestamo->socio_id)->first();
+                if ($user) {
+                    $user->notify(new \App\Notifications\PrestamoProximoVencer($prestamo));
+                }
             }
         }
 
@@ -248,6 +264,15 @@ class PrestamoService
     {
         if (! $socio->activo) {
             throw ValidationException::withMessages(['socio_id' => 'El socio está dado de baja.']);
+        }
+
+        $yaActivo = Prestamo::where('socio_id', $socio->id)
+            ->where('material_id', $material->id)
+            ->whereIn('estado', ['activo', 'pendiente', 'atrasado'])
+            ->exists();
+
+        if ($yaActivo) {
+            throw ValidationException::withMessages(['material_id' => 'El socio ya tiene un préstamo activo de este material.']);
         }
 
         $disponibleReal = MaterialEjemplar::where('material_id', $material->id)

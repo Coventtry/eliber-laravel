@@ -44,7 +44,7 @@ class NoticiaController extends Controller
             ->orderBy('fecha', 'desc')
             ->paginate(10);
 
-        return NoticiaResource::collection($noticias);
+        return NoticiaResource::collection($noticias)->response();
     }
 
     #[OA\Post(
@@ -148,7 +148,7 @@ class NoticiaController extends Controller
 
         $noticia->update($data);
 
-        return new NoticiaResource($noticia);
+        return (new NoticiaResource($noticia))->response();
     }
 
     #[OA\Delete(

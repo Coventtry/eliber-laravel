@@ -63,7 +63,7 @@ class UsuarioController extends Controller
             ->orderBy('nombre')
             ->paginate(20);
 
-        return UserResource::collection($usuarios);
+        return UserResource::collection($usuarios)->response();
     }
 
     #[OA\Get(
@@ -87,7 +87,7 @@ class UsuarioController extends Controller
 
         return UserResource::make($user)->additional([
             'permisos' => $user->getDirectPermissions()->pluck('name'),
-        ]);
+        ])->response();
     }
 
     #[OA\Post(
@@ -174,7 +174,7 @@ class UsuarioController extends Controller
         }
         $user->update($data);
 
-        return new UserResource($user);
+        return (new UserResource($user))->response();
     }
 
     #[OA\Delete(
@@ -234,7 +234,6 @@ class UsuarioController extends Controller
     public function updatePermisos(Request $request, User $user): JsonResponse
     {
         abort_if(! auth()->user()->hasRole('admin'), 403);
-        $user = User::where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         abort_if($user->hasRole('admin'), 403, 'No se pueden editar los permisos de un administrador.');
 
         $request->validate([
@@ -265,7 +264,6 @@ class UsuarioController extends Controller
     public function toggleActivo(User $user): JsonResponse
     {
         abort_if(! auth()->user()->hasRole('admin'), 403);
-        $user = User::where('institucion_id', auth()->user()->institucion_id)->findOrFail($id);
         abort_if($user->id === auth()->id(), 403, 'No podés desactivarte a vos mismo.');
 
         $user->update(['activo' => ! $user->activo]);

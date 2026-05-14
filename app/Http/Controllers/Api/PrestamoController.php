@@ -60,7 +60,7 @@ class PrestamoController extends Controller
             ->orderBy('fecha_devolucion')
             ->paginate(20);
 
-        return PrestamoResource::collection($prestamos);
+        return PrestamoResource::collection($prestamos)->response();
     }
 
     #[OA\Get(
@@ -80,7 +80,7 @@ class PrestamoController extends Controller
     {
         $prestamo = Prestamo::with(['socio', 'material'])->findOrFail($id);
 
-        return new PrestamoResource($prestamo);
+        return (new PrestamoResource($prestamo))->response();
     }
 
     #[OA\Post(
@@ -112,7 +112,7 @@ class PrestamoController extends Controller
         $this->authorize('create', Prestamo::class);
 
         try {
-            $prestamo = $this->prestamoService->crearPrestamo(
+            $prestamos = $this->prestamoService->crearPrestamo(
                 $request->socio_id,
                 $request->material_id,
                 $request->cantidad,
@@ -122,7 +122,7 @@ class PrestamoController extends Controller
             return response()->json(['errors' => $e->errors()], 422);
         }
 
-        return PrestamoResource::make($prestamo)->response()->setStatusCode(201);
+        return PrestamoResource::make($prestamos[0])->response()->setStatusCode(201);
     }
 
     #[OA\Patch(

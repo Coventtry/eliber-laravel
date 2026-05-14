@@ -61,7 +61,7 @@ class ReservaController extends Controller
                 ->paginate(20);
         }
 
-        return ReservaResource::collection($reservas);
+        return ReservaResource::collection($reservas)->response();
     }
 
     #[OA\Post(

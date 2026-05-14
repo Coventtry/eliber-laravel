@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Material;
+use App\Models\MaterialEjemplar;
 use App\Models\Socio;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -53,7 +54,7 @@ class ApiTest extends TestCase
         $this->actingAs($user, 'sanctum')
             ->getJson("/api/v1/socios/{$socio->id}")
             ->assertOk()
-            ->assertJsonPath('nombre', 'Martin');
+            ->assertJsonPath('data.nombre', 'Martin');
     }
 
     public function test_api_actualiza_socio(): void
@@ -386,6 +387,12 @@ class ApiTest extends TestCase
             'editorial' => 'Edit',
             'clasificacion_fisica' => 'B2',
             'institucion_id' => $user->institucion_id,
+        ]);
+        MaterialEjemplar::forceCreate([
+            'material_id' => $material->id,
+            'institucion_id' => $user->institucion_id,
+            'codigo_ejemplar' => '400-002-E1',
+            'estado' => 'disponible',
         ]);
 
         $this->actingAs($user, 'sanctum')

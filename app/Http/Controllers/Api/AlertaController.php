@@ -67,7 +67,7 @@ class AlertaController extends Controller
             ->orderByDesc('fecha_alerta')
             ->paginate(20);
 
-        return AlertaResource::collection($alertas);
+        return AlertaResource::collection($alertas)->response();
     }
 
     #[OA\Patch(

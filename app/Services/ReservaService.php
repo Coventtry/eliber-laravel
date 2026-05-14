@@ -97,6 +97,7 @@ class ReservaService
             ]);
 
             $reserva->material->decrement('disponibilidad_reservada');
+            $reserva->material->decrement('disponibilidad');
 
             $user = User::where('socio_id', $reserva->socio_id)->first();
             if ($user) {

@@ -39,7 +39,7 @@ class AreaController extends Controller
     )]
     public function index(): JsonResponse
     {
-        return AreaResource::collection(Area::orderBy('nombre')->paginate(30));
+        return AreaResource::collection(Area::orderBy('nombre')->paginate(30))->response();
     }
 
     #[OA\Get(
@@ -57,7 +57,7 @@ class AreaController extends Controller
     )]
     public function show(int $id): JsonResponse
     {
-        return new AreaResource(Area::findOrFail($id));
+        return (new AreaResource(Area::findOrFail($id)))->response();
     }
 
     #[OA\Post(
@@ -136,7 +136,7 @@ class AreaController extends Controller
 
         $area->update($request->only('codigo_dewey', 'nombre', 'Abreviado'));
 
-        return new AreaResource($area);
+        return (new AreaResource($area))->response();
     }
 
     #[OA\Delete(

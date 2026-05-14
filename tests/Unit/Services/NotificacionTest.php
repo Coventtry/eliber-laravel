@@ -6,6 +6,7 @@ use App\Models\Area;
 use App\Models\Configuracion;
 use App\Models\Institucion;
 use App\Models\Material;
+use App\Models\MaterialEjemplar;
 use App\Models\Prestamo;
 use App\Models\Socio;
 use App\Models\User;
@@ -123,6 +124,12 @@ class NotificacionTest extends TestCase
             'codigo' => '100-003', 'disponibilidad' => 3, 'disponibilidad_reservada' => 0,
             'editorial' => 'Ed', 'clasificacion_fisica' => 'FIL-A-(E)1-1',
             'institucion_id' => $this->socio->institucion_id,
+        ]);
+        MaterialEjemplar::forceCreate([
+            'material_id' => $material->id,
+            'institucion_id' => $this->socio->institucion_id,
+            'codigo_ejemplar' => '100-003-E1',
+            'estado' => 'disponible',
         ]);
 
         $reserva = $this->reservaService->crearReserva($this->socio->id, $material->id);

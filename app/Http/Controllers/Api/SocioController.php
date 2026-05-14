@@ -60,7 +60,7 @@ class SocioController extends Controller
             ->orderBy('apellido')
             ->paginate(20);
 
-        return SocioResource::collection($socios);
+        return SocioResource::collection($socios)->response();
     }
 
     #[OA\Get(
@@ -80,7 +80,7 @@ class SocioController extends Controller
     {
         $socio = Socio::findOrFail($id);
 
-        return new SocioResource($socio);
+        return (new SocioResource($socio))->response();
     }
 
     #[OA\Post(
@@ -157,7 +157,7 @@ class SocioController extends Controller
         $this->authorize('update', $socio);
         $socio->update($request->validated());
 
-        return new SocioResource($socio);
+        return (new SocioResource($socio))->response();
     }
 
     #[OA\Delete(

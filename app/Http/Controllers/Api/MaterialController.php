@@ -50,7 +50,7 @@ class MaterialController extends Controller
             ->where('disponibilidad', '>', 0)
             ->paginate(20);
 
-        return MaterialResource::collection($materiales);
+        return MaterialResource::collection($materiales)->response();
     }
 
     #[OA\Get(
@@ -85,7 +85,7 @@ class MaterialController extends Controller
         $material = Material::select('id', 'titulo', 'autor', 'anio_publicacion', 'categoria', 'codigo', 'disponibilidad', 'editorial', 'area_id')
             ->findOrFail($material);
 
-        return new MaterialResource($material);
+        return (new MaterialResource($material))->response();
     }
 
     #[OA\Post(
@@ -142,7 +142,7 @@ class MaterialController extends Controller
         $material = Material::create($data);
         $this->materialService->generarQR($material);
 
-        return new MaterialResource($material, 201);
+        return MaterialResource::make($material)->response()->setStatusCode(201);
     }
 
     #[OA\Put(
@@ -182,7 +182,7 @@ class MaterialController extends Controller
         $this->authorize('update', $material);
         $material->update($request->validated());
 
-        return new MaterialResource($material);
+        return (new MaterialResource($material))->response();
     }
 
     #[OA\Delete(
