@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { useForm, usePage } from '@inertiajs/vue3'
+import { Head, useForm, usePage } from '@inertiajs/vue3'
 
 const page = usePage()
 const form = useForm({

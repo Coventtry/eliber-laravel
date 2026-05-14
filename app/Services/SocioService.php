@@ -13,13 +13,14 @@ class SocioService
         DB::transaction(function () use ($socio, $observaciones) {
             $socio->update(['activo' => 0]);
 
-        HistorialSocio::create([
-            'id_socio' => $socio->id,
-            'accion' => 'BAJA',
-            'fecha' => now(),
-            'observaciones' => $observaciones ?: 'Baja registrada.',
-            'institucion_id' => $socio->institucion_id,
-        ]);
+            HistorialSocio::create([
+                'id_socio' => $socio->id,
+                'accion' => 'BAJA',
+                'fecha' => now(),
+                'observaciones' => $observaciones ?: 'Baja registrada.',
+                'institucion_id' => $socio->institucion_id,
+            ]);
+        });
     }
 
     public function reactivar(Socio $socio): void
@@ -27,12 +28,13 @@ class SocioService
         DB::transaction(function () use ($socio) {
             $socio->update(['activo' => 1]);
 
-        HistorialSocio::create([
-            'id_socio' => $socio->id,
-            'accion' => 'ALTA',
-            'fecha' => now(),
-            'observaciones' => 'Reactivacion de cuenta.',
-            'institucion_id' => $socio->institucion_id,
-        ]);
+            HistorialSocio::create([
+                'id_socio' => $socio->id,
+                'accion' => 'ALTA',
+                'fecha' => now(),
+                'observaciones' => 'Reactivacion de cuenta.',
+                'institucion_id' => $socio->institucion_id,
+            ]);
+        });
     }
 }

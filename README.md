@@ -1,153 +1,143 @@
 # e-LibeR — Sistema de Gestión Bibliotecaria
 
-Laravel 12 + Vue 3 + Inertia.js SPA + REST API. Gestión de materiales, socios, préstamos y reservas para instituciones educativas.
+Laravel 12 + Vue 3 + Inertia.js SPA con REST API. Gestión de materiales, socios, préstamos y reservas para instituciones educativas.
+
+**Stack:** Laravel 12 · PHP 8.2 · Vue 3 · Vite · Inertia.js · MySQL 8+ · Bootstrap 4.6 · Docker
 
 ---
 
-## Requisitos
+## Desarrollo local
 
-| Herramienta | Versión |
-|-------------|---------|
-| PHP | 8.2+ |
-| Composer | 2.x |
-| Node.js | 18+ |
-| MySQL / MariaDB | 8.0 / 10.6 |
-
-Extensiones PHP requeridas: `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `gd`, `zip`, `xml`, `curl`, `json`.
-
----
-
-## Instalación (desarrollo)
+**Requisitos:** PHP 8.2+, Composer 2.x, Node.js 18+, MySQL 8+
 
 ```bash
-git clone <url> eliber-laravel
-cd eliber-laravel
+git clone <url> eliber-laravel && cd eliber-laravel
 cp .env.example .env
-# Editar .env con DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD
-composer run setup
-php artisan storage:link
+# Editar .env: DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD
+composer run setup      # install + key + migrate + seed + npm build
+composer run dev        # servidor + Vite (hot reload)
 ```
 
-### Servir la aplicación
-
-**Con XAMPP (Windows):** el proyecto va en `C:\xampp\htdocs\eliber-laravel\`, abrir `http://localhost/eliber-laravel/public`.
-
-**Con Artisan serve:** `php artisan serve` abre `http://localhost:8000`.
-
-En ambos casos, en una terminal aparte ejecutar `npm run dev` para Vite (hot reload).
-
-El comando `composer run setup` ejecuta: `composer install` → genera `APP_KEY` → migra BD con seeders → `npm ci` → `npm run build`.
-
----
-
-## Credenciales iniciales
-
-| Campo | Valor por defecto |
-|-------|-------------------|
-| Usuario | `admin` |
-| Contraseña | `eLiber#Admin2026` (configurable via `DEFAULT_ADMIN_PASSWORD` en `.env`) |
-| Rol | Administrador |
-
----
-
-## Comandos
+### Comandos útiles
 
 ```bash
-composer run dev          # Servidor + Vite
-composer run dev:queue    # + queue worker
-composer run test         # Tests (SQLite in-memory)
-composer run setup        # Instalación completa
-php artisan test --filter test_name
-php artisan optimize:clear
-npm run build             # Assets producción
+composer run dev:queue          # + queue worker
+composer run test               # tests (SQLite in-memory)
+php artisan test --filter nombre_test
+php artisan pint                # linting PHP
+npm run build                   # build assets producción
 ```
+
+---
+
+## Despliegue con Docker
+
+### 1. Clonar y configurar
+
+```bash
+git clone -b deploy <url> eliber-laravel && cd eliber-laravel
+cp .env.example .env
+```
+
+Editar `.env` con los valores de producción (ver sección **Variables de entorno**).
+
+### 2. Deploy
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+El script hace: `git pull origin deploy` → rebuild de imágenes → `docker compose up`.
+
+### 3. Crear primer usuario admin
+
+```bash
+docker exec -it eliber-app php artisan tinker
+```
+
+```php
+$user = App\Models\User::create([
+    'name'          => 'Administrador',
+    'nombre'        => 'Administrador',
+    'usuario'       => 'admin',
+    'email'         => 'admin@tuinstitucion.edu.ar',
+    'password'      => bcrypt('TuContraseñaSegura'),
+    'activo'        => true,
+    'institucion_id'=> 1,
+]);
+$user->assignRole('admin');
+```
+
+### Variables de entorno requeridas en producción
+
+| Variable | Descripción |
+|----------|-------------|
+| `APP_KEY` | Generar con `php artisan key:generate --show` |
+| `APP_URL` | URL pública: `https://eliber.tuinstitucion.edu.ar` |
+| `DB_PASSWORD` | Contraseña del usuario de BD |
+| `DB_ROOT_PASSWORD` | Contraseña root MySQL (solo Docker) |
+| `DEFAULT_ADMIN_PASSWORD` | Contraseña del admin inicial |
+| `SESSION_SECURE_COOKIE` | `true` si se usa HTTPS |
+| `SANCTUM_STATEFUL_DOMAINS` | Dominio para auth cookie Sanctum |
+| `CORS_ALLOWED_ORIGINS` | Origen permitido para la API |
+
+Ver `.env.example` para la lista completa con valores por defecto.
+
+### Nginx (host) como proxy inverso
+
+Configurar un bloque `server` que haga proxy a `http://localhost:8005`. Plantilla en `docker/nginx/eliber.conf`.
 
 ---
 
 ## Arquitectura
 
-**Inertia.js SPA** — Laravel sirve datos vía Inertia, Vue renderiza frontend. Sin API calls desde el frontend (excepto REST API pública).
+**Inertia.js SPA** — Laravel sirve datos vía Inertia, Vue renderiza el frontend sin API calls desde el browser (excepto la REST API pública).
 
-**REST API** — `/api/v1/` con auth via Laravel Sanctum (tokens). Recursos públicos: materiales, noticias. Protegidos: préstamos, reservas, áreas, alertas, socios, usuarios.
+**Multi-tenant** — Cada registro lleva `institucion_id`. El helper `tenantId()` resuelve la institución activa (admins pueden cambiar con `POST /admin/switch-institucion`). `TenantScope` filtra automáticamente en todos los modelos salvo `Configuracion`.
 
-**Multi-tenant** — Cada registro tiene `institucion_id`. Helper `tenantId()` retorna la institución activa. `TenantScope` filtra automáticamente en la mayoría de los modelos (excepto `Configuracion` que usa `get`/`set` estáticos con `institucion_id` explícito).
+**Roles** (Spatie Permission): `admin` · `bibliotecario` · `alumno`
 
-**Roles** — `admin` (todo), `bibliotecario` (gestión), `alumno` (catálogo + reservas). vía `spatie/laravel-permission`.
+**Service layer**: `PrestamoService` · `MaterialService` · `SocioService` · `ReservaService`
 
-**Service layer** — `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService`. Controllers delegan en services.
-
----
-
-## Flujo del sistema
+### Flujo de préstamo
 
 ```
-1. Usuario se loguea (login con campo "usuario", no email)
-         ↓
-2. Admin/Bibliotecario gestiona socios, materiales, préstamos
-         ↓
-3. Alumno ve catálogo público y hace reservas vía API
-         ↓
-4. Bibliotecario aprueba/rechaza reservas → crea préstamo automático
-         ↓
-5. Alertas de vencimientos próximos en dashboard
+Alumno reserva → Bibliotecario aprueba → Préstamo creado automáticamente
+                                       → Alumno devuelve → Stock restaurado
 ```
 
----
+### REST API `/api/v1/`
 
-## Estructura del proyecto
+| Recurso | Auth | Métodos |
+|---------|------|---------|
+| `/materiales`, `/noticias` | Público | GET |
+| `/socios`, `/prestamos`, `/reservas` | Sanctum | CRUD completo |
+| `/areas`, `/alertas`, `/usuarios`, `/multas` | Sanctum | CRUD completo |
 
-```
-app/
-├── Console/Commands/        # db:respaldo, marcar-atrasados, expirar-reservas
-├── Http/
-│   ├── Controllers/         # Web + Api/
-│   ├── Middleware/           # HandleInertiaRequests
-│   └── Requests/            # Form requests
-├── Models/                  # 17 modelos Eloquent (la mayoría con TenantScope)
-├── Policies/                # Spatie authorization
-├── Scopes/                  # TenantScope (filtro automático por institución)
-└── Services/                # PrestamoService, MaterialService, etc.
-├── helpers.php              # tenantId()
-database/migrations/         # ~40 migraciones ordenadas
-resources/js/                # Vue 3 SPA (Pages/, Components/)
-routes/
-├── web.php                  # Rutas SPA (Inertia)
-├── api.php                  # API REST /api/v1/ (Sanctum)
-└── console.php              # Tareas programadas
-```
+Autenticación: `POST /api/v1/login` devuelve token Bearer. Expiración: 24h.
 
 ---
 
-## API REST
+## Ramas
 
-Endpoint base: `/api/v1/`
+| Rama | Uso |
+|------|-----|
+| `master` | Desarrollo activo |
+| `deploy` | Producción — el servidor hace `git pull origin deploy` |
 
-| Recurso | Auth | Descripción |
-|---------|------|-------------|
-| `GET /materiales` | Público | Catálogo (con filtros) |
-| `GET /noticias` | Público | Noticias |
-| `POST /login` | Público | Login (usuario + password) → devuelve token |
-| `GET/POST /areas` | Sanctum | CRUD áreas Dewey |
-| `GET /alertas` | Sanctum | Alertas + marcar leídas |
-| `GET/POST/PUT/DELETE /socios` | Sanctum | CRUD socios + baja/reactivar |
-| `GET/POST /prestamos` | Sanctum | Préstamos + devolver/extender |
-| `GET/POST/DELETE /reservas` | Sanctum | Reservas + aprobar/rechazar |
-| `GET/POST/PUT/DELETE /usuarios` | Sanctum | CRUD usuarios + permisos/toggle activo |
+Para deployar: merge de `master` → `deploy`, luego `./deploy.sh` en el servidor.
 
 ---
 
-## Despliegue en producción
+## Protección de datos (Ley 25.326)
 
-Ver `DEPLOY.md` para instrucciones paso a paso (`.env`, comandos, post-deploy).
+Este sistema procesa datos personales de alumnos menores de edad (nombre, dirección, teléfono, historial de préstamos). La institución que lo opere es responsable de:
 
----
-
-## Notas para XAMPP (Windows)
-
-- Apache + MySQL deben estar corriendo
-- Colocar proyecto en `C:\xampp\htdocs\eliber-laravel\`
-- Agregar `C:\xampp\php` al PATH si `php` no se reconoce
-- Usar Git Bash o PowerShell
+- Obtener consentimiento informado de los tutores.
+- Informar la finalidad del tratamiento de datos.
+- Garantizar el derecho de acceso, rectificación y supresión.
+- Notificar incidentes de seguridad según la normativa vigente.
 
 ---
 

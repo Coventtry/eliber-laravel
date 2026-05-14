@@ -7,6 +7,7 @@ use App\Models\Material;
 use App\Models\MaterialEjemplar;
 use App\Models\Prestamo;
 use App\Models\Reserva;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -97,15 +98,13 @@ class ReservaService
 
             $reserva->material->decrement('disponibilidad_reservada');
 
+            $user = User::where('socio_id', $reserva->socio_id)->first();
+            if ($user) {
+                $user->notify(new \App\Notifications\ReservaAprobada($reserva));
+            }
+
             return $prestamo;
         });
-
-        $user = User::where('socio_id', $reserva->socio_id)->first();
-        if ($user) {
-            $user->notify(new ReservaAprobada($reserva));
-        }
-
-        return $prestamo;
     }
 
     public function rechazarReserva(Reserva $reserva, ?string $motivo = null): void

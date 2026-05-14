@@ -37,6 +37,7 @@
 </template>
 
 <script setup>
+import { Head } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 

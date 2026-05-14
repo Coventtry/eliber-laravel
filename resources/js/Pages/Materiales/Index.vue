@@ -149,7 +149,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { Head, router, Link } from '@inertiajs/vue3'
 import axios from 'axios'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
@@ -165,6 +165,7 @@ const props = defineProps({
 const busqueda = ref(props.filters.busqueda ?? '')
 const area_id  = ref(props.filters.area_id ?? '')
 
+const cargando           = ref(false)
 const ejemplaresModal    = ref(null)
 const ejemplaresLoading  = ref(false)
 
