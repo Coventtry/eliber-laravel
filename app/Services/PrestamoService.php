@@ -216,7 +216,6 @@ class PrestamoService
         if (! $socio->activo) {
             throw ValidationException::withMessages(['socio_id' => 'El socio está dado de baja.']);
         }
-    }
 
         $disponibleReal = MaterialEjemplar::where('material_id', $material->id)
             ->where('estado', 'disponible')
@@ -229,7 +228,7 @@ class PrestamoService
         }
     }
 
-    private function validarLimiteActivos(Socio $socio): void
+    private function validarLimiteActivos(Socio $socio, int $cantidad = 1): void
     {
         $activos = Prestamo::where('socio_id', $socio->id)
             ->whereIn('estado', ['activo', 'pendiente', 'atrasado'])
