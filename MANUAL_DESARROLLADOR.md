@@ -12,13 +12,18 @@ Guía técnica para contribuir al proyecto. Para instalar el entorno de desarrol
 4. [Base de datos y multi-tenancy](#base-de-datos-y-multi-tenancy)
 5. [Autenticación y roles](#autenticación-y-roles)
 6. [Capa de servicios](#capa-de-servicios)
-7. [Rutas](#rutas)
-8. [Convenciones de código](#convenciones-de-código)
-9. [Patrón Inertia + Vue](#patrón-inertia--vue)
-10. [Cómo agregar un módulo nuevo](#cómo-agregar-un-módulo-nuevo)
-11. [Testing](#testing)
-12. [Variables de entorno clave](#variables-de-entorno-clave)
-13. [Despliegue en producción](#despliegue-en-producción)
+7. [Concurrencia y condiciones de carrera](#concurrencia-y-condiciones-de-carrera)
+8. [Rutas](#rutas)
+9. [Convenciones de código](#convenciones-de-código)
+10. [Patrón Inertia + Vue](#patrón-inertia--vue)
+11. [Controladores API (REST)](#controladores-api-rest)
+12. [Cómo agregar un módulo nuevo](#cómo-agregar-un-módulo-nuevo)
+13. [Testing](#testing)
+14. [Caché](#caché)
+15. [Comandos de Artisan y scheduler](#comandos-de-artisan-y-scheduler)
+16. [Variables de entorno clave](#variables-de-entorno-clave)
+17. [Despliegue en producción](#despliegue-en-producción)
+18. [Referencia rápida de archivos clave](#referencia-rápida-de-archivos-clave)
 
 ---
 
@@ -27,16 +32,16 @@ Guía técnica para contribuir al proyecto. Para instalar el entorno de desarrol
 | Capa | Tecnología |
 |------|-----------|
 | Backend | Laravel 12, PHP 8.2+ |
-| Frontend | Vue 3, Vite 5, Bootstrap 4.6.2 |
+| Frontend | Vue 3, Vite 8, Bootstrap 4.6.2 |
 | SPA bridge | Inertia.js v2 |
 | Auth | Laravel Session + Spatie Permission v6 (roles/permisos) |
-| API REST | Laravel Sanctum |
+| API REST | Laravel Sanctum (token expiry: 1440 min) |
 | DB | MySQL 8+ / MariaDB 10.6+ |
 | Íconos | Bootstrap Icons |
 | QR | simplesoftwareio/simple-qrcode |
 | Rutas JS | Ziggy (genera `route()` en Vue) |
 | Testing | PHPUnit 11, SQLite en memoria |
-| Documentación API | darkaonline/l5-swagger |
+| Documentación API | darkaonline/l5-swagger (zircote/swagger-php) |
 
 ---
 
@@ -44,37 +49,46 @@ Guía técnica para contribuir al proyecto. Para instalar el entorno de desarrol
 
 ```
 app/
-  Console/Commands/       # db:respaldo, expirar-reservas, migrar-ejemplares
+  Console/Commands/       # db:respaldo, reservas:expirar, ejemplares:migrar, prestamos:marcar-atrasados
   Http/
-    Controllers/          # Un controlador por módulo (+ Api/)
-    Middleware/           # HandleInertiaRequests (comparte props globales)
-    Requests/             # Form Requests para validación
-  Models/                 # 17 modelos Eloquent (ver tabla abajo)
-  Services/               # Lógica de negocio (PrestamoService, etc.)
-  Scopes/                 # TenantScope (filtra por institucion_id)
-  Policies/               # Autorización por modelo (Spatie)
+    Controllers/          # Un controlador por módulo (+ Api/ para REST)
+    Middleware/           # HandleInertiaRequests (props globales Inertia)
+    Requests/             # Form Requests (StoreSocioRequest, StorePrestamoRequest, etc.)
+  Models/                 # Eloquent: User, Socio, Material, MaterialEjemplar, Prestamo, Reserva,
+                          #   Area, Alerta, Multa, Noticia, Anotacion, Configuracion, Institucion,
+                          #   HistorialSocio, CategoriaFisica, Faq, FeedbackCard, FooterLink
+  Services/               # Lógica de negocio (PrestamoService, ReservaService, etc.)
+  Scopes/                 # TenantScope — filtra todas las queries por institucion_id
+  Notifications/          # PrestamoVencido, PrestamoProximoVencer, ReservaAprobada
 
 database/
-  migrations/             # ~38 migraciones ordenadas
-  seeders/                # Roles, instituciones, admin, áreas, datos de prueba
+  migrations/             # ~40 migraciones ordenadas cronológicamente
+  seeders/                # RolesAndPermissionsSeeder, DefaultAdminSeeder, SampleDataSeeder
 
 resources/
   js/
-    Components/           # Componentes reutilizables (AppNavbar, FlashMessage…)
-    Composables/          # Composables Vue (useDarkMode, useAlertSound)
+    Components/           # AppNavbar, AppNavbarAlumno, AppFooter, FlashMessage, Pagination…
+    Composables/          # useDarkMode, useAlertSound
     Layouts/              # AdminLayout
-    Pages/                # ~30 vistas Inertia (mapeadas 1:1 a Inertia::render())
-      Admin/              # Dashboard, Usuarios, Configuración, Contenido, Analítica, Feedback
-      Auth/               # Login, Register, ResetPassword
-      Alumno/             # Dashboard, Catálogo, Reservas
-      Materiales/         # Index, Create, Edit
-      Prestamos/
-      Socios/
-      …
+    Pages/
+      Admin/              # Dashboard, Usuarios, Configuracion, Contenido, Analitica, Feedback
+      Alumno/             # Dashboard, Catalogo, MisReservas, MisPrestamos
+      Auth/               # Login (con tab Registro), ResetPassword
+      Socios/             # Index, Create, Edit
+      Materiales/         # Index, Create, Edit, Ejemplares
+      Prestamos/          # Index, Create, Solicitudes
+      Multas/             # Index, Create
+      Alertas/            # Index
+      Anotaciones/        # Index
+      Noticias/           # Index, Create, Edit
+      Areas/              # Index, Create, Edit
+      Categorias/         # Index
+      Usuarios/           # Index, Edit
+      Perfil/             # Edit
 
 routes/
-  web.php                 # Rutas web Inertia + AJAX interno
-  api.php                 # API REST pública /api/v1/ con Sanctum
+  web.php                 # Rutas Inertia + AJAX interno
+  api.php                 # API REST /api/v1/ con Sanctum
   console.php             # Tareas programadas (schedule)
 ```
 
@@ -82,7 +96,7 @@ routes/
 
 ## Arquitectura general
 
-El proyecto es un **monolito SPA** usando Inertia.js como puente entre Laravel y Vue 3. No hay API separada para el frontend — Inertia serializa los props PHP directamente como props Vue.
+El proyecto es un **monolito SPA** usando Inertia.js como puente entre Laravel y Vue 3. No hay API separada para el frontend: Inertia serializa los props PHP directamente como props Vue.
 
 ```
 Request HTTP
@@ -90,10 +104,10 @@ Request HTTP
     → Controller (valida, llama Service, prepara datos)
     → Inertia::render('Pagina/Vista', [...props])
     → Vue component recibe props como defineProps()
-    → Respuesta HTML (primera carga) o JSON (navegación SPA)
+    → Respuesta HTML (primera carga) o JSON delta (navegación SPA)
 ```
 
-Para operaciones AJAX internas (búsqueda predictiva, panel de detalle) se usan endpoints bajo `/api/` dentro del grupo `auth`, llamados con `axios` desde Vue.
+Para operaciones AJAX internas (búsquedas predictivas, paneles expandibles) se usan rutas bajo `/api/` dentro del grupo `auth`, llamadas con `axios` desde Vue.
 
 ---
 
@@ -103,16 +117,20 @@ Para operaciones AJAX internas (búsqueda predictiva, panel de detalle) se usan 
 
 ```php
 // app/Scopes/TenantScope.php
-class TenantScope implements Scope
+public function apply(Builder $builder, Model $model): void
 {
-    public function apply(Builder $builder, Model $model): void
-    {
-        $builder->where($model->getTable() . '.institucion_id', auth()->user()?->institucion_id);
+    $tenantId = tenantId(); // helper global en app/helpers.php
+    if ($tenantId === null) {
+        $builder->whereRaw('1 = 0'); // bloqueo de seguridad si no hay tenant
+        return;
     }
+    $builder->where($model->getTable() . '.institucion_id', $tenantId);
 }
 ```
 
-Los modelos que lo usan lo registran en `booted()`:
+`tenantId()` resuelve el tenant activo: para `admin` lee `session('admin_institucion_id')`, para los demás roles retorna `auth()->user()->institucion_id`.
+
+Los modelos registran el scope en `booted()`:
 
 ```php
 protected static function booted(): void
@@ -121,48 +139,71 @@ protected static function booted(): void
 }
 ```
 
-> **Regla crítica**: cualquier modelo nuevo que almacene datos por institución debe incluir `institucion_id` en `$fillable` y aplicar `TenantScope`.
+**Regla crítica:** cualquier modelo nuevo con datos por institución debe incluir `institucion_id` en `$fillable` y aplicar `TenantScope` en `booted()`.
 
-### Modelos principales
+### Tabla de modelos
 
-| Modelo | Tabla | TenantScope | Relaciones clave |
-|--------|-------|-------------|-----------------|
-| `User` | `users` | No (campo `institucion_id`) | `belongsTo Institucion`, `belongsTo Socio` |
-| `Socio` | `socios` | Sí | `hasMany Prestamo`, `hasMany HistorialSocio` |
-| `Material` | `materiales` | Sí | `belongsTo Area`, `hasMany MaterialEjemplar` |
-| `MaterialEjemplar` | `material_ejemplares` | Sí | `belongsTo Material`, `hasMany Prestamo` |
-| `Prestamo` | `prestamos` | Sí | `belongsTo Socio`, `belongsTo Material`, `belongsTo MaterialEjemplar` |
-| `Reserva` | `reservas` | Sí | `belongsTo Socio`, `belongsTo Material`, `belongsTo MaterialEjemplar` |
+| Modelo | Tabla | TenantScope | Notas |
+|--------|-------|:-----------:|-------|
+| `User` | `users` | No | Tiene `institucion_id` pero no scope; campo auth |
+| `Socio` | `socios` | Sí | `full_name` attr; scopes: `activos()`, `buscarEmail()` |
+| `Material` | `materiales` | Sí | `disponibilidad` es contador denormalizado |
+| `MaterialEjemplar` | `material_ejemplares` | Sí | Fuente de verdad de stock físico |
+| `Prestamo` | `prestamos` | Sí | `link_whatsapp` attr; scopes: `activo()`, `atrasado()`, `vencimientoProximo()` |
+| `Reserva` | `reservas` | Sí | estados: pendiente/aprobada/rechazada/expirada |
+| `Multa` | `multas` | Sí | estados: pendiente/pagada/perdonada |
 | `Area` | `areas` | No (global) | `hasMany Material` |
-| `Institucion` | `instituciones` | N/A (raíz tenant) | raíz tenant, SoftDeletes |
 | `Alerta` | `alertas` | Sí | `belongsTo Prestamo` |
-| `Anotacion` | `anotaciones` | Sí | SoftDeletes |
 | `Noticia` | `noticias` | Sí | SoftDeletes |
+| `Anotacion` | `anotaciones` | Sí | SoftDeletes |
 | `CategoriaFisica` | `categorias_fisicas` | Sí | — |
-| `Faq` | `faqs` | Sí | `belongsTo Institucion` |
-| `FooterLink` | `footer_links` | No (filtro manual) | `belongsTo Institucion` |
-| `FeedbackCard` | `feedback_cards` | No (filtro manual) | Kanban interno |
-| `Configuracion` | `configuraciones` | No (usa `get`/`set` estáticos) | KV store por institución |
+| `Institucion` | `instituciones` | N/A | Raíz tenant, SoftDeletes |
+| `Configuracion` | `configuraciones` | No | KV store; usar `get()`/`set()` estáticos |
 | `HistorialSocio` | `historial_socios` | Sí | `belongsTo Socio` |
+| `Faq` | `faqs` | Sí | campo `activa` toggle |
+| `FooterLink` | `footer_links` | No | Filtro manual por `institucion_id` |
+| `FeedbackCard` | `feedback_cards` | No | Kanban interno (columnas: todo/progreso/hecho) |
 
 ---
 
 ## Autenticación y roles
 
-- El modelo auth es `App\Models\User` (no `Bibliotecario`).
-- Login por campo `usuario` (no `email`).
-- Roles con **Spatie Permission**: `admin`, `bibliotecario`, `alumno`.
+- El modelo auth es `App\Models\User` (campo `usuario`, no `email`).
+- Login por campo `usuario`. El email existe pero no se usa para autenticación.
+- Roles con **Spatie Permission v6**: `admin`, `bibliotecario`, `alumno`.
 - Cuentas creadas vía registro público nacen con `activo = false` → requieren aprobación.
+- Cuentas inactivas son rechazadas en login con mensaje según el rol que aprueba.
 
 ### Redirección post-login por rol
 
 ```php
 // AuthenticatedSessionController::store()
-match($rol) {
-    'admin'         => redirect('/admin/dashboard'),
-    'alumno'        => redirect('/alumno/dashboard'),
-    default         => redirect('/dashboard'),
-}
+return match(true) {
+    $user->hasRole('admin')  => redirect()->route('admin.dashboard'),
+    $user->hasRole('alumno') => redirect()->route('alumno.dashboard'),
+    default                  => redirect()->route('dashboard'),
+};
+```
+
+### Props globales compartidas (HandleInertiaRequests)
+
+Disponibles en todos los componentes Vue via `usePage().props`:
+
+```js
+auth.user              // { id, nombre, usuario, picture_url }
+auth.roles             // array de roles
+auth.permisos          // array de permisos (Spatie)
+auth.es_admin          // boolean shortcut
+menu                   // links del menú filtrados por permiso
+flash                  // { success, error, info, warning }
+vencimientos_proximos  // conteo de préstamos próximos a vencer
+alertas_no_leidas      // conteo de alertas sin leer
+solicitudes_pendientes // conteo de reservas pendientes de aprobación
+anuncio                // { texto, estilo } | null
+footer_links           // array de { label, url } (cacheado 1h)
+institucion_activa     // { id, nombre, slug }
+instituciones          // array (solo admin, para el switch de institución)
+logo_url               // URL del logo institucional
 ```
 
 ### Verificar permisos en controladores
@@ -171,86 +212,150 @@ match($rol) {
 // Por rol
 abort_if(!auth()->user()->hasRole('admin'), 403);
 
-// Por permiso (Spatie)
+// Por permiso Spatie
 $this->authorize('gestionar-socios');
 
-// En Policy
+// Por Policy Eloquent
 $this->authorize('update', $socio);
-```
-
-### Props globales compartidas (HandleInertiaRequests)
-
-Disponibles en todos los componentes Vue via `usePage().props`:
-
-```js
-auth.user        // usuario autenticado
-auth.roles       // array de roles
-auth.permisos    // array de permisos (Spatie)
-auth.es_admin    // boolean shortcut
-menu             // links del menú según rol
-flash.success / flash.error / flash.info / flash.warning
-vencimientos_proximos  // conteo de préstamos próximos a vencer
-alertas_no_leidas      // conteo de alertas sin leer
-anuncio          // {texto, estilo, activo} o null, desde Institucion
-footer_links     // array de {label, url}, cacheado 1h
 ```
 
 ---
 
 ## Capa de servicios
 
-La lógica de negocio compleja vive en `app/Services/`, no en los controladores.
+La lógica de negocio vive en `app/Services/`, no en controladores.
 
-| Servicio | Responsabilidad |
-|----------|----------------|
-| `PrestamoService` | `crearPrestamo()`, `devolverPrestamo()`, `extenderPrestamo()`, `marcarAtrasados()`, `obtenerVencimientosProximos()`. Valida: socio activo, máximo de préstamos simultáneos, fecha dentro del límite configurado. Bloquea ejemplares con `lockForUpdate()`. |
-| `ReservaService` | `crearReserva()`, `aprobarReserva()`, `rechazarReserva()`, `cancelarReserva()`, `expirarReservasVencidas()`. Gestiona `disponibilidad_reservada` y transición de ejemplares. |
-| `SocioService` | `darDeBaja()` y `reactivar()`. Ambos registran en `HistorialSocio`. |
-| `MaterialService` | `generarCodigo()`, `generarClasificacionFisica()`, `generarQR()`, `crearEjemplares()`, `ajustarEjemplares()`, `sincronizarDisponibilidad()`, `generarCodigoEjemplar()`. |
+| Servicio | Métodos principales |
+|----------|-------------------|
+| `PrestamoService` | `crearPrestamo()` → `Prestamo[]`, `devolverPrestamo()`, `extenderPrestamo()`, `marcarAtrasados()`, `obtenerVencimientosProximos()` |
+| `ReservaService` | `crearReserva()`, `aprobarReserva()`, `rechazarReserva()`, `cancelarReserva()`, `expirarReservasVencidas()` |
+| `SocioService` | `darDeBaja()`, `reactivar()` — ambos registran en `HistorialSocio` |
+| `MaterialService` | `generarCodigo()`, `generarClasificacionFisica()`, `generarQR()`, `crearEjemplares()`, `ajustarEjemplares()` |
+| `MultaService` | `generarMulta()`, `pagar()`, `perdonar()` |
 
-**Regla**: los controladores llaman al servicio y devuelven la respuesta. La lógica transaccional (DB::transaction) va en el servicio.
+**Importante:** `crearPrestamo()` retorna `Prestamo[]` (array), no un único modelo, porque se pueden crear varios ejemplares en un solo préstamo.
+
+**Regla:** los controladores llaman al servicio y manejan la respuesta. La lógica transaccional (`DB::transaction`) va siempre en el servicio.
 
 ```php
-// Correcto
+// Correcto — controlador delgado
 public function store(StorePrestamoRequest $request): RedirectResponse
 {
-    $this->prestamoService->crearPrestamo(
+    $prestamos = $this->prestamoService->crearPrestamo(
         $request->socio_id, $request->material_id,
         $request->cantidad, $request->fecha_devolucion
     );
-    return redirect()->route('prestamos.index')->with('success', '...');
+    return redirect()->route('prestamos.index')->with('success', 'Préstamo registrado.');
 }
 ```
 
 ---
 
-## Rutas
+## Concurrencia y condiciones de carrera
 
-Todas las rutas web están en `routes/web.php`. Las rutas REST públicas en `routes/api.php`.
+Todas las operaciones que modifican stock usan el patrón **pre-flight + lockForUpdate**:
 
-### Grupos principales
-
-```
-/ (público)                    Landing, FAQs
-/login, /register, /logout     Auth
-/dashboard                     auth middleware → bibliotecario
-/socios, /materiales, etc.     auth middleware
-/prestamos/create              Terminal de Préstamos
-/api/socios/buscar             AJAX interno (auth)
-/api/socios/{id}/prestamos     AJAX panel detalle (auth)
-/api/materiales/disponibles    AJAX búsqueda predictiva (auth)
-/admin/*                       auth + role:admin
-/alumno/*                      auth + role:alumno
-/api/v1/*                      Sanctum (público + auth)
-```
-
-### Agregar una ruta nueva
+1. **Pre-flight fuera de la transacción**: validaciones rápidas para UX (devuelven error antes de abrir la transacción)
+2. **Re-checks atómicos dentro de la transacción** con `lockForUpdate`: garantía real de consistencia
 
 ```php
-// En routes/web.php, dentro del grupo auth
-Route::get('mi-modulo', [MiModuloController::class, 'index'])->name('mi-modulo.index');
-Route::resource('mi-modulo', MiModuloController::class);
+// Ejemplo: crearPrestamo
+public function crearPrestamo(...): array
+{
+    // PRE-FLIGHT (UX rápida)
+    if ($socio->prestamosActivos()->count() >= 3) {
+        throw ValidationException::withMessages([...]);
+    }
+
+    return DB::transaction(function () use (...) {
+        // RE-CHECK ATÓMICO (seguridad real)
+        $activos = Prestamo::where('socio_id', $socio->id)
+            ->whereIn('estado', ['activo', 'pendiente', 'atrasado'])
+            ->lockForUpdate()
+            ->count();
+        if (($activos + $cantidad) > 3) {
+            throw ValidationException::withMessages([...]);
+        }
+
+        $ejemplares = MaterialEjemplar::where('material_id', $material->id)
+            ->where('estado', 'disponible')
+            ->lockForUpdate()
+            ->limit($cantidad)
+            ->get();
+        // ...
+    });
+}
 ```
+
+Operaciones protegidas con este patrón:
+- `crearPrestamo` — lock en Material + MaterialEjemplar; re-check de límite 3 préstamos y duplicado
+- `crearReserva` — check de duplicado + selección de ejemplar + incremento de `disponibilidad_reservada` dentro de una sola transacción
+- `expirarReservasVencidas` — lockForUpdate en Reserva + MaterialEjemplar para evitar doble decremento en ejecuciones concurrentes del scheduler
+- `marcarAtrasados` — transacción + lockForUpdate
+
+**No agregar operaciones que modifiquen stock fuera de `DB::transaction()`.**
+
+---
+
+## Rutas
+
+### Grupos web (`routes/web.php`)
+
+```
+/ (público)                    Landing, FAQs, Acerca
+/login, POST /register         Auth (throttle: 10/min login, 3/min registro)
+/reset-password                Cambio de contraseña
+/dashboard                     auth middleware → dashboard bibliotecario
+
+# Módulos principales (middleware: auth)
+/socios                        CRUD + baja + reactivar
+/materiales                    CRUD + QR + ejemplares + baja ejemplar
+/areas                         CRUD
+/categorias                    CRUD
+/prestamos                     index, create, store + devolver + extender + solicitudes
+/multas                        index, create, store + pagar + perdonar
+/noticias                      CRUD
+/anotaciones                   index + store
+/alertas                       index + marcar leída + todas-leídas
+/usuarios                      index, edit, update + permisos + toggle-activo + aprobar
+/perfil                        GET edit, PUT update
+
+# AJAX interno (middleware: auth, respuesta JSON)
+/api/socios/buscar             Búsqueda predictiva de socios
+/api/socios/{socio}/prestamos  Panel expandible del socio
+/api/materiales/ejemplares-disponibles  Búsqueda de materiales con stock
+
+# Admin (middleware: auth + role:admin, prefijo /admin)
+/admin/dashboard               Métricas generales
+/admin/usuarios                CRUD + toggle + aprobar
+/admin/feedback                Kanban (CRUD + mover columna)
+/admin/contenido               FAQs + footer links + anuncio
+/admin/analitica               Gráficos y estadísticas
+/admin/configuracion           Parámetros del sistema
+POST /admin/switch-institucion Cambiar tenant activo en sesión
+
+# Alumno (middleware: auth + role:alumno, prefijo /alumno)
+/alumno/dashboard
+/alumno/catalogo
+/alumno/mis-prestamos
+/alumno/mis-reservas
+POST /alumno/reservas           Crear reserva
+DELETE /alumno/reservas/{id}    Cancelar reserva
+
+# Exportaciones (middleware: auth, prefijo /exportar)
+/exportar/socios/csv|pdf
+/exportar/materiales/csv|pdf
+/exportar/prestamos/csv|pdf
+/exportar/multas/csv|pdf
+```
+
+### API REST (`routes/api.php`) — prefijo `/api/v1`
+
+Throttle global: 60 req/min (autenticadas), 30 req/min (públicas).
+
+Pública (sin auth): `GET /materiales`, `GET /materiales/{id}`, `GET /noticias`.
+
+Sanctum auth: socios, materiales, áreas, noticias, préstamos, reservas, multas, alertas, usuarios — CRUD completo más acciones específicas (`devolver`, `extender`, `pagar`, `aprobar`, etc.).
 
 ---
 
@@ -258,34 +363,29 @@ Route::resource('mi-modulo', MiModuloController::class);
 
 ### Idioma: español camelCase
 
-Todo el código custom se escribe en **español**. Las convenciones de Laravel (métodos CRUD, `$request`, etc.) se respetan en inglés.
+Todo el código custom se escribe en **español**. Las convenciones de Laravel (`$request`, métodos CRUD, etc.) se respetan en inglés.
 
-**PHP:**
 ```php
-$usuario      // no $user
-$datos        // no $data
-$archivo      // no $file
-$nombreArchivo // no $filename
-$idInstitucion // no $instId
+$socio         // no $member
+$prestamo      // no $loan
+$institucion   // no $tenant
+$enviarAlerta  // no $sendAlert
 ```
 
-**Vue:**
 ```js
 busqueda       // no search
+mostrarModal   // no showModal
 enviar()       // no submit()
 formatearFecha() // no formatDate()
-claseEstado()  // no estadoClass()
-confirmarBaja() // no confirmBaja()
-mostrarModal   // no showModal
 ```
 
-### Comentarios
+### Sin comentarios obvios
 
-Solo cuando el **por qué** no es obvio. No comentar lo que el código ya dice.
+Solo comentar cuando el **por qué** no es deducible del código: restricciones ocultas, workarounds de bugs, invariantes no obvios.
 
 ### Sin abstracción prematura
 
-Tres líneas similares no justifican un helper. Solo extraer cuando hay 4+ usos o la complejidad es genuina.
+Tres líneas similares no justifican un helper. Extraer solo cuando hay 4+ usos reales o la complejidad es genuina.
 
 ---
 
@@ -295,8 +395,9 @@ Tres líneas similares no justifican un helper. Solo extraer cuando hay 4+ usos 
 
 ```php
 return Inertia::render('Socios/Index', [
-    'socios'  => $socios,          // paginado con ->through()
-    'filters' => $request->only(['busqueda', 'activo']),
+    'socios'  => SocioResource::collection($socios->through(fn ($s) => $s)),
+    'filters' => $request->only(['busqueda', 'activo', 'anio', 'division']),
+    'areas'   => Area::all(['id', 'nombre']),
 ]);
 ```
 
@@ -305,8 +406,9 @@ return Inertia::render('Socios/Index', [
 ```vue
 <script setup>
 const props = defineProps({
-    socios:  { type: Object, required: true },
+    socios:  { type: Object, required: true },  // paginado
     filters: { type: Object, default: () => ({}) },
+    areas:   { type: Array,  default: () => [] },
 })
 </script>
 ```
@@ -315,57 +417,98 @@ const props = defineProps({
 
 ```js
 function buscar() {
-    router.get(route('socios.index'), { busqueda: busqueda.value }, {
-        preserveState: true,
-        replace: true,
-    })
+    router.get(route('socios.index'), {
+        busqueda: form.busqueda,
+        activo:   form.activo,
+    }, { preserveState: true, replace: true })
 }
 ```
 
 ### Formularios Inertia
 
 ```js
-const form = useForm({ campo: '' })
-form.post(route('socios.store'))     // POST
-form.put(route('socios.update', id)) // PUT
+const form = useForm({ nombre: '', apellido: '' })
+form.post(route('socios.store'))
+form.put(route('socios.update', socio.id))
+form.delete(route('socios.destroy', socio.id))
 ```
 
 ### AJAX interno (axios)
 
-Para búsquedas predictivas o paneles que no necesitan navegación:
-
 ```js
+// Búsqueda predictiva
 const { data } = await axios.get(route('api.socios.buscar'), {
     params: { q: termino },
 })
+
+// Panel expandible
+const { data: prestamos } = await axios.get(
+    route('api.socios.prestamos', socio.id)
+)
 ```
 
-### Endpoints que responden HTML y JSON
+### Endpoints duales HTML/JSON
 
 ```php
-public function extender(Request $request, Prestamo $prestamo)
+public function extender(Request $request, Prestamo $prestamo): RedirectResponse|JsonResponse
 {
-    // ...lógica...
+    $this->prestamoService->extenderPrestamo($prestamo, $request->dias);
+
     if ($request->wantsJson()) {
-        return response()->json(['message' => 'OK']);
+        return response()->json(['message' => 'OK', 'fecha_devolucion' => $prestamo->fecha_devolucion]);
     }
-    return redirect()->route('prestamos.index')->with('success', 'OK');
+    return redirect()->route('prestamos.index')->with('success', 'Préstamo extendido.');
 }
 ```
 
 ---
 
+## Controladores API (REST)
+
+**Regla PHP 8.2:** todos los métodos que declaran `JsonResponse` como tipo de retorno **deben** devolver `->response()` sobre el recurso, no el recurso directamente.
+
+```php
+// Correcto
+public function index(): JsonResponse
+{
+    return SocioResource::collection($socios)->response();
+}
+
+public function show(Socio $socio): JsonResponse
+{
+    return (new SocioResource($socio))->response();
+}
+
+public function store(Request $request): JsonResponse
+{
+    return (new SocioResource($socio))->response()->setStatusCode(201);
+}
+
+// INCORRECTO — TypeError en PHP 8.2
+public function show(Socio $socio): JsonResponse
+{
+    return new SocioResource($socio); // falta ->response()
+}
+```
+
+Los recursos envuelven la respuesta en una clave `data`:
+```json
+{ "data": { "id": 1, "nombre": "Juan" } }
+```
+Los tests deben usar `assertJsonPath('data.nombre', 'Juan')`, no `assertJsonPath('nombre', 'Juan')`.
+
+---
+
 ## Cómo agregar un módulo nuevo
 
-Ejemplo: agregar un módulo `Multas`.
+Ejemplo: módulo `Multas` (ya implementado, úsalo como referencia).
 
-**1. Migración**
+**1. Migración** — siempre incluir `institucion_id`
 ```bash
 php artisan make:migration create_multas_table
 ```
-Incluir siempre `institucion_id` en la tabla.
 
-**2. Modelo**
+**2. Modelo** — aplicar TenantScope
 ```php
 class Multa extends Model
 {
@@ -374,21 +517,27 @@ class Multa extends Model
         static::addGlobalScope(new TenantScope());
     }
 
-    protected $fillable = ['socio_id', 'monto', 'motivo', 'pagada', 'institucion_id'];
+    protected $fillable = [
+        'socio_id', 'prestamo_id', 'monto', 'motivo',
+        'estado', 'pagada_en', 'institucion_id',
+    ];
 }
 ```
 
-**3. Form Request** (opcional pero recomendado)
+**3. Form Request**
 ```bash
 php artisan make:request StoreMultaRequest
 ```
 
-**4. Servicio** (si hay lógica de negocio)
+**4. Servicio** (si hay lógica de negocio o transacciones)
 ```php
 // app/Services/MultaService.php
 class MultaService
 {
-    public function registrar(int $socioId, float $monto, string $motivo): Multa { ... }
+    public function registrar(int $socioId, float $monto, string $motivo): Multa
+    {
+        return DB::transaction(fn () => Multa::create([...]));
+    }
 }
 ```
 
@@ -396,90 +545,130 @@ class MultaService
 ```bash
 php artisan make:controller MultaController
 ```
-Inyectar el servicio en el constructor. Usar `Inertia::render('Multas/Index', [...])`.
+Inyectar el servicio. Usar `Inertia::render('Multas/Index', [...])`.
 
 **6. Rutas**
 ```php
 // routes/web.php — dentro del grupo auth
-Route::resource('multas', MultaController::class);
+Route::resource('multas', MultaController::class)->only(['index', 'create', 'store']);
+Route::patch('multas/{multa}/pagar',    [MultaController::class, 'pagar'])->name('multas.pagar');
+Route::patch('multas/{multa}/perdonar', [MultaController::class, 'perdonar'])->name('multas.perdonar');
 ```
 
-**7. Vistas Vue**
-Crear `resources/js/Pages/Multas/Index.vue` (y Create, Edit según necesidad).
-Seguir la convención: `defineProps`, `useForm`, búsqueda con `router.get`.
+**7. Vistas Vue** en `resources/js/Pages/Multas/`
+Seguir la convención: `defineProps`, `useForm`, paginación con `router.get`.
 
-**8. Navbar** (si corresponde)
-Agregar entrada en `AppNavbar.vue` bajo el permiso adecuado.
+**8. Navbar** — agregar entrada en `AppNavbar.vue` con el permiso adecuado.
 
-**9. Permiso** (si se usa Spatie)
-Agregar en `RolesAndPermissionsSeeder.php` y en la constante de `UserController`.
+**9. Permiso** — agregar en `RolesAndPermissionsSeeder.php` y asignar a los roles correspondientes.
+
+**10. API REST** (opcional) — crear `app/Http/Controllers/Api/MultaController.php` con retornos `->response()`.
 
 ---
 
 ## Testing
 
-Los tests usan **SQLite en memoria** con `RefreshDatabase`. La suite de humo (`SmokeTest.php`) cubre los flujos principales.
+Los tests usan **SQLite en memoria** con `RefreshDatabase`. Esto está configurado en `phpunit.xml` via variables de entorno:
+
+```xml
+<env name="DB_CONNECTION" value="sqlite"/>
+<env name="DB_DATABASE"   value=":memory:"/>
+```
 
 ```bash
-# Correr todos los tests
+# Todos los tests
 composer run test
 
-# Test específico
-php artisan test --filter test_nombre_del_test
+# Un archivo
+php artisan test tests/Feature/ApiTest.php
+
+# Un método específico
+php artisan test --filter test_bibliotecario_puede_crear_socio
 
 # Con output detallado
 php artisan test --verbose
 ```
 
-### Escribir un test nuevo
+### Tests con MaterialEjemplar
+
+Cualquier test que llame a `crearPrestamo()` o `crearReserva()` debe crear primero los registros de `MaterialEjemplar` — son la fuente de verdad del stock:
 
 ```php
-// tests/Feature/MultaTest.php
+$material = Material::forceCreate([
+    'titulo' => 'Libro', 'disponibilidad' => 2, ...,
+    'institucion_id' => $institucion->id,
+]);
+
+// OBLIGATORIO: crear los ejemplares físicos
+MaterialEjemplar::forceCreate([
+    'material_id'    => $material->id,
+    'institucion_id' => $material->institucion_id,
+    'codigo_ejemplar' => '100-001-E1',
+    'estado'         => 'disponible',
+]);
+```
+
+Sin los ejemplares, los servicios lanzan *"Material no disponible"* aunque `disponibilidad > 0`.
+
+### Escribir un test de Feature
+
+```php
 class MultaTest extends TestCase
 {
     use RefreshDatabase;
 
     public function test_bibliotecario_puede_registrar_multa(): void
     {
-        $institucion = Institucion::factory()->create();
+        $institucion = Institucion::create(['nombre' => 'Test', 'slug' => 'test', 'estado' => 'activa']);
         $user = User::factory()->create(['institucion_id' => $institucion->id]);
         $user->assignRole('bibliotecario');
 
         $this->actingAs($user)
-            ->post(route('multas.store'), [...])
+            ->post(route('multas.store'), [
+                'socio_id' => $socio->id,
+                'monto'    => 500,
+                'motivo'   => 'Retraso 5 días',
+            ])
             ->assertRedirect(route('multas.index'));
     }
 }
 ```
 
-> Los tests NO deben usar la base de datos real de MySQL — usan SQLite en memoria por configuración en `phpunit.xml`.
-
 ---
 
 ## Caché
 
-El sistema usa el driver `file` por defecto (configurable a `redis` en producción).
+Driver: `file` por defecto, configurable a `redis` o `database` en producción. El proyecto usa `database` en Docker.
 
 ### Keys cacheadas (TTL: 1 hora)
 
-| Key | Propósito | Invalidación |
-|-----|-----------|-------------|
-| `faqs_{institucion_id}` | FAQs del panel de contenido | `Cache::forget()` en store/update/destroy de FAQ |
-| `footer_links_{institucion_id}` | Enlaces del pie de página | `Cache::forget()` en store/update/destroy de FooterLink |
+| Key | Propósito | Se invalida en |
+|-----|-----------|----------------|
+| `faqs_{institucion_id}` | FAQs activas del tenant | store/update/destroy de FAQ |
+| `footer_links_{institucion_id}` | Footer links del tenant | store/update/destroy de FooterLink |
 
-Se usan en `ContenidoController::index()` y `HandleInertiaRequests::share()`.
+Usadas en `ContenidoController` y `HandleInertiaRequests::share()`.
 
 ---
 
-## Comandos de Artisan
+## Comandos de Artisan y scheduler
 
-| Comando | Descripción | Programación |
-|---------|-------------|-------------|
-| `db:respaldo --keep=7` | Backup MySQL comprimido a `storage/app/backups/` | Diario 03:00 |
+| Comando | Descripción | Frecuencia |
+|---------|-------------|-----------|
+| `prestamos:marcar-atrasados` | Marca préstamos vencidos como "atrasado", genera multas, envía notificaciones | Diario 01:00 |
 | `reservas:expirar` | Expira reservas vencidas, libera ejemplares | Cada hora |
-| `ejemplares:migrar --dry-run` | Migración única: crea ejemplares para materiales existentes | Manual (one-shot) |
+| `db:respaldo --keep=N` | Backup MySQL comprimido a `storage/app/backups/` | Diario 03:00 |
+| `ejemplares:migrar --dry-run` | One-shot: crea ejemplares para materiales existentes sin ejemplares | Manual |
 
-Todos los comandos programados usan `->withoutOverlapping()`.
+Todos usan `->withoutOverlapping()` para evitar ejecuciones concurrentes del scheduler.
+
+La programación está en `routes/console.php`:
+
+```php
+Schedule::command('prestamos:marcar-atrasados')->dailyAt('01:00')->withoutOverlapping();
+Schedule::command('reservas:expirar')->hourly()->withoutOverlapping();
+Schedule::command('db:respaldo', ['--keep=7'])->dailyAt('03:00')->withoutOverlapping();
+```
 
 ---
 
@@ -487,66 +676,49 @@ Todos los comandos programados usan `->withoutOverlapping()`.
 
 | Variable | Uso |
 |----------|-----|
+| `APP_KEY` | Encriptación — generado con `artisan key:generate` |
+| `APP_URL` | URL base (afecta QR, storage links, Sanctum) |
 | `DB_*` | Conexión MySQL |
-| `APP_KEY` | Encriptación (generado con `artisan key:generate`) |
-| `DEFAULT_ADMIN_*` | Credenciales del admin inicial (seed) |
-| `DEFAULT_INSTITUCION_*` | Institución creada en el seed |
-| `SEED_SAMPLE_DATA=true` | Activa el seeder de datos de prueba |
+| `DEFAULT_ADMIN_USUARIO` | Usuario del admin inicial (seed) |
+| `DEFAULT_ADMIN_PASSWORD` | Contraseña del admin inicial |
+| `DEFAULT_INSTITUCION_NOMBRE` | Institución creada en el seed |
+| `DEFAULT_INSTITUCION_SLUG` | Slug de la institución inicial |
+| `SEED_SAMPLE_DATA=true` | Activa el seeder de datos de prueba en dev |
 | `SESSION_ENCRYPT=true` | Encripta datos de sesión |
 | `SESSION_SECURE_COOKIE=true` | Cookie solo por HTTPS |
+| `SANCTUM_STATEFUL_DOMAINS` | Dominios para auth cookie en producción |
 | `L5_SWAGGER_GENERATE_ALWAYS` | Regenera docs Swagger en cada request (solo dev) |
 
 ---
 
 ## Despliegue en producción
 
-Ver `DEPLOY.md` para instrucciones completas paso a paso. Resumen de comandos:
+Ver `DEPLOY.md` para el proceso Docker completo. Ver `CHECKLIST_PRODUCCION.md` antes de cualquier deploy.
+
+Resumen de comandos manuales (sin Docker):
 
 ```bash
 composer install --optimize-autoloader --no-dev
 npm ci && npm run build
+php artisan migrate --force
 php artisan storage:link
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
-php artisan migrate --force
+php artisan db:seed --class=RolesAndPermissionsSeeder --force
 ```
 
-**Post-deploy obligatorio:**
-- Iniciar queue worker: `php artisan queue:work --tries=3 --daemon`
-- Agregar cron: `* * * * * cd /ruta && php artisan schedule:run >> /dev/null 2>&1`
-- Verificar backup: `php artisan db:respaldo --keep=7`
+**Post-deploy:**
+- Queue worker: `php artisan queue:work --tries=3 --daemon`
+- Cron: `* * * * * cd /ruta && php artisan schedule:run >> /dev/null 2>&1`
 
-> En producción, las credenciales SMTP, DB y `APP_URL` deben configurarse en `.env` según el entorno real. Ver `DEPLOY.md` sección 3.
+### Permisos de storage en Docker
 
----
+El directorio `storage/` se monta como bind mount desde el host. El entrypoint del contenedor aplica `chown -R www-data:www-data` automáticamente, pero si el mount es propiedad de otro usuario (uid distinto de 33) y el chown falla por permisos del host, puede ocurrir un error 500 en el primer request. En ese caso, correr manualmente en el host:
 
-## Notas importantes
-
-### Configuracion model
-
-El modelo `Configuracion` **NO aplica TenantScope** a propósito. Usa métodos estáticos con `institucion_id` explícito:
-
-```php
-$valor = Configuracion::get(tenantId(), 'clave', $default);
-Configuracion::set(tenantId(), 'clave', $valor);
+```bash
+sudo chown -R www-data:www-data ./storage ./bootstrap/cache
 ```
-
-### Nullsafe en fechas
-
-Columnas de fecha nullable (ej: `fecha_devolucion`) usan `?->format()` en lugar de condicionales:
-
-```php
-// Correcto
-$prestamo->fecha_devolucion?->format('d/m/Y');
-
-// Evitar
-$prestamo->fecha_devolucion ? $prestamo->fecha_devolucion->format('d/m/Y') : null;
-```
-
-### Login con `usuario` (no email)
-
-El campo de login es `usuario`, no `email`. Esto está configurado en `AuthenticatedSessionController` y en el seeder.
 
 ---
 
@@ -556,13 +728,19 @@ El campo de login es `usuario`, no `email`. Esto está configurado en `Authentic
 |---------|-----------|
 | `app/Http/Middleware/HandleInertiaRequests.php` | Props globales para todos los componentes Vue |
 | `app/Scopes/TenantScope.php` | Filtro automático por `institucion_id` |
-| `app/Services/PrestamoService.php` | Toda la lógica de préstamos |
-| `app/Services/ReservaService.php` | Toda la lógica de reservas |
-| `routes/web.php` | Todas las rutas web y AJAX interno |
-| `routes/api.php` | API REST pública (Sanctum) |
+| `app/helpers.php` | Helper global `tenantId()` |
+| `app/Services/PrestamoService.php` | Lógica completa de préstamos |
+| `app/Services/ReservaService.php` | Lógica completa de reservas |
+| `app/Services/MaterialService.php` | QR, códigos, ejemplares |
+| `routes/web.php` | Todas las rutas web e AJAX interno |
+| `routes/api.php` | API REST Sanctum |
+| `routes/console.php` | Scheduler (schedule) |
 | `resources/js/Components/AppNavbar.vue` | Navbar principal con control de permisos |
-| `database/seeders/DatabaseSeeder.php` | Punto de entrada del seed |
-| `AGENTS.md` | Referencia operativa para desarrollo y deploy |
-| `CLAUDE.md` | Instrucciones para el agente de IA |
-| `DEPLOY.md` | Guía paso a paso para puesta en producción |
-| `AUDITORIA.md` | Auditoría completa de seguridad y calidad pre-deploy |
+| `resources/js/Pages/Auth/Login.vue` | Login + Registro en una sola vista (tabs) |
+| `database/seeders/RolesAndPermissionsSeeder.php` | Definición de roles y permisos |
+| `database/seeders/DefaultAdminSeeder.php` | Creación del admin inicial |
+| `docker/entrypoint.sh` | Arranque del contenedor: migrate, seed, cache, permisos |
+| `docker-compose.prod.yml` | 5 servicios: app, db, web (nginx), queue, scheduler |
+| `DEPLOY.md` | Guía paso a paso para producción Docker |
+| `CHECKLIST_PRODUCCION.md` | Lista de verificación pre-deploy |
+| `CLAUDE.md` | Contexto para el agente IA |

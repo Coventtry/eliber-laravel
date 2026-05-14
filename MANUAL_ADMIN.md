@@ -1,4 +1,4 @@
-# Manual de Usuario — e-LibeR
+# Manual del Administrador — e-LibeR
 
 Sistema de Gestión Bibliotecaria para instituciones educativas.
 
@@ -6,330 +6,203 @@ Sistema de Gestión Bibliotecaria para instituciones educativas.
 
 ## Tabla de contenidos
 
-1. [Roles del sistema](#roles-del-sistema)
-2. [Ingreso al sistema](#ingreso-al-sistema)
-3. [Página pública](#página-pública)
-4. [Flujo principal de trabajo](#flujo-principal-de-trabajo)
-5. [Gestión de Usuarios](#gestión-de-usuarios)
-6. [Panel de Socios](#panel-de-socios)
-7. [Terminal de Préstamos](#terminal-de-préstamos)
-8. [Gestión de Materiales](#gestión-de-materiales)
-9. [Gestión de Áreas (Dewey)](#gestión-de-áreas-dewey)
-10. [Categorías Físicas](#categorías-físicas)
-11. [Gestión de Ejemplares](#gestión-de-ejemplares)
-12. [Noticias y Comunicados](#noticias-y-comunicados)
-13. [Alertas y Vencimientos](#alertas-y-vencimientos)
-14. [Panel de Administración](#panel-de-administración)
-15. [Mi Perfil](#mi-perfil)
+1. [Acceso al sistema](#acceso-al-sistema)
+2. [Panel de administración (Dashboard)](#panel-de-administración-dashboard)
+3. [Gestión de Usuarios](#gestión-de-usuarios)
+4. [Configuración del sistema](#configuración-del-sistema)
+5. [Contenido público](#contenido-público)
+6. [Analítica](#analítica)
+7. [Tablero de Feedback](#tablero-de-feedback)
+8. [Cambiar institución activa](#cambiar-institución-activa)
+9. [Mi Perfil](#mi-perfil)
 
 ---
 
-## Roles del sistema
-
-| Rol | Quién es | Qué puede hacer |
-|-----|----------|-----------------|
-| **Administrador** | Director, rector o encargado del sistema | Todo: configuración, usuarios, analítica, contenido |
-| **Bibliotecario** | Personal de la biblioteca | Socios, materiales, préstamos, áreas, noticias |
-| **Alumno** | Estudiante registrado | Ver catálogo, hacer y cancelar reservas, ver su historial |
-
----
-
-## Ingreso al sistema
+## Acceso al sistema
 
 1. Ingresar a `http://[url-del-sistema]/login`
 2. Escribir el **usuario** (no el email) y la **contraseña**
-3. El sistema redirige automáticamente al panel según el rol
+3. El sistema redirige automáticamente a `/admin/dashboard`
 
-### Registro de nuevos usuarios
-
-Los alumnos y bibliotecarios se pueden registrar desde la pestaña **"Registrarse"** en la pantalla de login. Las cuentas nuevas quedan **en espera de aprobación** — no pueden ingresar hasta que un responsable las active.
-
-### Recuperación de contraseña
-
-En la pantalla de login, el enlace **"¿Olvidaste tu contraseña?"** permite al usuario reestablecer su contraseña. Para eso debe:
-1. Ingresar su **nombre de usuario** (no el email)
-2. Ingresar su **contraseña actual**
-3. Ingresar la **nueva contraseña** (mínimo 8 caracteres)
-
-> Si el usuario no recuerda su contraseña actual, un administrador puede reestablecerla desde la edición del usuario.
+> El administrador tiene acceso completo a todo el sistema. Las funciones de operación diaria (socios, préstamos, materiales) están documentadas en el Manual del Bibliotecario.
 
 ---
 
-## Página pública
+## Panel de administración (Dashboard)
 
-El sistema tiene una página de inicio pública visible sin necesidad de iniciar sesión:
+**Ruta:** `/admin/dashboard`
 
-**Landing (`/`)**: Muestra las últimas noticias publicadas. Es la puerta de entrada al sistema.
+### Indicadores principales
 
-**FAQs (`/faqs`)**: Preguntas frecuentes configuradas desde el panel de administración. Solo se muestran las que están marcadas como **activas**.
+Cuatro tarjetas en la parte superior muestran el estado actual de la institución:
 
-**Ficha de material (`/materiales/{id}/ficha`)**: Información pública de un material (título, autor, área, clasificación). Útil para compartir por QR o WhatsApp sin requerir autenticación.
+| Indicador | Descripción |
+|-----------|-------------|
+| **Socios activos** | Cantidad de miembros con cuenta habilitada |
+| **Préstamos del mes** | Préstamos registrados en el mes en curso |
+| **Unidades en stock** | Total de ejemplares disponibles en estante |
+| **Alertas sin leer** | Alertas del sistema pendientes de revisión |
 
----
+### Panel derecho — Reservas pendientes
 
-## Flujo principal de trabajo
+Lista las reservas solicitadas por alumnos que aún no fueron procesadas. Muestra: nombre del alumno, material y fecha de solicitud. El botón **Ver todas** lleva a la cola de solicitudes.
 
-El circuito completo sigue este orden:
+### Panel izquierdo — Próximos vencimientos
 
-```
-[1] Alumno se registra
-        ↓
-[2] Bibliotecario aprueba en Usuarios  →  se crea el Socio automáticamente
-        ↓
-[3] Bibliotecario completa los datos del Socio (apellido, año, división)
-        ↓
-[4] Bibliotecario registra el préstamo desde el Panel de Socios o la Terminal
-        ↓
-[5] Seguimiento de vencimientos y prórrogas desde el Panel de Socios
-        ↓
-[6] Alumno devuelve el material  →  Bibliotecario registra la devolución
-```
+Lista los préstamos activos cuya fecha de devolución cae dentro del umbral de alerta configurado (por defecto 4 días). Muestra alumno, material y fecha de vencimiento resaltada. El botón **Ver todos** abre el listado de préstamos filtrado.
 
 ---
 
 ## Gestión de Usuarios
 
-**Ruta:** `/usuarios` (bibliotecario) · `/admin/usuarios` (administrador)
+**Ruta:** `/admin/usuarios`
 
-### Solicitudes pendientes de aprobación
+El administrador gestiona todos los usuarios del sistema, de todos los roles.
 
-Al ingresar a la vista de Usuarios aparece un panel amarillo con todas las cuentas que esperan aprobación. Para cada solicitud se muestra: nombre, email, usuario y fecha de registro.
+### Panel de solicitudes pendientes
 
-**Aprobar desde el listado:**
-- Hacer clic en el botón verde **Aprobar** en la fila correspondiente.
-- El sistema activa la cuenta y crea automáticamente el registro de Socio.
+Al ingresar aparece un panel amarillo con todas las cuentas que esperan aprobación. Muestra: nombre, email, usuario y fecha de registro.
 
-**Aprobar desde la edición:**
-1. Hacer clic en el ícono de lápiz (editar) sobre el usuario.
-2. En la sección **"Alta en el sistema"** (card verde), hacer clic en **Dar de Alta**.
-3. El sistema redirige al formulario del Socio para completar apellido, año y división.
+- **Aprobar** (botón verde): activa la cuenta y, si el rol es alumno, crea el registro de Socio automáticamente.
+- **Rechazar / Eliminar**: elimina la cuenta si fue creada por error.
 
-### Estado del socio vinculado
+> Los bibliotecarios los aprueba el administrador. Los alumnos los puede aprobar también el bibliotecario desde `/usuarios`.
 
-En la columna **"Socio vinculado"** del listado:
-- **Badge azul** con ID: el alumno ya tiene socio activo
-- **"Pendiente de Alta"**: el alumno aún no fue aprobado
+### Listado de usuarios
 
-### Búsqueda de usuarios
+Filtros disponibles:
+- Búsqueda por nombre, email o usuario
+- Filtro por rol (admin, bibliotecario, alumno)
+- Filtro por estado (activos / inactivos)
 
-Usar el campo de búsqueda para filtrar por nombre, email o nombre de usuario.
+**Columnas:** Nombre, Email, Usuario, Rol (badge), Estado (Activo/Inactivo), Socio vinculado (ID o "—"), Acciones.
 
----
+**Acciones por fila:**
+- **Editar** (lápiz): modifica nombre, email, contraseña, rol
+- **Activar / Desactivar** (toggle): habilita o bloquea el acceso sin eliminar la cuenta
+- **Eliminar** (tacho): elimina la cuenta permanentemente (requiere confirmación)
 
-## Panel de Socios
+### Crear usuario manualmente
 
-**Ruta:** `/socios`
+Desde el botón **Nuevo usuario**, el administrador puede crear cuentas directamente sin pasar por el proceso de registro, asignando el rol y la contraseña inicial.
 
-Vista central de gestión. Desde acá el bibliotecario tiene acceso completo al historial de cada alumno.
+### Editar usuario
 
-### Filtros disponibles
-
-| Filtro | Descripción |
-|--------|-------------|
-| Texto | Busca por nombre, apellido o email |
-| Estado | Activos / Inactivos / Todos |
-| Año | Filtra por año escolar (1 al 6) |
-| División | Filtra por división (1 al 6) |
-| Solo morosos | Muestra únicamente socios con préstamos atrasados |
-
-### Panel de detalle expandible
-
-Al hacer clic en el ícono de ojo ( 👁 ) de cualquier fila, se despliega un panel con:
-
-**Circulación activa**
-- Lista de préstamos vigentes con estado y fecha de vencimiento
-- Las filas en rojo indican préstamos **atrasados**
-- Botón **Extender**: permite ampliar la fecha de devolución directamente desde acá (ingresar cantidad de días → confirmar con ✓)
-
-**Historial reciente**
-- Últimas 10 devoluciones registradas del socio
-
-**Alerta de deudas**
-- Banner rojo si el socio tiene préstamos atrasados sin devolver
-
-**Botón "Nuevo préstamo"**
-- Abre la Terminal de Préstamos con el socio ya pre-seleccionado
-
-### Editar un socio
-
-Hacer clic en el ícono de lápiz para editar datos personales (nombre, apellido, email, año, división, teléfono, dirección).
-
-Las acciones **Dar de baja** y **Reactivar** están disponibles en la pantalla de edición.
+Desde la pantalla de edición se puede:
+- Cambiar nombre, apellido, email
+- Cambiar contraseña
+- Asignar o quitar **permisos individuales** (además de los del rol)
+- Dar de alta como socio si el usuario tiene rol alumno y aún no tiene socio vinculado
 
 ---
 
-## Terminal de Préstamos
+## Configuración del sistema
 
-**Ruta:** `/prestamos/create` · También desde el menú **Préstamos → Terminal de préstamos**
+**Ruta:** `/admin/configuracion`
 
-Formulario en dos pasos para registrar la salida de material.
+### Datos de la institución
 
-### Paso 1 — Identificar al socio
+- **Nombre de la institución**: aparece en el encabezado y en documentos generados. Los cambios se reflejan inmediatamente.
+- **Logo institucional**: imagen JPG, PNG, WebP o SVG, máximo 1 MB. Se muestra en el login, el dashboard y la landing pública. El logo se almacena en `storage/app/public/logos/`.
 
-- Escribir nombre, apellido o email en el campo de búsqueda
-- El sistema muestra sugerencias en tiempo real
-- Hacer clic en el socio correcto para seleccionarlo
-- Si se llegó desde el Panel de Socios, el socio ya viene pre-cargado
+### Parámetros de préstamos
 
-### Paso 2 — Seleccionar el material
+| Parámetro | Descripción | Valor por defecto |
+|-----------|-------------|-------------------|
+| **Días máximos de préstamo** | Límite máximo seleccionable al crear un préstamo | 14 días |
+| **Días de alerta previa al vencimiento** | Cuántos días antes se emite la alerta de vencimiento próximo | 4 días |
 
-- Escribir título o código de barras en el buscador de material
-- El sistema muestra resultados con stock disponible en tiempo real
-- Hacer clic en el material para seleccionarlo
-- Completar cantidad y fecha de devolución (máximo 14 días)
-- Hacer clic en **Confirmar préstamo**
-
-### Listado de préstamos activos
-
-**Ruta:** `/prestamos`
-
-Muestra todos los préstamos ordenados por urgencia: atrasados primero, luego activos por fecha de vencimiento.
-
-**Acciones disponibles:**
-- **Devolver**: registra la devolución e incrementa el stock del material
-- **Extender**: amplía la fecha de devolución (1 a 30 días)
-- **WhatsApp**: genera un enlace directo para recordar al socio por mensaje
+Estos valores se aplican en tiempo real: el cambio afecta a los próximos préstamos y a las notificaciones del scheduler.
 
 ---
 
-## Gestión de Materiales
+## Contenido público
 
-**Ruta:** `/materiales`
+**Ruta:** `/admin/contenido`
 
-### Cargar un nuevo material
+Gestión del contenido visible en la landing pública y en el sistema.
 
-1. Ir a **Materiales → Nuevo material** (o desde `/materiales/create`)
-2. Completar: título, autor, área (clasificación Dewey), categoría, año de publicación, editorial, cantidad disponible
-3. El **código** se puede generar automáticamente según el área
-4. La **clasificación física** (signatura) indica pasillo, tipo, estante y nivel donde está ubicado
-5. Guardar
+### FAQs
 
-### Generar código QR
+Preguntas frecuentes que aparecen en la página pública `/faqs`.
 
-Desde el listado o la edición de un material, el botón **QR** genera e imprime un código QR con la información del ejemplar.
+- **Agregar FAQ**: ingresar pregunta y respuesta, guardar.
+- **Activar / Desactivar** (toggle **Activa**): las FAQs desactivadas no se muestran al público, pero quedan guardadas.
+- **Editar** (lápiz): modifica pregunta y respuesta.
+- **Eliminar** (tacho): elimina permanentemente (requiere confirmación).
 
-### Código de barras / código de clasificación
+> Las FAQs activas se muestran en orden de creación. Se pueden reordenar editándolas.
 
-Formato automático: `{codigo_dewey}-{secuencia}` (ej: `1300-002`). Se puede sobrescribir manualmente.
+### Footer links
 
----
+Enlaces que aparecen en el pie de página del sistema y de la landing pública.
 
-## Gestión de Áreas (Dewey)
+- Cada enlace tiene un **Label** (texto visible) y una **URL**.
+- Los cambios se reflejan en todos los usuarios sin recargar la página (se cachean por 1 hora).
 
-**Ruta:** `/areas`
+### Anuncio (banner)
 
-Las áreas agrupan los materiales por clasificación temática (sistema Dewey).
+Banner informativo que aparece en la barra superior del sistema para todos los usuarios autenticados.
 
-Cada área tiene:
-- **Código Dewey**: número de clasificación (ej: `130`)
-- **Nombre**: descripción completa (ej: "Psicología")
-- **Abreviado**: sigla para la signatura física (ej: `PSI`)
-
-Los materiales se asocian a un área al momento de cargarse.
+- **Texto**: mensaje a mostrar (máximo una línea).
+- **Estilo**: Info (azul), Éxito (verde), Advertencia (amarillo), Peligro (rojo).
+- **Activo**: toggle para mostrar u ocultar el banner sin borrar el mensaje.
 
 ---
 
-## Categorías Físicas
+## Analítica
 
-**Ruta:** `/categorias`
+**Ruta:** `/admin/analitica`
 
-Las categorías físicas complementan la clasificación Dewey y permiten agrupar materiales por tipo de publicación (libro, revista, mapa, DVD, etc.).
+### Indicadores globales
 
-Cada categoría tiene:
-- **Nombre**: ej: "Libro", "Revista", "Atlas", "Material Audiovisual"
-- Se asigna al crear o editar un material
+| Indicador | Descripción |
+|-----------|-------------|
+| Préstamos totales | Total histórico acumulado |
+| Préstamos activos | Con estado activo o atrasado actualmente |
+| Préstamos vencidos | Con estado "atrasado" en este momento |
+| Materiales | Total de registros en el catálogo |
+| Socios | Total de miembros registrados |
 
----
+### Gráficos
 
-## Gestión de Ejemplares
+**Préstamos por mes (últimos 6 meses)** — Gráfico de barras. Permite identificar estacionalidad de uso.
 
-Cada material puede tener múltiples **ejemplares** físicos. El sistema los gestiona automáticamente al crear un material (tantos ejemplares como `disponibilidad` se indique) y al ajustar el stock.
+**Socios: activos vs dados de baja** — Gráfico de dona. Proporciones de socios según estado.
 
-### Estados de un ejemplar
+**Materiales por categoría** — Gráfico de barras horizontal. Distribución del fondo bibliográfico por área.
 
-| Estado | Significado |
-|--------|-------------|
-| **disponible** | Está en el estante, listo para prestar |
-| **prestado** | Está en manos de un socio |
-| **reservado** | Alguien lo apartó, pero aún no lo retiró |
-| **baja** | Dado de baja (robo, pérdida, deterioro) |
-
-### Dar de baja un ejemplar
-
-Desde el detalle de un material (`/materiales/{id}`):
-1. Hacer clic en **Ver ejemplares**
-2. Localizar el ejemplar con estado **disponible**
-3. Hacer clic en el botón de **baja**
-4. Opcional: ingresar una nota sobre el motivo
-
-> No se puede dar de baja un ejemplar que esté **prestado** o **reservado** — primero debe devolverse.
-
-Cuando se reduce la **disponibilidad** de un material desde la edición, el sistema da de baja automáticamente los ejemplares sobrantes (los últimos de la lista).
-
-### Código de ejemplar
-
-Cada ejemplar tiene un código único con formato `{codigo-material}-E{seq}` (ej: `1300-002-E01`). Se usa para identificar el ejemplar físico en la terminal de préstamos.
+**Top 5 materiales más prestados** — Lista rankeada con título, autor y cantidad de préstamos. Útil para compras y descarte.
 
 ---
 
-## Noticias y Comunicados
+## Tablero de Feedback
 
-**Ruta:** `/noticias`
+**Ruta:** `/admin/feedback`
 
-Publicaciones visibles en el panel del alumno y en la landing pública.
+Tablero Kanban interno para registrar ideas, mejoras y problemas del sistema. Solo visible para administradores.
 
-- Crear con título, cuerpo y opcionalmente una imagen
-- Se muestran ordenadas por fecha de publicación
-- Se pueden editar o eliminar en cualquier momento
+### Columnas
 
----
+| Columna | Uso |
+|---------|-----|
+| **Por hacer** | Ideas o tareas pendientes de iniciar |
+| **En progreso** | Tareas en curso |
+| **Hecho** | Tareas completadas |
 
-## Alertas y Vencimientos
+### Acciones
 
-**Ruta:** `/alertas`
-
-El sistema genera alertas automáticas cuando un préstamo está próximo a vencer o ya venció.
-
-- El ícono en la barra superior muestra el conteo de alertas no leídas
-- Desde `/alertas` se pueden marcar como leídas individualmente o todas a la vez
-- Los préstamos atrasados también aparecen como aviso en la barra superior (badge naranja)
+- **Nueva tarjeta** (botón +): ingresar título y descripción opcional.
+- **Mover** (flechas ◀ ▶ en cada tarjeta): pasa la tarjeta a la columna anterior o siguiente.
+- **Eliminar** (tacho): elimina permanentemente.
 
 ---
 
-## Panel de Administración
+## Cambiar institución activa
 
-**Ruta:** `/admin/dashboard` · Solo accesible con rol **Administrador**
+Para instalaciones con múltiples instituciones, el administrador puede cambiar la institución activa desde el menú desplegable del usuario en la barra superior (opción **Cambiar institución**).
 
-### Dashboard
-
-Métricas generales: total de socios, materiales, préstamos activos, préstamos atrasados y actividad reciente.
-
-### Usuarios (`/admin/usuarios`)
-
-- Ver todos los usuarios de la institución filtrados por rol
-- Aprobar solicitudes pendientes de **bibliotecarios** (los alumnos los aprueba el bibliotecario)
-- Crear, editar, activar/desactivar y eliminar usuarios
-- Asignar permisos individuales a bibliotecarios
-
-### Configuración (`/admin/configuracion`)
-
-- Nombre e institución
-- Logo institucional
-- Parámetros del sistema (días de alerta de vencimiento, límite de préstamos por socio, días máximos de préstamo)
-
-### Contenido (`/admin/contenido`)
-
-- **FAQs**: preguntas frecuentes que aparecen en la página pública `/faqs`. Cada FAQ puede activarse o desactivarse individualmente con el toggle **Activa**. Las desactivadas no se muestran al público.
-- **Footer links**: enlaces del pie de página visibles en todo el sistema y en la landing pública.
-- **Anuncio**: banner informativo que aparece en la barra superior del sistema. Configurable con texto, estilo (info/warning/danger/success) y toggle de activación.
-
-### Analítica (`/admin/analitica`)
-
-Reportes de uso: materiales más prestados, socios más activos, evolución de préstamos por período.
-
-### Feedback (`/admin/feedback`)
-
-Tablero Kanban interno para registrar ideas, mejoras y bugs del sistema. Las tarjetas se pueden mover entre columnas (Por hacer / En progreso / Hecho).
+El cambio afecta solo la sesión actual: todas las vistas, listados y reportes mostrarán los datos de la institución seleccionada.
 
 ---
 
@@ -337,30 +210,11 @@ Tablero Kanban interno para registrar ideas, mejoras y bugs del sistema. Las tar
 
 **Ruta:** `/perfil`
 
-Disponible para todos los roles desde el menú desplegable del usuario (esquina superior derecha).
+Disponible desde el menú desplegable del usuario (esquina superior derecha).
 
-- Actualizar email
-- Actualizar apellido
-- Actualizar año y división *(solo alumnos)*
+- Actualizar nombre, apellido y email
 - Cambiar foto de perfil
-- Cambiar imagen de portada (banner)
+- Cambiar imagen de portada (banner del dashboard)
 - Cambiar contraseña
 
----
-
-## Preguntas frecuentes
-
-**¿Qué pasa si un alumno olvida su contraseña?**
-Puede usar el enlace **"¿Olvidaste tu contraseña?"** en la pantalla de login.
-
-**¿Se puede hacer un préstamo sin que el alumno tenga cuenta?**
-Sí. El bibliotecario puede crear socios manualmente desde `/socios` → *Dar de alta desde Usuarios*, o bien crear directamente el usuario desde `/usuarios`.
-
-**¿Cuántos préstamos puede tener activos un socio?**
-El máximo está configurado en `/admin/configuracion`. Por defecto son 3 préstamos simultáneos.
-
-**¿Qué pasa si se supera la fecha de devolución?**
-El sistema marca el préstamo como **atrasado** automáticamente y genera una alerta. El bibliotecario puede extender el plazo o registrar la devolución.
-
-**¿Cómo se aprueba a un nuevo bibliotecario?**
-Las solicitudes de bibliotecarios las aprueba el **Administrador** desde `/admin/usuarios` (panel amarillo de solicitudes pendientes).
+> Si el administrador olvidó su contraseña, puede restablecerla desde el enlace **"¿Olvidaste tu contraseña?"** en la pantalla de login ingresando su usuario.
