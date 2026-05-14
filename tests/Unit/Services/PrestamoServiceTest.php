@@ -6,6 +6,7 @@ use App\Models\Area;
 use App\Models\Configuracion;
 use App\Models\Institucion;
 use App\Models\Material;
+use App\Models\MaterialEjemplar;
 use App\Models\Prestamo;
 use App\Models\Socio;
 use App\Models\User;
@@ -56,16 +57,25 @@ class PrestamoServiceTest extends TestCase
             'institucion_id' => $institucion->id,
         ]);
 
+        foreach (range(1, 3) as $i) {
+            MaterialEjemplar::forceCreate([
+                'material_id'    => $this->material->id,
+                'institucion_id' => $institucion->id,
+                'codigo_ejemplar' => "100-001-E{$i}",
+                'estado'         => 'disponible',
+            ]);
+        }
+
         $this->service = $this->app->make(PrestamoService::class);
     }
 
     public function test_crear_prestamo_success(): void
     {
-        $prestamo = $this->service->crearPrestamo(
+        $prestamos = $this->service->crearPrestamo(
             $this->socio->id, $this->material->id, 1, now()->addDays(7)->toDateString()
         );
 
-        $this->assertDatabaseHas('prestamos', ['id' => $prestamo->id, 'estado' => 'activo']);
+        $this->assertDatabaseHas('prestamos', ['id' => $prestamos[0]->id, 'estado' => 'activo']);
         $this->assertDatabaseHas('materiales', ['id' => $this->material->id, 'disponibilidad' => 2]);
     }
 
@@ -89,7 +99,15 @@ class PrestamoServiceTest extends TestCase
                 'editorial' => 'Ed', 'clasificacion_fisica' => 'FIL-A-(E)1-1',
                 'institucion_id' => $this->material->institucion_id,
             ]);
-            $this->service->crearPrestamo($this->socio->id, $m->id, 1, now()->addDays(7)->toDateString());
+            Prestamo::forceCreate([
+                'socio_id'        => $this->socio->id,
+                'material_id'     => $m->id,
+                'fecha_prestamo'  => now()->toDateString(),
+                'fecha_devolucion' => now()->addDays(7)->toDateString(),
+                'estado'          => 'activo',
+                'cantidad'        => 1,
+                'institucion_id'  => $this->material->institucion_id,
+            ]);
         }
 
         $this->expectException(ValidationException::class);
@@ -128,9 +146,10 @@ class PrestamoServiceTest extends TestCase
 
     public function test_devolver_prestamo(): void
     {
-        $prestamo = $this->service->crearPrestamo(
+        $prestamos = $this->service->crearPrestamo(
             $this->socio->id, $this->material->id, 1, now()->addDays(7)->toDateString()
         );
+        $prestamo = $prestamos[0];
 
         $this->service->devolverPrestamo($prestamo);
 
@@ -140,9 +159,10 @@ class PrestamoServiceTest extends TestCase
 
     public function test_extender_prestamo(): void
     {
-        $prestamo = $this->service->crearPrestamo(
+        $prestamos = $this->service->crearPrestamo(
             $this->socio->id, $this->material->id, 1, now()->addDays(7)->toDateString()
         );
+        $prestamo = $prestamos[0];
 
         $this->service->extenderPrestamo($prestamo, 5);
 
@@ -152,13 +172,14 @@ class PrestamoServiceTest extends TestCase
 
     public function test_extender_prestamo_within_range(): void
     {
-        $prestamo = $this->service->crearPrestamo(
+        $prestamos = $this->service->crearPrestamo(
             $this->socio->id, $this->material->id, 1, now()->addDays(7)->toDateString()
         );
+        $prestamo = $prestamos[0];
 
-        $this->service->extenderPrestamo($prestamo, 31);
+        $this->service->extenderPrestamo($prestamo, 30);
 
-        $this->assertEquals(now()->addDays(38)->toDateString(), $prestamo->fresh()->fecha_devolucion->format('Y-m-d'));
+        $this->assertEquals(now()->addDays(37)->toDateString(), $prestamo->fresh()->fecha_devolucion->format('Y-m-d'));
     }
 
     public function test_marcar_atrasados(): void

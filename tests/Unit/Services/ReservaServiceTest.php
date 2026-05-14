@@ -6,9 +6,11 @@ use App\Models\Alerta;
 use App\Models\Area;
 use App\Models\Institucion;
 use App\Models\Material;
+use App\Models\MaterialEjemplar;
 use App\Models\Socio;
 use App\Models\User;
 use App\Services\ReservaService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -52,6 +54,15 @@ class ReservaServiceTest extends TestCase
             'institucion_id' => $institucion->id,
         ]);
 
+        foreach (range(1, 2) as $i) {
+            MaterialEjemplar::forceCreate([
+                'material_id'    => $this->material->id,
+                'institucion_id' => $institucion->id,
+                'codigo_ejemplar' => "100-001-E{$i}",
+                'estado'         => 'disponible',
+            ]);
+        }
+
         $this->service = $this->app->make(ReservaService::class);
     }
 
@@ -77,7 +88,7 @@ class ReservaServiceTest extends TestCase
 
     public function test_crear_reserva_fails_when_no_stock(): void
     {
-        $this->material->update(['disponibilidad' => 0, 'disponibilidad_reservada' => 0]);
+        DB::table('material_ejemplares')->where('material_id', $this->material->id)->update(['estado' => 'prestado']);
 
         $this->expectException(\Exception::class);
         $this->service->crearReserva($this->socio->id, $this->material->id);
