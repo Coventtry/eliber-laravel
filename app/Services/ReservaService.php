@@ -17,16 +17,18 @@ class ReservaService
     {
         $material = Material::findOrFail($materialId);
 
-        $yaReservado = Reserva::where('material_id', $materialId)
-            ->where('socio_id', $socioId)
-            ->whereIn('estado', ['pendiente', 'aprobada'])
-            ->exists();
-
-        if ($yaReservado) {
-            throw ValidationException::withMessages(['material_id' => 'Ya tienes una reserva activa para este material']);
-        }
-
         return DB::transaction(function () use ($material, $socioId) {
+            // Check inside transaction with lock to prevent double-reserve on concurrent requests
+            $yaReservado = Reserva::where('material_id', $material->id)
+                ->where('socio_id', $socioId)
+                ->whereIn('estado', ['pendiente', 'aprobada'])
+                ->lockForUpdate()
+                ->exists();
+
+            if ($yaReservado) {
+                throw ValidationException::withMessages(['material_id' => 'Ya tienes una reserva activa para este material']);
+            }
+
             $ejemplar = MaterialEjemplar::where('material_id', $material->id)
                 ->where('estado', 'disponible')
                 ->lockForUpdate()
@@ -144,18 +146,23 @@ class ReservaService
 
     public function expirarReservasVencidas(): int
     {
-        $vencidas = Reserva::where('estado', 'pendiente')
-            ->where('fecha_vencimiento', '<', now())
-            ->get();
+        return DB::transaction(function () {
+            $vencidas = Reserva::where('estado', 'pendiente')
+                ->where('fecha_vencimiento', '<', now())
+                ->lockForUpdate()
+                ->get();
 
-        foreach ($vencidas as $reserva) {
-            if ($reserva->ejemplar_id) {
-                $reserva->ejemplar->update(['estado' => 'disponible']);
+            foreach ($vencidas as $reserva) {
+                if ($reserva->ejemplar_id) {
+                    MaterialEjemplar::where('id', $reserva->ejemplar_id)
+                        ->lockForUpdate()
+                        ->update(['estado' => 'disponible']);
+                }
+                $reserva->material->decrement('disponibilidad_reservada');
+                $reserva->update(['estado' => 'expirada']);
             }
-            $reserva->material->decrement('disponibilidad_reservada');
-            $reserva->update(['estado' => 'expirada']);
-        }
 
-        return $vencidas->count();
+            return $vencidas->count();
+        });
     }
 }

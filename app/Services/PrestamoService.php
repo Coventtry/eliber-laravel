@@ -32,7 +32,31 @@ class PrestamoService
         $this->validarLimiteActivos($socio, $cantidad);
 
         return DB::transaction(function () use ($socio, $material, $cantidad, $fechaDevolucion) {
-            Material::where('id', $material->id)->lockForUpdate();
+            Material::where('id', $material->id)->lockForUpdate()->first();
+
+            // Re-check inside transaction: duplicate active loan
+            $yaActivo = Prestamo::where('socio_id', $socio->id)
+                ->where('material_id', $material->id)
+                ->whereIn('estado', ['activo', 'pendiente', 'atrasado'])
+                ->lockForUpdate()
+                ->exists();
+
+            if ($yaActivo) {
+                throw ValidationException::withMessages(['material_id' => 'El socio ya tiene un préstamo activo de este material.']);
+            }
+
+            // Re-check inside transaction: 3-loan limit
+            $activos = Prestamo::where('socio_id', $socio->id)
+                ->whereIn('estado', ['activo', 'pendiente', 'atrasado'])
+                ->lockForUpdate()
+                ->count();
+
+            if (($activos + $cantidad) > 3) {
+                $restantes = max(0, 3 - $activos);
+                throw ValidationException::withMessages([
+                    'socio_id' => "El socio solo puede tomar {$restantes} préstamo(s) más (límite: 3 activos).",
+                ]);
+            }
 
             $ejemplares = MaterialEjemplar::where('material_id', $material->id)
                 ->where('estado', 'disponible')
