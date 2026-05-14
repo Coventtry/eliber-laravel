@@ -27,9 +27,11 @@ class Configuracion extends Model
 
     public static function get(int $institucionId, string $clave, mixed $default = null): mixed
     {
-        $row = static::where('institucion_id', $institucionId)->where('clave', $clave)->first();
+        $valor = once(fn () => static::where('institucion_id', $institucionId)
+            ->where('clave', $clave)
+            ->value('valor'));
 
-        return $row ? $row->valor : $default;
+        return $valor ?? $default;
     }
 
     public static function set(int $institucionId, string $clave, mixed $valor): void

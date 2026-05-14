@@ -6,6 +6,7 @@ use App\Models\Alerta;
 use App\Models\Configuracion;
 use App\Models\Material;
 use App\Models\MaterialEjemplar;
+use App\Models\Multa;
 use App\Models\Prestamo;
 use App\Models\Socio;
 use Carbon\Carbon;
@@ -122,6 +123,7 @@ class PrestamoService
                     "{$prestamo->socio->full_name} — {$prestamo->material->titulo} (venció el {$fecha})",
                     true
                 );
+                $this->generarMultaSiCorresponde($prestamo);
             }
 
             return count($atrasados);
@@ -156,6 +158,37 @@ class PrestamoService
         }
 
         return $proximos;
+    }
+
+    private function generarMultaSiCorresponde(Prestamo $prestamo): void
+    {
+        $yaExiste = Multa::withoutGlobalScopes()
+            ->where('prestamo_id', $prestamo->id)
+            ->exists();
+
+        if ($yaExiste) {
+            return;
+        }
+
+        $montoPorDia = (float) Configuracion::get($prestamo->institucion_id, 'monto_multa_por_dia', 0);
+
+        if ($montoPorDia <= 0) {
+            return;
+        }
+
+        $diasAtraso = (int) now()->toDateString() > $prestamo->fecha_devolucion->toDateString()
+            ? now()->diffInDays($prestamo->fecha_devolucion)
+            : 1;
+
+        Multa::create([
+            'socio_id'       => $prestamo->socio_id,
+            'prestamo_id'    => $prestamo->id,
+            'monto'          => round($montoPorDia * max(1, $diasAtraso), 2),
+            'motivo'         => 'Devolución tardía',
+            'pagada'         => false,
+            'fecha_creacion' => now()->toDateString(),
+            'institucion_id' => $prestamo->institucion_id,
+        ]);
     }
 
     private function registrarAlerta(Prestamo $prestamo, string $tipo, string $descripcion, bool $upsert = false): void

@@ -21,14 +21,17 @@
                     No hay notas.
                 </li>
             </ul>
+            <Pagination :links="anotaciones.links" class="mt-3" />
         </div>
     </div>
     <AppFooter />
 </template>
 
 <script setup>
+import { Head, Link } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
+import Pagination from '@/Components/Pagination.vue'
 defineProps({ anotaciones: { type: Object, required: true } })
 </script>

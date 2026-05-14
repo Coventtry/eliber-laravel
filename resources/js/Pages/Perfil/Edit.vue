@@ -73,7 +73,8 @@
                                         {{ nombreAvatar }}
                                     </label>
                                 </div>
-                                <small class="text-muted">JPG, PNG o WebP — máx. 2 MB</small>
+                                <div v-if="errorAvatar" class="text-danger small mt-1">{{ errorAvatar }}</div>
+                                <small v-else class="text-muted">JPG, PNG o WebP — máx. 2 MB</small>
                             </div>
 
                             <div class="form-group">
@@ -86,7 +87,8 @@
                                         {{ nombreBanner }}
                                     </label>
                                 </div>
-                                <small class="text-muted">JPG, PNG o WebP — máx. 4 MB. Se muestra como banner en tu perfil.</small>
+                                <div v-if="errorBanner" class="text-danger small mt-1">{{ errorBanner }}</div>
+                                <small v-else class="text-muted">JPG, PNG o WebP — máx. 4 MB. Se muestra como banner en tu perfil.</small>
                             </div>
 
                             <div class="text-right">
@@ -138,13 +140,23 @@ const form = ref({
     anio:     props.perfil.anio     ?? '',
     division: props.perfil.division ?? '',
 })
-const archivoAvatar     = ref(null)
-const archivoBanner  = ref(null)
-const nombreAvatar   = ref('Seleccioná una imagen...')
-const nombreBanner= ref('Seleccioná una imagen...')
-const previsualizacionAvatar  = ref(null)
+const archivoAvatar          = ref(null)
+const archivoBanner          = ref(null)
+const nombreAvatar           = ref('Seleccioná una imagen...')
+const nombreBanner           = ref('Seleccioná una imagen...')
+const previsualizacionAvatar = ref(null)
 const previsualizacionBanner = ref(props.perfil.wallpaper_url ?? null)
-const guardando      = ref(false)
+const guardando              = ref(false)
+const errorAvatar            = ref(null)
+const errorBanner            = ref(null)
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+function validarImagen(archivo, maxMB) {
+    if (!ALLOWED_TYPES.includes(archivo.type)) return 'Solo se aceptan JPG, PNG o WebP.'
+    if (archivo.size > maxMB * 1024 * 1024) return `El archivo supera los ${maxMB} MB.`
+    return null
+}
 
 const estiloFondo = computed(() => {
     const img = previsualizacionBanner.value
@@ -156,20 +168,25 @@ const estiloFondo = computed(() => {
 function alCambiarAvatar(e) {
     const archivo = e.target.files[0]
     if (!archivo) return
-    archivoAvatar.value   = archivo
-    nombreAvatar.value = archivo.name
+    errorAvatar.value = validarImagen(archivo, 2)
+    if (errorAvatar.value) { e.target.value = ''; return }
+    archivoAvatar.value          = archivo
+    nombreAvatar.value           = archivo.name
     previsualizacionAvatar.value = URL.createObjectURL(archivo)
 }
 
 function alCambiarBanner(e) {
     const archivo = e.target.files[0]
     if (!archivo) return
-    archivoBanner.value    = archivo
-    nombreBanner.value  = archivo.name
+    errorBanner.value = validarImagen(archivo, 4)
+    if (errorBanner.value) { e.target.value = ''; return }
+    archivoBanner.value          = archivo
+    nombreBanner.value           = archivo.name
     previsualizacionBanner.value = URL.createObjectURL(archivo)
 }
 
 function guardar() {
+    if (errorAvatar.value || errorBanner.value) return
     guardando.value = true
     const data = new FormData()
     data.append('_method', 'PUT')
