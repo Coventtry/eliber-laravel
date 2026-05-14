@@ -86,25 +86,22 @@ class PrestamoService
     public function extenderPrestamo(Prestamo $prestamo, int $dias): void
     {
         DB::transaction(function () use ($prestamo, $dias) {
+            if ($prestamo->ejemplar_id && $prestamo->ejemplar?->estado !== 'prestado') {
+                throw ValidationException::withMessages(['prestamo' => 'El ejemplar no está en préstamo activo.']);
+            }
+
             $prestamo->update([
                 'fecha_devolucion' => $prestamo->fecha_devolucion->addDays($dias)->toDateString(),
             ]);
 
-        if ($prestamo->ejemplar_id && $prestamo->ejemplar?->estado !== 'prestado') {
-            throw ValidationException::withMessages(['prestamo' => 'El ejemplar no está en préstamo activo.']);
-        }
-
-        $prestamo->update([
-            'fecha_devolucion' => $prestamo->fecha_devolucion->addDays($dias)->toDateString(),
-        ]);
-
-        $prestamo->load(['socio', 'material']);
-        $nuevaFecha = $prestamo->fecha_devolucion?->format('d/m/Y') ?? '';
-        $this->registrarAlerta(
-            $prestamo,
-            'renovacion',
-            "Renovación +{$dias} días — {$prestamo->material->titulo} (nuevo vencimiento: {$nuevaFecha})"
-        );
+            $prestamo->load(['socio', 'material']);
+            $nuevaFecha = $prestamo->fecha_devolucion?->format('d/m/Y') ?? '';
+            $this->registrarAlerta(
+                $prestamo,
+                'renovacion',
+                "Renovación +{$dias} días — {$prestamo->material->titulo} (nuevo vencimiento: {$nuevaFecha})"
+            );
+        });
     }
 
     public function marcarAtrasados(): int
