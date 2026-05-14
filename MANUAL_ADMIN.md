@@ -186,14 +186,24 @@ Tablero Kanban interno para registrar ideas, mejoras y problemas del sistema. So
 
 | Columna | Uso |
 |---------|-----|
-| **Por hacer** | Ideas o tareas pendientes de iniciar |
+| **Backlog** | Ideas o tareas pendientes de iniciar |
 | **En progreso** | Tareas en curso |
-| **Hecho** | Tareas completadas |
+| **Completado** | Tareas finalizadas internamente |
+| **Publicado** | Cambios desplegados o comunicados |
+
+### Tarjetas
+
+Cada tarjeta tiene:
+- **Título** (obligatorio)
+- **Descripción** (opcional, hasta 2000 caracteres)
+- **Prioridad**: Baja (verde) / Media (amarillo) / Alta (rojo) / Urgente (rojo oscuro)
+- **Tags** opcionales: Bug, Mejora, Feature, Diseño, Seguridad, UX, Documentación, Performance
 
 ### Acciones
 
-- **Nueva tarjeta** (botón +): ingresar título y descripción opcional.
-- **Mover** (flechas ◀ ▶ en cada tarjeta): pasa la tarjeta a la columna anterior o siguiente.
+- **Nueva tarjeta** (botón +): ingresar título, descripción, prioridad y tags opcionales.
+- **Mover**: arrastrar la tarjeta a otra columna (drag & drop) o usar los botones de columna.
+- **Editar** (lápiz): modifica título, descripción, prioridad y tags.
 - **Eliminar** (tacho): elimina permanentemente.
 
 ---
@@ -217,4 +227,4 @@ Disponible desde el menú desplegable del usuario (esquina superior derecha).
 - Cambiar imagen de portada (banner del dashboard)
 - Cambiar contraseña
 
-> Si el administrador olvidó su contraseña, puede restablecerla desde el enlace **"¿Olvidaste tu contraseña?"** en la pantalla de login ingresando su usuario.
+> Para cambiar la contraseña, ir a `/reset-password` o a **Mi Perfil → Cambiar contraseña**. El formulario requiere la contraseña actual. Si se olvidó la contraseña y no es posible ingresar, otra cuenta de admin puede reestablecerla desde la edición del usuario.

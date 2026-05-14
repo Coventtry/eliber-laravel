@@ -35,9 +35,9 @@ Sistema de Gestión Bibliotecaria para instituciones educativas.
 
 Las cuentas nuevas creadas por registro público comienzan con estado **inactivo** y no pueden ingresar hasta que el administrador las apruebe desde `/admin/usuarios`. Una vez aprobada, la cuenta queda activa y el sistema permite el ingreso.
 
-### Recuperar contraseña
+### Cambiar contraseña
 
-En la pantalla de login, el enlace **"¿Olvidaste tu contraseña?"** permite restablecer la contraseña ingresando el nombre de usuario y una contraseña nueva. Si no se recuerda la contraseña actual, el administrador puede cambiarla desde la edición del usuario.
+La contraseña se puede cambiar desde `/reset-password` o desde **Mi Perfil**. El formulario requiere ingresar la **contraseña actual**, la nueva contraseña y la confirmación. Si no se recuerda la contraseña actual, el administrador puede reestablecerla desde la edición del usuario en `/admin/usuarios`.
 
 ---
 
@@ -195,7 +195,7 @@ Gestión de multas por préstamos atrasados.
 
 ### Generación automática
 
-Si el administrador configuró un monto de multa diaria, el sistema genera multas automáticamente al marcar los préstamos como atrasados (proceso diario automático). El monto se calcula por los días de retraso acumulados.
+El sistema puede generar multas automáticamente cuando el proceso diario marca préstamos como atrasados. El monto se configura directamente en la base de datos (no hay UI para configurarlo en esta versión). Si el monto está en cero, no se generan multas automáticas.
 
 ### Registrar una multa manualmente
 
@@ -206,12 +206,14 @@ Desde **Nueva multa**:
 
 ### Acciones sobre multas existentes
 
-- **Cobrar** (botón verde): marca la multa como pagada. Ingresar la fecha de cobro.
-- **Perdonar** (botón amarillo): cancela la multa sin cobro. Registrar el motivo.
+- **Cobrar** (botón verde): marca la multa como pagada.
+- **Perdonar** (botón amarillo): cierra la multa sin cobro, registrando una observación. Internamente también queda como "pagada" en la base de datos.
 
 ### Tabla de multas
 
-**Columnas:** Socio, Monto, Motivo, Estado (Pendiente / Pagada / Perdonada), Fecha.
+**Columnas:** Socio, Monto, Motivo, Estado (**Pendiente** / **Pagada**), Fecha.
+
+> La acción "perdonar" cierra la multa igual que "cobrar" — la distinción queda en las observaciones, no en un estado separado.
 
 ---
 

@@ -57,9 +57,9 @@ Una vez registrado, el sistema muestra el mensaje:
 
 El sistema te redirige automáticamente a tu panel de inicio.
 
-### Contraseña olvidada
+### Cambiar contraseña
 
-Hacer clic en **"¿Olvidaste tu contraseña?"** en la pantalla de login. Ingresar tu nombre de usuario y elegir una contraseña nueva. Si no recordás ni el usuario, contactá al bibliotecario de tu institución.
+Una vez que ingresaste al sistema, podés cambiar tu contraseña desde `/reset-password` o desde **Mi Perfil**. El formulario requiere ingresar tu **contraseña actual** más la nueva. Si olvidaste tu contraseña y no podés ingresar, contactá al bibliotecario para que te la reestablezca.
 
 ### Cuenta pendiente de aprobación
 

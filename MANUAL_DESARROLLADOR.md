@@ -162,7 +162,7 @@ protected static function booted(): void
 | `HistorialSocio` | `historial_socios` | Sí | `belongsTo Socio` |
 | `Faq` | `faqs` | Sí | campo `activa` toggle |
 | `FooterLink` | `footer_links` | No | Filtro manual por `institucion_id` |
-| `FeedbackCard` | `feedback_cards` | No | Kanban interno (columnas: todo/progreso/hecho) |
+| `FeedbackCard` | `feedback_cards` | No | Kanban interno (columnas: backlog/in_progress/completed/published); campos: titulo, descripcion, tags (JSON), prioridad (low/medium/high/urgent) |
 
 ---
 
@@ -655,12 +655,14 @@ Usadas en `ContenidoController` y `HandleInertiaRequests::share()`.
 
 | Comando | Descripción | Frecuencia |
 |---------|-------------|-----------|
-| `prestamos:marcar-atrasados` | Marca préstamos vencidos como "atrasado", genera multas, envía notificaciones | Diario 01:00 |
+| `prestamos:marcar-atrasados` | Marca préstamos vencidos como "atrasado", envía notificaciones; genera multas si `monto_multa_por_dia > 0` en `configuraciones` | Diario 01:00 |
 | `reservas:expirar` | Expira reservas vencidas, libera ejemplares | Cada hora |
 | `db:respaldo --keep=N` | Backup MySQL comprimido a `storage/app/backups/` | Diario 03:00 |
 | `ejemplares:migrar --dry-run` | One-shot: crea ejemplares para materiales existentes sin ejemplares | Manual |
 
 Todos usan `->withoutOverlapping()` para evitar ejecuciones concurrentes del scheduler.
+
+> **Inconsistencia conocida**: `PrestamoService::marcarAtrasados()` lee la clave `monto_multa_por_dia` (default 0), mientras que `MultaService::registrar()` lee `monto_multa_diaria` (default 100). Ambas claves existen en `configuraciones` pero **ninguna es configurable desde la UI de administración**. Para activar multas automáticas hay que insertar el valor manualmente: `Configuracion::set($instId, 'monto_multa_por_dia', '100')`. Es deuda técnica pendiente de unificar.
 
 La programación está en `routes/console.php`:
 
