@@ -3,6 +3,10 @@ set -e
 
 # Solo el contenedor app corre migraciones (no queue ni scheduler)
 if [ "${1}" = "php-fpm" ]; then
+    echo "Corrigiendo permisos de storage..."
+    chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
     echo "Sincronizando assets públicos..."
     cp -rf /var/www/public_build/. /var/www/public/
 
