@@ -9,14 +9,14 @@ echo "=== e-LibeR Deploy ==="
 
 # 1. Actualizar código
 echo "Pulling latest code..."
-git pull origin master
+git pull origin deploy
 
 # 2. Rebuild y restart
 echo "Rebuilding containers..."
-sudo docker compose -f docker-compose.prod.yml build --no-cache
+sudo docker compose -f docker-compose.prod.yml build
 
 echo "Restarting containers..."
-sudo docker compose -f docker-compose.prod.yml up -d --wait --wait-timeout 120
+sudo docker compose -f docker-compose.prod.yml up -d --force-recreate --wait --wait-timeout 120
 
 echo "=== Deploy completado ==="
 sudo docker compose -f docker-compose.prod.yml ps
