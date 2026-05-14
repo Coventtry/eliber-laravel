@@ -129,6 +129,7 @@ const auth              = computed(() => page.props.auth)
 const instituciones     = computed(() => page.props.instituciones ?? [])
 const institucionActiva = computed(() => page.props.institucion_activa ?? null)
 const sidebarOpen       = ref(false)
+const cargando          = ref(false)
 
 const { darkMode, toggleDark } = useDarkMode()
 
