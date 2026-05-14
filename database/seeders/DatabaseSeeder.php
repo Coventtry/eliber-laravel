@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
             InstitucionesSeeder::class,
             AreasSeeder::class,
             RolesAndPermissionsSeeder::class,
-            DefaultBibliotecarioSeeder::class,
+            DefaultAdminSeeder::class,
         ]);
 
         if (filter_var(env('SEED_SAMPLE_DATA', false), FILTER_VALIDATE_BOOL)) {

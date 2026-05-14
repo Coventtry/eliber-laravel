@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('bibliotecarios')) {
+            return;
+        }
         Schema::table('bibliotecarios', function (Blueprint $table) {
             $table->integer('socio_id')->nullable()->after('institucion_id');
             $table->foreign('socio_id')->references('id')->on('socios')->nullOnDelete();
