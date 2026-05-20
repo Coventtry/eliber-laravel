@@ -49,7 +49,13 @@ Lista las reservas solicitadas por alumnos que aún no fueron procesadas. Muestr
 
 ### Panel izquierdo — Próximos vencimientos
 
-Lista los préstamos activos cuya fecha de devolución cae dentro del umbral de alerta configurado (por defecto 4 días). Muestra alumno, material y fecha de vencimiento resaltada. El botón **Ver todos** abre el listado de préstamos filtrado.
+Muestra los préstamos activos o pendientes cuya fecha de devolución está entre **hoy** y **hoy + N días**, donde N es el valor de **Días de alerta previa al vencimiento** configurado en `/admin/configuracion` (default: 4 días).
+
+La fecha de devolución la define el **bibliotecario al crear el préstamo**, dentro del límite de **Días máximos de préstamo** (default: 14 días desde hoy).
+
+> **Ejemplo:** Hoy es 20/05. Con alerta = 4 días, se listan préstamos con vencimiento entre el 20/05 y el 24/05. Un préstamo creado el 20/05 con vencimiento 02/06 no aparece hasta el 29/05.
+
+Muestra alumno, material y fecha de vencimiento resaltada. El botón **Ver todos** abre el listado de préstamos filtrado.
 
 ---
 
@@ -109,10 +115,16 @@ Desde la pantalla de edición se puede:
 
 | Parámetro | Descripción | Valor por defecto |
 |-----------|-------------|-------------------|
-| **Días máximos de préstamo** | Límite máximo seleccionable al crear un préstamo | 14 días |
-| **Días de alerta previa al vencimiento** | Cuántos días antes se emite la alerta de vencimiento próximo | 4 días |
+| **Días máximos de préstamo** | Límite máximo de días que puede tener un préstamo desde la fecha actual. El bibliotecario no puede seleccionar una fecha de devolución más allá de hoy + este valor. | 14 días |
+| **Días de alerta previa al vencimiento** | Ventana de días hacia adelante para considerar un préstamo como "próximo a vencer". Determina qué préstamos aparecen en el panel del dashboard y cuándo se generan las alertas automáticas. | 4 días |
 
-Estos valores se aplican en tiempo real: el cambio afecta a los próximos préstamos y a las notificaciones del scheduler.
+**Cómo funciona:**
+1. Al crear un préstamo, el bibliotecario elige `fecha_devolucion` (entre hoy y hoy + `días_máximos`).
+2. El dashboard ejecuta: `WHERE fecha_devolucion BETWEEN today AND today + días_alerta`.
+3. Si `fecha_devolucion` cae dentro de esa ventana → aparece en "Próximos vencimientos" y se genera una alerta.
+4. El scheduler (`prestamos:marcar-atrasados`) corre diariamente a la 01:00 para marcar los vencidos.
+
+Estos valores se aplican en tiempo real desde la base de datos. El cambio afecta a los próximos préstamos y a las notificaciones del scheduler.
 
 ---
 

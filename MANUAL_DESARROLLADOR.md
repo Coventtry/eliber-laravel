@@ -249,6 +249,37 @@ public function store(StorePrestamoRequest $request): RedirectResponse
 }
 ```
 
+### Flujo de "Próximos vencimientos"
+
+El sistema determina qué préstamos están próximos a vencer mediante esta cadena:
+
+```
+Configuracion::get(institucion_id, 'dias_alerta_previa', 4)  → N
+       │
+       ▼
+Prestamo::vencimientoProximo(N)
+  → scope: WHERE estado IN ('activo','pendiente')
+            AND fecha_devolucion BETWEEN today AND today + N
+       │
+       ▼
+AdminController::dashboard()
+  → Inertia::render('Admin/Dashboard', { proximos_vencer, diasAlerta })
+```
+
+**Puntos clave:**
+
+1. **`fecha_devolucion`** la define el bibliotecario al crear el préstamo (campo manual). Se valida entre hoy y `dias_prestamo` (default 14, configurable).
+
+2. **`dias_alerta_previa`** (default 4) es la ventana. Se configura por institución en `Configuracion`. El scope `vencimientoProximo($dias)` usa este valor como `N`.
+
+3. **HandleInertiaRequests** ejecuta `PrestamoService::obtenerVencimientosProximos(N)` en cada request. Además de devolver el collection, crea registros `Alerta` de tipo `proximo_vencer` (si no existe una no leída) y envía notificación `PrestamoProximoVencer` al usuario vinculado al socio.
+
+4. **`crearPrestamo()`** no calcula la fecha automáticamente — la recibe del formulario. La validación `validarFechaDevolucion()` la clampa entre hoy y `dias_prestamo`.
+
+5. **Dashboard bibliotecario** (`Dashboard.vue`) usa el conteo global `vencimientos_proximos`. **Dashboard admin** (`Admin/Dashboard.vue`) recibe la lista completa con `diasAlerta` visible en el badge "N días".
+
+6. **Scheduler**: `prestamos:marcar-atrasados` corre a las 01:00, marca como `atrasado` los préstamos con `fecha_devolucion < today AND estado = 'activo'`, envía `PrestamoVencido` y genera multa si `monto_multa_por_dia > 0`.
+
 ---
 
 ## Concurrencia y condiciones de carrera

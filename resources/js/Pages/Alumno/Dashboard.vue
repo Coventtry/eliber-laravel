@@ -6,12 +6,13 @@
         <FlashMessage />
 
         <div class="text-center mb-4">
-            <img
-                :src="$page.props.logo_url || '/img/logo.png'"
-                alt="Logo institucional"
-                style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--eliber-primary);background:#fff;"
-                class="mb-3"
-            >
+            <div class="logo-circle mb-3">
+                <img v-if="!logoError"
+                     :src="$page.props.logo_url || '/img/logo.png'"
+                     alt="Logo institucional"
+                     @error="logoError = true">
+                <i v-else class="bi bi-image"></i>
+            </div>
             <h4 class="mb-0">Bienvenido, {{ auth.user.nombre }}</h4>
             <small class="text-muted">{{ $page.props.institucion_activa?.nombre ?? 'Biblioteca E-liber' }}</small>
         </div>
@@ -112,7 +113,7 @@
 
 <script setup>
 import { Head, Link, usePage } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import AppNavbarAlumno from '@/Components/AppNavbarAlumno.vue'
 import AppFooter from '@/Components/AppFooter.vue'
 import FlashMessage from '@/Components/FlashMessage.vue'
@@ -124,6 +125,7 @@ defineProps({
 
 const page = usePage()
 const auth = computed(() => page.props.auth)
+const logoError = ref(false)
 
 function badgeEstado(estado) {
     return {
@@ -134,3 +136,27 @@ function badgeEstado(estado) {
     }
 }
 </script>
+
+<style>
+.logo-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid var(--eliber-primary);
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0 auto;
+}
+.logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.logo-circle i {
+    font-size: 2rem;
+    color: #adb5bd;
+}
+</style>

@@ -4,12 +4,13 @@
 
     <div class="hero-section text-center" style="background: linear-gradient(rgba(27, 94, 32, 0.85), rgba(27, 94, 32, 0.85)), url('/img/menu_bibliotecario.jpg') center/cover no-repeat;">
         <div class="container">
-            <img
-                :src="$page.props.logo_url || '/img/logo.png'"
-                alt="Logo institucional"
-                class="mb-3"
-                style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.8);background:#fff;"
-            >
+            <div class="logo-circle mb-3">
+                <img v-if="!logoError"
+                     :src="$page.props.logo_url || '/img/logo.png'"
+                     alt="Logo institucional"
+                     @error="logoError = true">
+                <i v-else class="bi bi-image"></i>
+            </div>
             <h2 class="font-weight-bold">Bienvenido, {{ $page.props.auth.user.nombre }}</h2>
             <p class="lead">Sistema de Gestión de Biblioteca Escolar</p>
         </div>
@@ -72,7 +73,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
 import AppNavbar from '@/Components/AppNavbar.vue'
 import AppFooter from '@/Components/AppFooter.vue'
@@ -84,4 +85,28 @@ defineProps({
 
 const page = usePage()
 const solicitudesPendientes = computed(() => page.props.solicitudes_pendientes ?? 0)
+const logoError = ref(false)
 </script>
+
+<style>
+.logo-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.8);
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.logo-circle i {
+    font-size: 2.5rem;
+    color: #adb5bd;
+}
+</style>

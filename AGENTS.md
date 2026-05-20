@@ -3,130 +3,111 @@
 ## Dev Commands
 
 ```bash
-composer run dev       # Laravel + Vite (parallel)
-composer run dev:queue # + queue worker
-composer run test      # config:clear → tests (SQLite in-memory)
-composer run setup     # Fresh install (deps, .env, migrate, seed, npm)
-php artisan pint       # PHP formatting (Laravel Pint)
-php artisan optimize:clear  # Wipes all caches (config, route, view, etc.)
-```
-
-**Single test:**
-```bash
-php artisan test --filter test_name
+composer run dev          # artisan serve + Vite (parallel via concurrently)
+composer run dev:queue    # + queue worker
+composer run test         # config:clear → tests (SQLite in-memory)
+composer run setup        # Fresh install (composer install, .env, key:generate, migrate --seed, npm, npm build)
+php artisan pint          # Laravel Pint (PHP formatting)
+php artisan test --filter test_name  # Single test
 ```
 
 ## Architecture
 
-Inertia.js SPA (Laravel + Vue 3) + REST API under `/api/v1/` (Sanctum auth). One project, one `.env`.
+Inertia.js SPA (Laravel 12 + Vue 3) + REST API under `/api/v1/` (Sanctum auth). One project, one `.env`.
 
-**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService`. Controllers delegate to these.
+**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService`, `MultaService`. Controllers delegate business logic. All write ops use `$this->authorize()`.
 
-**Key models**: `User`, `Socio` (member), `Material`, `Prestamo` (loan), `Reserva` (reservation), `Area` (Dewey), `Institucion` (tenant).
+**Inertia pages**: `resources/js/Pages/` — `Inertia::render('Socios/Index')` → `Socios/Index.vue`. PascalCase. Shared layout: `AdminLayout.vue`.
 
-**Inertia pages**: `resources/js/Pages/` — `Inertia::render('Socios/Index')` maps to `Socios/Index.vue`. PascalCase. Shared layout: `AdminLayout.vue`.
+## Auth & Roles
 
-**Spanish route names**: resources use Spanish (`socios`, `materiales`, `prestamos`, `noticias`, `anotaciones`, `usuarios`). Some use explicit parameter mapping, e.g. `->parameters(['materiales' => 'material'])`.
-
-**Bootstrap 4 + jQuery legacy**: Vite config globally exposes jQuery (required by Bootstrap 4). Avoid jQuery in new Vue 3 components but be aware it exists globally. `popper.js` is pre-optimized.
-
-**API Resource classes**: All `/api/v1/` responses use `app/Http/Resources/` — `Resource::collection()`, `new Resource()`, or `Resource::make()`. Never return raw models. Nested relations use `$this->whenLoaded()`.
-
-**l5-swagger**: `darkaonline/l5-swagger` installed for API docs; annotate new API controller routes.
-
-**Service layer** (`app/Services/`): `PrestamoService`, `MaterialService`, `SocioService`, `ReservaService` — controllers delegate business logic. All write operations use `$this->authorize()`.
-
+- **Login uses `usuario` field** (NOT `email`): `Auth::attempt(['usuario' => ...])`
 - Guard: `web`, provider: `App\Models\User`
-- Login uses `usuario` field (NOT `email`): `Auth::attempt(['usuario' => ...])`
-- REST API: `auth:sanctum` guard
-- Roles via `spatie/laravel-permission`: `admin`, `bibliotecario`, `alumno`
-- `admin` has all permissions; `bibliotecario` needs individual permissions
-- Policies in `app/Policies/` — `$this->authorize()` on all write ops. When adding routes, ensure roles/permissions are seeded (403 otherwise).
-- Session driver defaults to `database` (config/session.php)
+- Roles via `spatie/laravel-permission` (two guards: `web` + `sanctum`):
+  - `admin` — all 12 permissions including `ver-reportes`
+  - `bibliotecario` — all 9 except `ver-reportes`
+  - `alumno` — `ver-materiales`, `crear-reservas`, `ver-reservas`
+- Users have `activo` boolean; inactive accounts rejected at login
+- All protected routes use `auth` middleware; REST API uses `auth:sanctum`
+- Policies in `app/Policies/` — `$this->authorize()` on all write ops. When adding routes, seed roles/permissions (403 otherwise).
 - Ziggy (`tightenco/ziggy`) available for `route()` helper in Inertia pages
+- Session driver defaults to `database`
 
-## Key Models
+## Multi-Tenancy
 
-`tenantId()` helper in `app/helpers.php` (autoloaded via `composer.json` files): returns `session('admin_institucion_id')` for admin, else `auth()->user()->institucion_id`.
+- `tenantId()` helper (`app/helpers.php`): returns `session('admin_institucion_id')` for admin, else `auth()->user()->institucion_id`
+- `App\Scopes\TenantScope` applied via `booted()` on scoped models — auto-filters by `tenantId()`
+- `institucion_id` is NEVER a form field — set from `tenantId()` in controllers
+- Avoid `FIELD()` MySQL — use `CASE` for SQLite-compatible ordering
+- `User` model is NOT tenant-scoped
 
-`App\Scopes\TenantScope` filters all queries via `tenantId()`. Every scoped model boots it in `booted()`. `institucion_id` is NEVER a form field — always set from `tenantId()` in controllers.
+### Configuracion quirk
 
-`Configuracion` model uses explicit `institucion_id` in queries (no TenantScope). Use `Configuracion::get(tenantId(), 'key')` / `::set(tenantId(), 'key', $value)`.
+`Configuracion` model **does** boot `TenantScope`, but its static `get()`/`set()` methods take explicit `institucion_id`:
+```php
+Configuracion::get(tenantId(), 'key', $default);
+Configuracion::set(tenantId(), 'key', $value);
+```
 
-## Database & Migrations
+## Routes (Spanish resource names)
 
-- Most migrations use `Schema::table()` with `if (Schema::hasColumn(...))` guards — generally safe on existing data (some newer migrations skip the guard)
-- Test DB: SQLite in-memory (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:` in `phpunit.xml`)
-- Main tables in `biblioteca` MySQL database
+Resources use Spanish names with explicit parameter mapping:
+```php
+Route::resource('materiales', ...)->parameters(['materiales' => 'material']);
+Route::resource('usuarios', ...)->parameters(['usuarios' => 'user']);
+```
+
+**Route groups:**
+- `/admin/*` (role:admin) — users CRUD, feedback Kanban, FAQs/footer/anuncio, analytics, config, institution switcher
+- `/alumno/*` (role:alumno) — dashboard, mis-prestamos, mis-reservas, catalogo, reservas
+- Export: `/exportar/{socios|materiales|prestamos|multas}/{csv|pdf}`
+- AJAX: `/api/socios/buscar`, `/api/socios/{socio}/prestamos`, `/api/materiales/disponibles`, `/api/materiales/ultimo-codigo`
+- REST API: `/api/v1/*` (public GET materiales/noticias; Sanctum for CRUD on socios, prestamos, reservas, areas, alertas, multas, usuarios)
+
+API responses use `app/Http/Resources/` — `Resource::collection()`, `new Resource()`, or `Resource::make()`. Never return raw models. Nested relations use `$this->whenLoaded()`. Annotate new API routes with OpenAPI (`darkaonline/l5-swagger`).
 
 ## Tests
 
-`tests/Feature/SmokeTest.php` covers main flows. Private helper `createBibliotecario()` creates a `User` with admin role + all permissions — required for `authorize()` checks to pass. This is not a global helper; same file also has `createAlumno()`, `createSocio()`, `createArea()`, `createInstitucion()`.
+- **SQLite in-memory** (`phpunit.xml`: `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`)
+- `tests/Feature/SmokeTest.php` covers main flows
+- `tests/Support/TestHelpers.php` trait provides: `createBibliotecario()` (creates User + admin role + all permissions), `createAlumno()`, `createSocio()`, `createArea()`, `createInstitucion()`, `actingAsBibliotecario()`
+- All service tests use `RefreshDatabase` + SQLite-safe ordering (no `FIELD()`)
 
-## Deploy Checklist
+## Quirks
 
-Before deploying to production, verify each item:
+- **jQuery global**: Vite config aliases `jquery` to `window.jQuery` for Bootstrap 4 compat. Avoid jQuery in new Vue 3 components.
+- **`popper.js`** pre-optimized in Vite `optimizeDeps`
+- **`Alerta::withoutGlobalScopes()`** used in `PrestamoService` for alert CRUD (alerts have TenantScope)
+- **`barryvdh/laravel-dompdf`** for PDF exports; **`simplesoftwareio/simple-qrcode`** for QR codes
+- **Manifest icons**: PWA icons in `manifest.json` must be square with exact pixel dimensions (192×192, 512×512). Non-square images cause browser warnings.
+- **Dashboard logo fallback**: `<img>` tags use `@error="logoError = true"` to show a `bi-image` icon instead of a broken image (pattern in `Dashboard.vue` and `Alumno/Dashboard.vue`).
+- **Mailer in dev**: Notifications (PrestamoVencido, etc.) are `ShouldQueue`. If no SMTP/mailpit running, set `MAIL_MAILER=log` in `.env` to avoid 500 errors.
+- **Missing migrations**: If you hit "table not found" errors, run `php artisan migrate` — many tables (multas, material_ejemplares) were added after the initial migration.
 
-### .env Production
-- [ ] `APP_ENV=production` | `APP_DEBUG=false`
-- [ ] `APP_KEY` generated via `php artisan key:generate`
-- [ ] `APP_URL` = production URL (https://...)
-- [ ] `DB_USERNAME` / `DB_PASSWORD` = real credentials (not root/empty)
-- [ ] `QUEUE_CONNECTION=database` (not sync)
-- [ ] `MAIL_MAILER=smtp` with real SMTP credentials
-- [ ] `SESSION_DRIVER=database` (not file)
-- [ ] `SESSION_SECURE_COOKIE=true`
-- [ ] `LOG_LEVEL=warning` | `LOG_STACK=daily`
-- [ ] `CORS_ALLOWED_ORIGINS` = production domain only
-- [ ] `SANCTUM_STATEFUL_DOMAINS` = production domain
+## Queue & Scheduler
 
-### Known Errors (all items fixed — see AUDITORIA.md for full audit)
-- A7: Configuracion model no aplica TenantScope (intencional, usa métodos estáticos) - no es un bug
-- Items postergables: missing policies (controllers protegidos por auth + TenantScope), Vite peer dep warnings (esbuild moderate, dev-only)
-
-### Commands (in order)
-```bash
-php artisan key:generate
-php artisan storage:link
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan migrate --force
-php artisan queue:table       # if not done
-php artisan migrate --force   # for jobs table
-npm run build
-```
-
-### Post-deploy
-- [ ] Queue worker running: `php artisan queue:work --tries=3 --daemon`
-- [ ] Scheduler running: `* * * * * cd /path && php artisan schedule:run >> /dev/null 2>&1`
-- [ ] `php artisan db:respaldo --keep=7` works and file is writable
-- [ ] Admin can log in and see data (TenantScope fix verified)
-- [ ] Alerts (internal) visible in dashboard
-- [ ] Storage symlink works (`public/storage` → `storage/app/public`)
+- Default driver: `database` (jobs table)
+- Worker: `php artisan queue:work --tries=3`
+- Scheduler (`routes/console.php`):
+  - `reservas:expirar` — hourly
+  - `prestamos:marcar-atrasados` — daily at 01:00
+  - `db:respaldo --keep=7` — daily at 03:00 (requires `mysqldump`)
+- Backup files in `storage/app/backups/`
 
 ## Storage
 
 - QR codes: `storage/app/public/qrcodes/`
 - News images: `storage/app/public/noticias/`
 - Avatars: `storage/app/public/uploads/`
-- Backups: `storage/app/backups/`
+- Wallpapers: `storage/app/public/wallpapers/`
 - Run `php artisan storage:link` after deploy
 
-## Quirks
+## Deploy
 
-- **Vite** aliases jQuery as global for Bootstrap 4 compat (see `vite.config.js`)
-- `Alerta::withoutGlobalScopes()` used in `PrestamoService` for alert CRUD
-- **Backup**: `php artisan db:respaldo` runs `mysqldump` daily at 03:00, keeps 7 days; files in `storage/app/backups/`
-- Requires `mysqldump` installed on the server for backup to function
-- `FLied()` MySQL function avoided — use `CASE` for SQLite-compatible ordering
+Two options:
+1. **Docker** (`docker-compose.prod.yml`): `./deploy.sh` (git pull → rebuild → up)
+2. **Bare-metal** (Nginx reverse-proxy): `nginx/eliber.conf` as vhost template
 
-## Queue
+Production commands (in order): `key:generate`, `storage:link`, `config:cache`, `route:cache`, `view:cache`, `migrate --force`, `queue:table` (if needed), `migrate --force` (jobs table), `npm run build`.
 
-- Default: `database` driver (jobs table)
-- Worker: `php artisan queue:work --tries=3`
-- Failed jobs stored in `failed_jobs` table
-
-## Reference
-
-Full pre-deploy audit: `AUDITORIA.md`
+Full audit/production checklist: `AUDITORIA.md`, `CHECKLIST_PRODUCCION.md`, `DEPLOY.md`.
